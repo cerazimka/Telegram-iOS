@@ -20,7 +20,6 @@ jobs:
 
       - name: Set active Xcode path
         run: |
-          # Use latest available Xcode on the runner
           XCODE_PATH=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
           if [ -z "$XCODE_PATH" ]; then
             XCODE_PATH=$(xcode-select -p | sed 's|/Contents/Developer||')
@@ -37,41 +36,14 @@ jobs:
           mv /Users/Shared/$(basename $GITHUB_WORKSPACE) /Users/Shared/telegram-ios
 
       - name: Build the App
-        env:
-          TELEGRAM_API_ID: ${{ secrets.TELEGRAM_API_ID }}
-          TELEGRAM_API_HASH: ${{ secrets.TELEGRAM_API_HASH }}
         run: |
           set -x
-
           SOURCE_DIR=/Users/Shared/telegram-ios
           BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
-
           cd $SOURCE_DIR
 
-          # Patch build config with API credentials from secrets (if provided)
-          python3 - <<'PYEOF'
-import json, os, sys
-
-config_path = 'build-system/appstore-configuration.json'
-with open(config_path) as f:
-    config = json.load(f)
-
-api_id = os.environ.get('TELEGRAM_API_ID', '').strip()
-api_hash = os.environ.get('TELEGRAM_API_HASH', '').strip()
-
-if api_id:
-    config['api_id'] = api_id
-if api_hash:
-    config['api_hash'] = api_hash
-
-with open(config_path, 'w') as f:
-    json.dump(config, f, indent=2)
-
-print(f"Build config: bundle_id={config['bundle_id']}, api_id={config['api_id']}")
-PYEOF
-
           BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
-          export APP_VERSION=$(python3 -c 'import json,sys; obj=json.load(open("versions.json")); print(obj["app"])')
+          export APP_VERSION=$(python3 -c 'import json; print(json.load(open("versions.json"))["app"])')
           export COMMIT_COUNT=$(git rev-list --count HEAD)
           export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
           export BUILD_NUMBER="$COMMIT_COUNT"
@@ -89,7 +61,6 @@ PYEOF
             --configuration=${{ github.event.inputs.configuration || 'release_arm64' }} \
             --buildNumber="$BUILD_NUMBER"
 
-          # Collect IPA
           OUTPUT_PATH="build/artifacts"
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
@@ -97,7 +68,6 @@ PYEOF
             cp "$f" "$OUTPUT_PATH/ExteraGram.ipa"
           done
 
-          # Collect dSYMs
           mkdir -p build/DSYMs
           for f in bazel-out/applebin_ios-ios_arm*-opt-ST-*/bin/Telegram/*.dSYM; do
             cp -R "$f" build/DSYMs/
@@ -121,7 +91,7 @@ PYEOF
           body: |
             Unsigned build of ExteraGram ${{ env.APP_VERSION }} (build ${{ env.BUILD_NUMBER }})
 
-            > ⚠️ This IPA is not signed with a valid Apple certificate. To install, use AltStore, Sideloadly, or a similar tool.
+            > This IPA is not signed with a valid Apple certificate. To install, use AltStore, Sideloadly, or a similar tool.
           draft: false
           prerelease: false
           files: |
