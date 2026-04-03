@@ -1,5 +1,5 @@
 import Foundation
-import SGSimpleSettings
+import EGSimpleSettings
 import UIKit
 import AsyncDisplayKit
 import Display
@@ -335,9 +335,9 @@ private final class ItemNode: ASDisplayNode {
     }
     
     func updateLayout(height: CGFloat, transition: ContainedViewLayoutTransition) -> (width: CGFloat, shortWidth: CGFloat) {
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         var height = height
-        if SGSimpleSettings.shared.hideTabBar {
+        if EGSimpleSettings.shared.hideTabBar {
             height = 46.0
         }
         let titleSize = self.titleNode.updateLayout(CGSize(width: 160.0, height: .greatestFiniteMagnitude))
@@ -386,9 +386,9 @@ private final class ItemNode: ASDisplayNode {
     }
     
     func updateArea(size: CGSize, sideInset: CGFloat, useShortTitle: Bool, transition: ContainedViewLayoutTransition) {
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         var size = size
-        if SGSimpleSettings.shared.hideTabBar {
+        if EGSimpleSettings.shared.hideTabBar {
             size.height = 46.0
         }
         transition.updateAlpha(node: self.titleContainer, alpha: useShortTitle ? 0.0 : 1.0)
@@ -545,7 +545,7 @@ public final class ChatListFilterTabContainerNode: ASDisplayNode {
         }
     }
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     public let inline: Bool
     private var backgroundNode: NavigationBackgroundNode? = nil
     
@@ -562,7 +562,7 @@ public final class ChatListFilterTabContainerNode: ASDisplayNode {
         self.selectedBackgroundNode.displaysAsynchronously = false
         self.selectedBackgroundNode.displayWithoutProcessing = true
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         self.inline = inline
         if self.inline {
             let presentationData = context.sharedContext.currentPresentationData.with { $0 }
@@ -897,7 +897,7 @@ public final class ChatListFilterTabContainerNode: ASDisplayNode {
             }
         }
         
-        let minSpacing: CGFloat = 26.0 / (SGSimpleSettings.shared.compactFolderNames ? 2.5 : 1.0)
+        let minSpacing: CGFloat = 26.0 / (EGSimpleSettings.shared.compactFolderNames ? 2.5 : 1.0)
         
         let resolvedSideInset: CGFloat = 14.0
         var leftOffset: CGFloat = resolvedSideInset

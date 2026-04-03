@@ -1,7 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgdeps = [
-    "//Swiftgram/SGStrings:SGStrings"
+    "//ExteraGram/EGStrings:EGStrings"
 ]
 
 swift_library(

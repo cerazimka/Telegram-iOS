@@ -1,5 +1,5 @@
-// MARK: Swiftgram
-import SGSimpleSettings
+// MARK: ExteraGram
+import EGSimpleSettings
 import TextFormat
 import TranslateUI
 import Foundation
@@ -88,8 +88,8 @@ func chatMessageDisplaySendMessageOptions(selfController: ChatControllerImpl, no
             return
         }
         
-        // MARK: Swiftgram
-        let outgoingMessageTranslateToLang = SGSimpleSettings.shared.outgoingLanguageTranslation[SGSimpleSettings.makeOutgoingLanguageTranslationKey(accountId: selfController.context.account.peerId.id._internalGetInt64Value(), peerId: peer.id.id._internalGetInt64Value())] ?? selfController.contentData?.state.predictedChatLanguage
+        // MARK: ExteraGram
+        let outgoingMessageTranslateToLang = EGSimpleSettings.shared.outgoingLanguageTranslation[EGSimpleSettings.makeOutgoingLanguageTranslationKey(accountId: selfController.context.account.peerId.id._internalGetInt64Value(), peerId: peer.id.id._internalGetInt64Value())] ?? selfController.contentData?.state.predictedChatLanguage
                 
         let sgTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?) = (outgoingMessageTranslateToLang: outgoingMessageTranslateToLang, translate: { [weak selfController] in
             guard let selfController else { return }
@@ -121,7 +121,7 @@ func chatMessageDisplaySendMessageOptions(selfController: ChatControllerImpl, no
                 }
                 
                 if !toLang.isEmpty {
-                    SGSimpleSettings.shared.outgoingLanguageTranslation[SGSimpleSettings.makeOutgoingLanguageTranslationKey(accountId: selfController.context.account.peerId.id._internalGetInt64Value(), peerId: peerId.id._internalGetInt64Value())] = langCode
+                    EGSimpleSettings.shared.outgoingLanguageTranslation[EGSimpleSettings.makeOutgoingLanguageTranslationKey(accountId: selfController.context.account.peerId.id._internalGetInt64Value(), peerId: peerId.id._internalGetInt64Value())] = langCode
                 }
                 chatMessageDisplaySendMessageOptions(selfController: selfController, node: node, gesture: gesture)
             })

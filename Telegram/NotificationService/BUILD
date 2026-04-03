@@ -1,7 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgdeps = [
-    "//Swiftgram/SGAppGroupIdentifier:SGAppGroupIdentifier"
+    "//ExteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier"
 ]
 
 swift_library(

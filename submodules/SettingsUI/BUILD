@@ -2,12 +2,12 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgdeps = [
     "//submodules/BuildConfig:BuildConfig",
-    "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-    "//Swiftgram/SGStrings:SGStrings"
+    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//ExteraGram/EGStrings:EGStrings"
 ]
 
 sgsrc = [
-    "//Swiftgram/SGRecentSessionApiId:SGRecentSessionApiId",
+    "//ExteraGram/EGRecentSessionApiId:EGRecentSessionApiId",
 ]
 
 swift_library(

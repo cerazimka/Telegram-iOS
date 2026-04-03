@@ -226,7 +226,7 @@
         _cropPipe = [[SPipe alloc] init];
         _captionAbovePipe = [[SPipe alloc] init];
         _highQualityPhotoPipe = [[SPipe alloc] init];
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         _highQualityPhoto = [[NSUserDefaults standardUserDefaults] boolForKey:@"sendLargePhotos"];
         _livePhotoModePipe = [[SPipe alloc] init];
     }

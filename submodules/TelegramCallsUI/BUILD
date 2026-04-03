@@ -41,7 +41,7 @@ apple_resource_bundle(
 )
 
 sgdeps = [
-    "//Swiftgram/SGAppGroupIdentifier:SGAppGroupIdentifier"
+    "//ExteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier"
 ]
 
 swift_library(

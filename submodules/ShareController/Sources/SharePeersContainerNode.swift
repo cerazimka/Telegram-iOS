@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import AsyncDisplayKit
@@ -164,7 +164,7 @@ final class SharePeersContainerNode: ASDisplayNode, ShareContentContainerNode {
         
         self.peersValue.set(.single(peers))
         
-        let canShareStory = controllerInteraction.shareStory != nil && SGSimpleSettings.shared.showRepostToStoryV2
+        let canShareStory = controllerInteraction.shareStory != nil && EGSimpleSettings.shared.showRepostToStoryV2
         
         let items: Signal<[SharePeerEntry], NoError> = combineLatest(self.peersValue.get(), self.foundPeers.get(), self.tick.get(), self.themePromise.get())
         |> map { [weak controllerInteraction] initialPeers, foundPeers, _, theme -> [SharePeerEntry] in
@@ -328,7 +328,7 @@ final class SharePeersContainerNode: ASDisplayNode, ShareContentContainerNode {
 
         self.contentTitleNode.view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.debugTapGesture(_:))))
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         self.isAccessibilityElement = false
 
         self.contentTitleNode.isAccessibilityElement = true

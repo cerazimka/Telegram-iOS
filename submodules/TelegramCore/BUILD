@@ -1,17 +1,17 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgdeps = [
-    "//Swiftgram/SwiftSoup:SwiftSoup",
-    "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-    "//Swiftgram/SGTranslationLangFix:SGTranslationLangFix",
-    "//Swiftgram/SGWebSettingsScheme:SGWebSettingsScheme",
-    "//Swiftgram/SGGHSettingsScheme:SGGHSettingsScheme",
-    "//Swiftgram/SGConfig:SGConfig",
-    "//Swiftgram/SGLogging:SGLogging",
+    "//ExteraGram/SwiftSoup:SwiftSoup",
+    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//ExteraGram/EGTranslationLangFix:EGTranslationLangFix",
+    "//ExteraGram/EGWebSettingsScheme:EGWebSettingsScheme",
+    "//ExteraGram/EGGHSettingsScheme:EGGHSettingsScheme",
+    "//ExteraGram/EGConfig:EGConfig",
+    "//ExteraGram/EGLogging:EGLogging",
 ]
 
 sgsrc = [
-    "//Swiftgram/SGIQTP:SGIQTP",
+    "//ExteraGram/EGIQTP:EGIQTP",
 ]
 
 swift_library(

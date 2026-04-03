@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import TelegramPresentationData
 import AccountContext
@@ -139,7 +139,7 @@ extension ChatControllerImpl {
             var requestsState: PeerInvitationImportersState?
             var dismissedInvitationRequests: [Int64]?
 
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             var predictedChatLanguage: String?
             
             var customEmojiAvailable: Bool = false
@@ -171,7 +171,7 @@ extension ChatControllerImpl {
         private var premiumGiftSuggestionDisposable: Disposable?
         private var translationStateDisposable: Disposable?
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         private var chatLanguagePredictionDisposable: Disposable?
 
         private let isPeerInfoReady = ValuePromise<Bool>(false, ignoreRepeated: true)
@@ -1065,7 +1065,7 @@ extension ChatControllerImpl {
                         } else {
                             isRegularChat = true
                         }
-                        if strongSelf.nextChannelToReadDisposable == nil, let peerId = chatLocation.peerId, let customChatNavigationStack, !SGSimpleSettings.shared.disableScrollToNextChannel {
+                        if strongSelf.nextChannelToReadDisposable == nil, let peerId = chatLocation.peerId, let customChatNavigationStack, !EGSimpleSettings.shared.disableScrollToNextChannel {
                             if let index = customChatNavigationStack.firstIndex(of: peerId), index != customChatNavigationStack.count - 1 {
                                 let nextPeerId = customChatNavigationStack[index + 1]
                                 strongSelf.nextChannelToReadDisposable = (combineLatest(queue: .mainQueue(),
@@ -1109,7 +1109,7 @@ extension ChatControllerImpl {
                                     }
                                 })
                             }
-                        } else if isRegularChat, strongSelf.nextChannelToReadDisposable == nil, !SGSimpleSettings.shared.disableScrollToNextChannel {
+                        } else if isRegularChat, strongSelf.nextChannelToReadDisposable == nil, !EGSimpleSettings.shared.disableScrollToNextChannel {
                             //TODO:loc optimize
                             let accountPeerId = context.account.peerId
                             strongSelf.nextChannelToReadDisposable = (combineLatest(queue: .mainQueue(),
@@ -1745,7 +1745,7 @@ extension ChatControllerImpl {
                         strongSelf.state.alwaysShowGiftButton = alwaysShowGiftButton
                         strongSelf.state.disallowedGifts = disallowedGifts
                         
-                        if let replyThreadId, let channel = renderedPeer?.peer as? TelegramChannel, channel.isForumOrMonoForum, strongSelf.nextChannelToReadDisposable == nil, !SGSimpleSettings.shared.disableScrollToNextTopic {
+                        if let replyThreadId, let channel = renderedPeer?.peer as? TelegramChannel, channel.isForumOrMonoForum, strongSelf.nextChannelToReadDisposable == nil, !EGSimpleSettings.shared.disableScrollToNextTopic {
                             strongSelf.nextChannelToReadDisposable = (combineLatest(queue: .mainQueue(),
                             context.engine.peers.getNextUnreadForumTopic(peerId: channel.id, topicId: Int32(clamping: replyThreadId)),
                                 ApplicationSpecificNotice.getNextChatSuggestionTip(accountManager: context.sharedContext.accountManager)
@@ -2156,7 +2156,7 @@ extension ChatControllerImpl {
                         if counterAndTimestamp.0 >= 3 {
                             maybeSuggestPremium = true
                         }
-                        if (isPremium || maybeSuggestPremium || hasAutoTranslate || true /* MARK: Swiftgram */) && !isHidden {
+                        if (isPremium || maybeSuggestPremium || hasAutoTranslate || true /* MARK: ExteraGram */) && !isHidden {
                             return chatTranslationState(context: context, peerId: peerId, threadId: chatLocation.threadId)
                             |> map { translationState -> ChatPresentationTranslationState? in
                                 if let translationState, !translationState.fromLang.isEmpty && (translationState.fromLang != baseLanguageCode || translationState.isEnabled) {
@@ -2182,7 +2182,7 @@ extension ChatControllerImpl {
                         strongSelf.onUpdated?(previousState)
                     })
 
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     self.chatLanguagePredictionDisposable = (
                         chatTranslationState(context: context, peerId: peerId, threadId: chatLocation.threadId, forcePredict: true)
                         |> map { translationState -> ChatPresentationTranslationState? in
@@ -2464,7 +2464,7 @@ extension ChatControllerImpl {
             self.cachedDataDisposable?.dispose()
             self.premiumGiftSuggestionDisposable?.dispose()
             self.translationStateDisposable?.dispose()
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             self.chatLanguagePredictionDisposable?.dispose()
             self.inviteRequestsDisposable?.dispose()
         }

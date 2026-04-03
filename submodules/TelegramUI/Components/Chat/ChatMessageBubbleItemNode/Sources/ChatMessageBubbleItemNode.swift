@@ -1,5 +1,5 @@
-import SGStrings
-import SGSimpleSettings
+import EGStrings
+import EGSimpleSettings
 import TranslateUI
 import Foundation
 import UIKit
@@ -324,7 +324,7 @@ private func contentNodeMessagesAndClassesForItem(_ item: ChatMessageItem) -> ([
                     }
                     
                     
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     var message = message
                     if message.canRevealContent(contentSettings: item.context.currentContentSettings.with { $0 }) {
                         let originalTextLength = message.text.count
@@ -342,7 +342,7 @@ private func contentNodeMessagesAndClassesForItem(_ item: ChatMessageItem) -> ([
                                 entities: [
                                     MessageTextEntity(
                                         range: startIndex..<endIndex,
-                                        // TODO(swiftgram): Add more instructions to collapsed block?
+                                        // TODO(exteragram): Add more instructions to collapsed block?
                                         type: .BlockQuote(isCollapsed: false) //.Custom(type: ApplicationSpecificEntityType.Button)
                                     )
                                 ]
@@ -733,7 +733,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
     private var shareButtonNode: ChatMessageShareButton?
     
     private var quickTranslateButtonNode: ChatMessageShareButton?
-    public var needsQuickTranslateButton: Bool = false /* SGSimpleSettings.defaultValues[SGSimpleSettings.Keys.quickTranslateButton.rawValue] as! Bool*/
+    public var needsQuickTranslateButton: Bool = false /* EGSimpleSettings.defaultValues[EGSimpleSettings.Keys.quickTranslateButton.rawValue] as! Bool*/
     
     private let messageAccessibilityArea: AccessibilityAreaNode
 
@@ -1273,7 +1273,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 if let shareButtonNode = strongSelf.shareButtonNode, shareButtonNode.frame.contains(point) {
                     return .fail
                 }
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 if let quickTranslateButtonNode = strongSelf.quickTranslateButtonNode, quickTranslateButtonNode.frame.contains(point) {
                     return .fail
                 }
@@ -1779,8 +1779,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         
         let isFailed = item.content.firstMessage.effectivelyFailed(timestamp: item.context.account.network.getApproximateRemoteTimestamp())
         
-        // MARK: Swiftgram
-        var sgLocalNeedsQuickTranslateButton = false /* SGSimpleSettings.defaultValues[SGSimpleSettings.Keys.quickTranslateButton.rawValue] as! Bool*/
+        // MARK: ExteraGram
+        var sgLocalNeedsQuickTranslateButton = false /* EGSimpleSettings.defaultValues[EGSimpleSettings.Keys.quickTranslateButton.rawValue] as! Bool*/
         if let strongSelf = selfReference.value {
             if strongSelf.needsQuickTranslateButton {
                 if incoming && !item.message.text.isEmpty && item.message.adAttribute == nil {
@@ -1790,7 +1790,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         }
         
         var needsShareButton = false
-        var mayHaveSeparateCommentsButton = false // MARK: Swiftgram
+        var mayHaveSeparateCommentsButton = false // MARK: ExteraGram
         var needsSummarizeButton = false
     
         if incoming, case let .customChatContents(contents) = item.associatedData.subject, case .hashTagSearch = contents.kind {
@@ -1848,7 +1848,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     needsShareButton = true
                 }
             }
-            // var mayHaveSeparateCommentsButton = false // MARK: Swiftgram
+            // var mayHaveSeparateCommentsButton = false // MARK: ExteraGram
             if !needsShareButton {
                 loop: for media in item.message.media {
                     if media is TelegramMediaGame || media is TelegramMediaInvoice {
@@ -1923,7 +1923,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         tmpWidth -= deliveryFailedInset
         // MARK: Swifgram
         let renderWideChannelPosts: Bool
-        if let channel = item.message.peers[item.message.id.peerId] as? TelegramChannel, case .broadcast = channel.info, SGSimpleSettings.shared.wideChannelPosts, !(mayHaveSeparateCommentsButton && hasCommentButton(item: item)) {
+        if let channel = item.message.peers[item.message.id.peerId] as? TelegramChannel, case .broadcast = channel.info, EGSimpleSettings.shared.wideChannelPosts, !(mayHaveSeparateCommentsButton && hasCommentButton(item: item)) {
             renderWideChannelPosts = true
             
             tmpWidth = baseWidth
@@ -2462,7 +2462,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         var mosaicStatusSizeAndApply: (CGSize, (ListViewItemUpdateAnimation) -> ChatMessageDateAndStatusNode)?
         
         if let mosaicRange = mosaicRange {
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             var maxDimensions = layoutConstants.image.maxDimensions
             if renderWideChannelPosts {
                 maxDimensions.width = maximumContentWidth
@@ -2473,8 +2473,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     return CGSize(width: 256.0, height: 256.0)
                 }
                 return size
-            }/*, TODO(swiftgram): fillWidth: SGSimpleSettings.shared.wideChannelPosts */)
-            // MARK: Swiftgram
+            }/*, TODO(exteragram): fillWidth: EGSimpleSettings.shared.wideChannelPosts */)
+            // MARK: ExteraGram
             if innerSize.height > maxSize.height, maxDimensions.width != layoutConstants.image.maxDimensions.width {
                 maxDimensions.width = max(round(maxDimensions.width * maxSize.height / innerSize.height), layoutConstants.image.maxDimensions.width)
                 maxSize = maxDimensions.fittedToWidthOrSmaller(maximumContentWidth - layoutConstants.image.bubbleInsets.left - layoutConstants.image.bubbleInsets.right)
@@ -2483,7 +2483,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                         return CGSize(width: 256.0, height: 256.0)
                     }
                     return size
-                }/*, TODO(swiftgram): fillWidth: SGSimpleSettings.shared.wideChannelPosts */)
+                }/*, TODO(exteragram): fillWidth: EGSimpleSettings.shared.wideChannelPosts */)
             }
             
             let framesAndPositions = innerFramesAndPositions.map { ($0.0.offsetBy(dx: layoutConstants.image.bubbleInsets.left, dy: layoutConstants.image.bubbleInsets.top), $0.1) }
@@ -5086,8 +5086,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
             shareButtonNode.removeFromSupernode()
         }
         
-        // MARK: Swiftgram
-        // TODO(swiftgram): Move business-logic up to hierarchy
+        // MARK: ExteraGram
+        // TODO(exteragram): Move business-logic up to hierarchy
         if strongSelf.needsQuickTranslateButton && incoming && !item.message.text.isEmpty && item.message.adAttribute == nil {
             if strongSelf.quickTranslateButtonNode == nil {
                 let quickTranslateButtonNode = ChatMessageShareButton()
@@ -5322,7 +5322,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 animation.animator.updateAlpha(layer: shareButtonNode.layer, alpha: (isCurrentlyPlayingMedia || isSidePanelOpen) ? 0.0 : 1.0, completion: nil)
                 animation.animator.updateScale(layer: shareButtonNode.layer, scale: (isCurrentlyPlayingMedia || isSidePanelOpen) ? 0.001 : 1.0, completion: nil)
             }
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             if let quickTranslateButtonNode = strongSelf.quickTranslateButtonNode {
                 let currentBackgroundFrame = strongSelf.backgroundNode.frame
                 let buttonSize = quickTranslateButtonNode.update(hasTranslation: false /*item.message.attributes.first(where: { $0 is QuickTranslationMessageAttribute }) as? QuickTranslationMessageAttribute != nil*/, presentationData: item.presentationData, controllerInteraction: item.controllerInteraction, chatLocation: item.chatLocation, subject: item.associatedData.subject, message: item.message, account: item.context.account, disableComments: disablesComments)
@@ -5404,7 +5404,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 animation.animator.updateScale(layer: shareButtonNode.layer, scale: (isCurrentlyPlayingMedia || isSidePanelOpen) ? 0.001 : 1.0, completion: nil)
             }
 
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             if let quickTranslateButtonNode = strongSelf.quickTranslateButtonNode {
                 let buttonSize = quickTranslateButtonNode.update(hasTranslation: false /*item.message.attributes.first(where: { $0 is QuickTranslationMessageAttribute }) as? QuickTranslationMessageAttribute != nil*/, presentationData: item.presentationData, controllerInteraction: item.controllerInteraction, chatLocation: item.chatLocation, subject: item.associatedData.subject, message: item.message, account: item.context.account, disableComments: disablesComments)
                 
@@ -5565,9 +5565,9 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                         f()
                     case let .openContextMenu(openContextMenu):
                         switch (sgDoubleTapMessageAction(incoming: openContextMenu.tapMessage.effectivelyIncoming(item.context.account.peerId), message: openContextMenu.tapMessage)) {
-                        case SGSimpleSettings.MessageDoubleTapAction.none.rawValue:
+                        case EGSimpleSettings.MessageDoubleTapAction.none.rawValue:
                             break
-                        case SGSimpleSettings.MessageDoubleTapAction.edit.rawValue:
+                        case EGSimpleSettings.MessageDoubleTapAction.edit.rawValue:
                             item.controllerInteraction.sgStartMessageEdit(openContextMenu.tapMessage)
                         default:
                         if canAddMessageReactions(message: openContextMenu.tapMessage) {
@@ -5581,9 +5581,9 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     item.controllerInteraction.clickThroughMessage(self.view, location)
                 } else if case .doubleTap = gesture {
                     switch (sgDoubleTapMessageAction(incoming:                    item.message.effectivelyIncoming(item.context.account.peerId), message: item.message)) {
-                    case SGSimpleSettings.MessageDoubleTapAction.none.rawValue:
+                    case EGSimpleSettings.MessageDoubleTapAction.none.rawValue:
                         break
-                    case SGSimpleSettings.MessageDoubleTapAction.edit.rawValue:
+                    case EGSimpleSettings.MessageDoubleTapAction.edit.rawValue:
                         item.controllerInteraction.sgStartMessageEdit(item.message)
                     default:
                     if canAddMessageReactions(message: item.message) {
@@ -6275,7 +6275,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         if let shareButtonNode = self.shareButtonNode, shareButtonNode.frame.contains(point) {
             return shareButtonNode.view.hitTest(self.view.convert(point, to: shareButtonNode.view), with: event)
         }
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if let quickTranslateButtonNode = self.quickTranslateButtonNode, quickTranslateButtonNode.frame.contains(point) {
             return quickTranslateButtonNode.view.hitTest(self.view.convert(point, to: quickTranslateButtonNode.view), with: event)
         }
@@ -6746,8 +6746,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 Queue.mainQueue().async {
                     self.updateParentMessageIsTranslating(true)
                 }
-                // TODO(swiftgram): pass fromLang
-                let _ = translateMessageIds(context: item.context, messageIds: [item.message.id], fromLang: nil, toLang: translateToLanguage, viaText: !item.context.isPremium || SGSimpleSettings.shared.translationBackend == SGSimpleSettings.TranslationBackend.gtranslate.rawValue, forQuickTranslate: true).startStandalone(completed: { [weak self] in
+                // TODO(exteragram): pass fromLang
+                let _ = translateMessageIds(context: item.context, messageIds: [item.message.id], fromLang: nil, toLang: translateToLanguage, viaText: !item.context.isPremium || EGSimpleSettings.shared.translationBackend == EGSimpleSettings.TranslationBackend.gtranslate.rawValue, forQuickTranslate: true).startStandalone(completed: { [weak self] in
                     if let strongSelf = self, let item = strongSelf.item {
                         let _ = (item.context.account.postbox.transaction { transaction in
                             transaction.updateMessage(item.message.id, update: { currentMessage in

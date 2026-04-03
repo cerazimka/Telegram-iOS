@@ -1,5 +1,5 @@
-// MARK: Swiftgram
-import SGSimpleSettings
+// MARK: ExteraGram
+import EGSimpleSettings
 import Foundation
 import UIKit
 import Intents
@@ -255,7 +255,7 @@ final class AuthorizedApplicationContext {
         }
         
         if self.rootController.rootTabController == nil {
-            self.rootController.addRootControllers(hidePhoneInSettings: SGSimpleSettings.shared.hidePhoneInSettings, showContactsTab: self.showContactsTab, showCallsTab: self.showCallsTab)
+            self.rootController.addRootControllers(hidePhoneInSettings: EGSimpleSettings.shared.hidePhoneInSettings, showContactsTab: self.showContactsTab, showCallsTab: self.showCallsTab)
         }
         if let tabsController = self.rootController.viewControllers.first as? TabBarController, !tabsController.controllers.isEmpty, tabsController.selectedIndex >= 0 {
             let controller = tabsController.controllers[tabsController.selectedIndex]

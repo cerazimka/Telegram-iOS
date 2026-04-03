@@ -1,4 +1,4 @@
-import SGLogging
+import EGLogging
 import Foundation
 import Postbox
 import SwiftSignalKit
@@ -128,9 +128,9 @@ func _internal_requestChatContextResults(IQTP: Bool = false, account: Account, b
                 return ChatContextResultCollection(apiResults: result, botId: bot.id, peerId: peerId, query: query, geoPoint: location)
             }
             |> mapError { error -> RequestChatContextResultsError in
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 if IQTP {
-                    SGLogger.shared.log("SGIQTP", "Error requesting inline results: \(error.errorDescription ?? "nil")")
+                    EGLogger.shared.log("EGIQTP", "Error requesting inline results: \(error.errorDescription ?? "nil")")
                 }
                 if error.errorDescription == "BOT_INLINE_GEO_REQUIRED" {
                     return .locationRequired

@@ -1,7 +1,7 @@
-// MARK: Swiftgram
-import SGSimpleSettings
-import SGSettingsUI
-import SGStrings
+// MARK: ExteraGram
+import EGSimpleSettings
+import EGSettingsUI
+import EGStrings
 import CountrySelectionUI
 import Foundation
 import UIKit
@@ -24,10 +24,10 @@ import PeerNameColorItem
 import BoostLevelIconComponent
 
 private let enabledPublicBioEntities: EnabledEntityTypes = [.allUrl, .mention, .hashtag]
-private let enabledPrivateBioEntities: EnabledEntityTypes = [.allUrl, .mention, .hashtag] // MARK: Swiftgram
+private let enabledPrivateBioEntities: EnabledEntityTypes = [.allUrl, .mention, .hashtag] // MARK: ExteraGram
 
 enum InfoSection: Int, CaseIterable {
-    case swiftgram
+    case exteragram
     case groupLocation
     case calls
     case personalChannel
@@ -48,7 +48,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
     
     var currentPeerInfoSection: InfoSection = .peerInfo
 
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     var sgItemId = 0
     var idText = ""
     var isMutualContact = false
@@ -111,7 +111,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         let ItemBotAddToChatInfo = 9003
         let ItemVerification = 9004
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         isMutualContact = user.flags.contains(.mutualContact)
         idText = String(user.id.id._internalGetInt64Value())
 //        isUser = true
@@ -140,7 +140,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
             }))
         }
         
-        if let phone = user.phone, !(SGSimpleSettings.shared.hidePhoneInSettings && isMyProfile) {
+        if let phone = user.phone, !(EGSimpleSettings.shared.hidePhoneInSettings && isMyProfile) {
             let formattedPhone = formatPhoneNumber(context: context, number: phone)
             let label: String
             if formattedPhone.hasPrefix("+888 ") {
@@ -534,7 +534,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
             }
         }
     } else if let channel = data.peer as? TelegramChannel {
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         idText = "-100" + String(channel.id.id._internalGetInt64Value())
         let ItemSGRecentActions = 20
         
@@ -703,7 +703,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
                 
                 if case .broadcast = channel.info {
                     var canEditMembers = false
-                    if channel.adminRights != nil || channel.flags.contains(.isCreator) { // MARK: Swiftgram
+                    if channel.adminRights != nil || channel.flags.contains(.isCreator) { // MARK: ExteraGram
                         canEditMembers = true
                     }
                     if canEditMembers {
@@ -786,7 +786,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
                         interaction.openEditing()
                     }))
      
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     if channel.hasPermission(.banMembers) || channel.flags.contains(.isCreator) {
                         items[section]!.append(PeerInfoScreenDisclosureItem(id: ItemSGRecentActions, label: .none, text: presentationData.strings.Group_Info_AdminLog, icon: UIImage(bundleImageName: "Chat/Info/RecentActionsIcon"), action: {
                             interaction.openRecentActions()
@@ -812,7 +812,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
             }
         }
     } else if let group = data.peer as? TelegramGroup {
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         idText = String(group.id.id._internalGetInt64Value())
          
         if let cachedData = data.cachedData as? CachedGroupData {
@@ -892,9 +892,9 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         }
     }
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     if showProfileId {
-        items[.swiftgram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: "id: \(idText)", text: "", textColor: .primary, action: nil, longTapAction: { sourceNode in
+        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: "id: \(idText)", text: "", textColor: .primary, action: nil, longTapAction: { sourceNode in
             interaction.openPeerInfoContextMenu(.copy(idText), sourceNode, nil)
         }, requestLayout: { _ in
             interaction.requestLayout(false)
@@ -902,7 +902,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         sgItemId += 1
     }
     
-    if SGSimpleSettings.shared.showDC {
+    if EGSimpleSettings.shared.showDC {
         var dcId: Int? = nil
 //        var dcLocation: String = ""
         var phoneCountryText = ""
@@ -956,7 +956,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         }
 
         if !dcText.isEmpty || !dcLabel.isEmpty {
-            items[.swiftgram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: dcLabel, text: dcText, textColor: .primary, action: nil, longTapAction: { sourceNode in
+            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: dcLabel, text: dcText, textColor: .primary, action: nil, longTapAction: { sourceNode in
                 interaction.openPeerInfoContextMenu(.aboutDC, sourceNode, nil)
             }, requestLayout: { _ in
                 interaction.requestLayout(false)
@@ -965,10 +965,10 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         }
     }
     
-    if SGSimpleSettings.shared.showCreationDate {
+    if EGSimpleSettings.shared.showCreationDate {
         if let channelCreationTimestamp = data.channelCreationTimestamp {
             let creationDateString = stringForDate(timestamp: channelCreationTimestamp, strings: presentationData.strings)
-            items[.swiftgram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.Created", presentationData.strings.baseLanguageCode, creationDateString), text: "", action: nil, longTapAction: { sourceNode in
+            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.Created", presentationData.strings.baseLanguageCode, creationDateString), text: "", action: nil, longTapAction: { sourceNode in
                 interaction.openPeerInfoContextMenu(.copy(creationDateString), sourceNode, nil)
             }, requestLayout: { _ in
                 interaction.requestLayout(false)
@@ -979,7 +979,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
     
     if let invitedAt = nearestChatParticipant.1 {
         let joinedDateString = stringForDate(timestamp: invitedAt, strings: presentationData.strings)
-        items[.swiftgram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.JoinedDateTitle", presentationData.strings.baseLanguageCode, nearestChatParticipant.0 ?? "chat") , text: joinedDateString, action: nil, longTapAction: { sourceNode in
+        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.JoinedDateTitle", presentationData.strings.baseLanguageCode, nearestChatParticipant.0 ?? "chat") , text: joinedDateString, action: nil, longTapAction: { sourceNode in
             interaction.openPeerInfoContextMenu(.copy(joinedDateString), sourceNode, nil)
         }, requestLayout: { _ in
             interaction.requestLayout(false)
@@ -987,7 +987,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         sgItemId += 1
     }
     
-    if SGSimpleSettings.shared.showRegDate {
+    if EGSimpleSettings.shared.showRegDate {
         var regDateString = ""
         if let cachedData = data.cachedData as? CachedUserData, let registrationDate = cachedData.peerStatusSettings?.registrationDate {
             let components = registrationDate.components(separatedBy: ".")
@@ -1009,7 +1009,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
             }
         }
         if !regDateString.isEmpty {
-            items[.swiftgram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.RegDate", presentationData.strings.baseLanguageCode), text: regDateString, action: nil, longTapAction: { sourceNode in
+            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.RegDate", presentationData.strings.baseLanguageCode), text: regDateString, action: nil, longTapAction: { sourceNode in
                 interaction.openPeerInfoContextMenu(.copy(regDateString), sourceNode, nil)
             }, requestLayout: { _ in
                 interaction.requestLayout(false)
@@ -1018,7 +1018,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         }
     }
     if isMutualContact {
-        items[.swiftgram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("MutualContact.Label", presentationData.strings.baseLanguageCode), text: "", action: nil, longTapAction: { _ in }, requestLayout: { _ in
+        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("MutualContact.Label", presentationData.strings.baseLanguageCode), text: "", action: nil, longTapAction: { _ in }, requestLayout: { _ in
             interaction.requestLayout(false)
         }))
         sgItemId += 1
@@ -1400,7 +1400,7 @@ func editingItems(data: PeerInfoScreenData?, boostStatus: ChannelBoostStatus?, s
                 }
                 
                 var canEditMembers = false
-                if /*channel.hasPermission(.banMembers) &&*/ (channel.adminRights != nil || channel.flags.contains(.isCreator)) { // MARK: Swiftgram
+                if /*channel.hasPermission(.banMembers) &&*/ (channel.adminRights != nil || channel.flags.contains(.isCreator)) { // MARK: ExteraGram
                     canEditMembers = true
                 }
                 if canEditMembers {

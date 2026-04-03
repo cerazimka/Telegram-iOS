@@ -1,8 +1,8 @@
-// MARK: Swiftgram
-import SGLogging
-import SGLoggingComposer
-import SGSimpleSettings
-import SGDebugUI
+// MARK: ExteraGram
+import EGLogging
+import EGLoggingComposer
+import EGSimpleSettings
+import EGDebugUI
 
 import Foundation
 import UIKit
@@ -51,7 +51,7 @@ private final class DebugControllerArguments {
 }
 
 private enum DebugControllerSection: Int32 {
-    case swiftgram
+    case exteragram
     case sticker
     case logs
     case logging
@@ -64,7 +64,7 @@ private enum DebugControllerSection: Int32 {
 }
 
 private enum DebugControllerEntry: ItemListNodeEntry {
-    case SGDebug(PresentationTheme)
+    case EGDebug(PresentationTheme)
     case sendSGLogs(PresentationTheme)
     case testStickerImport(PresentationTheme)
     case sendLogs(PresentationTheme)
@@ -134,8 +134,8 @@ private enum DebugControllerEntry: ItemListNodeEntry {
     
     var section: ItemListSectionId {
         switch self {
-        case .sendSGLogs, .SGDebug:
-            return DebugControllerSection.swiftgram.rawValue
+        case .sendSGLogs, .EGDebug:
+            return DebugControllerSection.exteragram.rawValue
         case .testStickerImport:
             return DebugControllerSection.sticker.rawValue
         case .sendLogs, .sendOneLog, .sendShareLogs, .sendGroupCallLogs, .sendStorageStats, .sendNotificationLogs, .sendCriticalLogs, .sendAllLogs:
@@ -163,8 +163,8 @@ private enum DebugControllerEntry: ItemListNodeEntry {
     
     var stableId: Int {
         switch self {
-        // MARK: Swiftgram
-        case .SGDebug:
+        // MARK: ExteraGram
+        case .EGDebug:
             return -110
         case .sendSGLogs:
             return -100
@@ -308,8 +308,8 @@ private enum DebugControllerEntry: ItemListNodeEntry {
     func item(presentationData: ItemListPresentationData, arguments: Any) -> ListViewItem {
         let arguments = arguments as! DebugControllerArguments
         switch self {
-        case .SGDebug:
-            return ItemListDisclosureItem(presentationData: presentationData, title: "Swiftgram Debug", label: "", sectionId: self.section, style: .blocks, action: {
+        case .EGDebug:
+            return ItemListDisclosureItem(presentationData: presentationData, title: "ExteraGram Debug", label: "", sectionId: self.section, style: .blocks, action: {
                 guard let context = arguments.context else {
                     return
                 }
@@ -414,17 +414,17 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                     arguments.presentController(actionSheet, nil)
                 })
             })
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         case .sendOneLog, .sendSGLogs:
             var title = "Send Latest Logs (Up to 4 MB)"
             var logCollectionSignal: Signal<[(String, String)], NoError> = Logger.shared.collectLogs()
             var fileName = "Log-iOS-Short.txt"
             var appName = "Telegram"
             if case .sendSGLogs(_) = self {
-                title = "Send Swiftgram Logs"
-                logCollectionSignal = SGLogger.shared.collectLogs()
-                fileName = "Log-iOS-Swiftgram.txt"
-                appName = "Swiftgram"
+                title = "Send ExteraGram Logs"
+                logCollectionSignal = EGLogger.shared.collectLogs()
+                fileName = "Log-iOS-ExteraGram.txt"
+                appName = "ExteraGram"
             }
             return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, title: title, label: "", sectionId: self.section, style: .blocks, action: {
                 let _ = (logCollectionSignal
@@ -1564,8 +1564,8 @@ private func debugControllerEntries(context: AccountContext?, sharedContext: Sha
 
     let isMainApp = sharedContext.applicationBindings.isMainApp
     
-    // MARK: Swiftgram
-    entries.append(.SGDebug(presentationData.theme))
+    // MARK: ExteraGram
+    entries.append(.EGDebug(presentationData.theme))
     entries.append(.sendSGLogs(presentationData.theme))
     
 //    entries.append(.testStickerImport(presentationData.theme))

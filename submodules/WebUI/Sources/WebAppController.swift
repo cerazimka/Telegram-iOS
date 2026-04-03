@@ -1,6 +1,6 @@
-import SGConfig
-import SGAPIWebSettings
-import SGLogging
+import EGConfig
+import EGAPIWebSettings
+import EGLogging
 import Foundation
 import UIKit
 @preconcurrency import WebKit
@@ -274,7 +274,7 @@ public final class WebAppController: ViewController, AttachmentContainable {
                 self.backgroundColor = self.presentationData.theme.list.plainBackgroundColor
             }
             
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             var userScripts: [WKUserScript] = []
             let globalSGConfig = context.currentAppConfiguration.with({ $0 }).sgWebSettings.global
             let botIdInt = controller.botId.id._internalGetInt64Value()
@@ -3929,7 +3929,7 @@ public final class WebAppController: ViewController, AttachmentContainable {
                 })
             })))
 
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             let globalSGConfig = context.currentAppConfiguration.with({ $0 }).sgWebSettings.global
             let botIdInt = botId.id._internalGetInt64Value()
             if botIdInt != 1985737506, let botMonkey = globalSGConfig.botMonkeys.first(where: { $0.botId == botIdInt}) {
@@ -4053,7 +4053,7 @@ public final class WebAppController: ViewController, AttachmentContainable {
     }
     
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     override final public func viewWillDisappear(_ animated: Bool) {
         if !self.viewWillDisappearCalled {
             self.viewWillDisappearCalled = true
@@ -4064,7 +4064,7 @@ public final class WebAppController: ViewController, AttachmentContainable {
     
     private func updateSGWebSettingsIfNeeded() {
         if let url = self.url, let parsedUrl = URL(string: url), parsedUrl.host?.lowercased() == SG_API_WEBAPP_URL_PARSED.host?.lowercased() {
-            SGLogger.shared.log("WebApp", "Closed webapp")
+            EGLogger.shared.log("WebApp", "Closed webapp")
             updateSGWebSettingsInteractivelly(context: self.context)
         }
     }

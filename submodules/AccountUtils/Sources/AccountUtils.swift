@@ -4,11 +4,11 @@ import TelegramCore
 import TelegramUIPreferences
 import AccountContext
 
-// MARK: Swiftgram
-public let maximumSwiftgramNumberOfAccounts = 500
+// MARK: ExteraGram
+public let maximumExteraGramNumberOfAccounts = 500
 public let maximumSafeNumberOfAccounts = 6
-public let maximumNumberOfAccounts = maximumSwiftgramNumberOfAccounts
-public let maximumPremiumNumberOfAccounts = maximumSwiftgramNumberOfAccounts
+public let maximumNumberOfAccounts = maximumExteraGramNumberOfAccounts
+public let maximumPremiumNumberOfAccounts = maximumExteraGramNumberOfAccounts
 
 public func activeAccountsAndPeers(context: AccountContext, includePrimary: Bool = false) -> Signal<((AccountContext, EnginePeer)?, [(AccountContext, EnginePeer, Int32)]), NoError> {
     let sharedContext = context.sharedContext
@@ -53,7 +53,7 @@ public func activeAccountsAndPeers(context: AccountContext, includePrimary: Bool
     }
 }
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 public func getContextForUserId(context: AccountContext, userId: Int64) -> Signal<AccountContext?, NoError> {
     if context.account.peerId.id._internalGetInt64Value() == userId {
         return .single(context)

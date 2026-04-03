@@ -349,7 +349,7 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
                 if chatPresentationInterfaceState.interfaceState.editMessage != nil, channel.hasPermission(.editAllMessages) {
                     displayInputTextPanel = true
                 } else if !channel.hasPermission(.sendSomething) || !isMember {
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     if isMember && forceHideChannelButton {
                         return (nil, nil)
                     }

@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import Postbox
 import SwiftSignalKit
@@ -1145,8 +1145,8 @@ func _internal_updatedChatListFilters(postbox: Postbox, hiddenIds: Signal<Set<In
                 return true
             }
         }
-        // MARK: Swiftgram
-        if filters.count > 1 && SGSimpleSettings.shared.allChatsHidden {
+        // MARK: ExteraGram
+        if filters.count > 1 && EGSimpleSettings.shared.allChatsHidden {
             filters.removeAll { $0 == .allChats }
         }
         return filters

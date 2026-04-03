@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import AsyncDisplayKit
@@ -362,7 +362,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
         let premiumConfiguration = PremiumConfiguration.with(appConfiguration: arguments.context.currentAppConfiguration.with { $0 })
         
         let transcriptionText = self.forcedAudioTranscriptionText ?? transcribedText(message: message)
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if transcriptionText == nil && false {
             if premiumConfiguration.audioTransciptionTrialCount > 0 {
                 if !arguments.associatedData.isPremium {
@@ -422,7 +422,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                 self.audioTranscriptionState = .inProgress
                 self.requestUpdateLayout(true)
                 
-                if context.sharedContext.immediateExperimentalUISettings.localTranscription || !arguments.associatedData.isPremium || SGSimpleSettings.shared.transcriptionBackend == SGSimpleSettings.TranscriptionBackend.apple.rawValue {
+                if context.sharedContext.immediateExperimentalUISettings.localTranscription || !arguments.associatedData.isPremium || EGSimpleSettings.shared.transcriptionBackend == EGSimpleSettings.TranscriptionBackend.apple.rawValue {
                     let appLocale = presentationData.strings.baseLanguageCode
                     
                     let signal: Signal<LocallyTranscribedAudio?, NoError> = context.engine.data.get(TelegramEngine.EngineData.Item.Messages.Message(id: message.id))
@@ -775,7 +775,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                     displayTranscribe = false
                 } else if arguments.message.id.peerId.namespace != Namespaces.Peer.SecretChat && !isViewOnceMessage && !arguments.presentationData.isPreview {
                     let premiumConfiguration = PremiumConfiguration.with(appConfiguration: arguments.context.currentAppConfiguration.with { $0 })
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     if arguments.associatedData.isPremium || true {
                         displayTranscribe = true
                     } else if premiumConfiguration.audioTransciptionTrialCount > 0 {
@@ -807,7 +807,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                 }
                 
                 let currentTime = Int32(Date().timeIntervalSince1970)
-                if transcribedText == nil, let cooldownUntilTime = arguments.associatedData.audioTranscriptionTrial.cooldownUntilTime, cooldownUntilTime > currentTime, { return false }() /* MARK: Swiftgram */ {
+                if transcribedText == nil, let cooldownUntilTime = arguments.associatedData.audioTranscriptionTrial.cooldownUntilTime, cooldownUntilTime > currentTime, { return false }() /* MARK: ExteraGram */ {
                     updatedAudioTranscriptionState = .locked
                 }
                 

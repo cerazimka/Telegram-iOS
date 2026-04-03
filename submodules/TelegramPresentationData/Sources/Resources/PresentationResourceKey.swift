@@ -312,7 +312,7 @@ public enum PresentationResourceKey: Int32 {
     case chatFreeExpandButtonIcon
     case chatFreeCollapseButtonIcon
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     case chatTranslateButtonIcon
     case chatUndoTranslateButtonIcon
     

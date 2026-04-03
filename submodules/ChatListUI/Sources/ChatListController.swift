@@ -1,5 +1,5 @@
-// MARK: Swiftgram
-import SGSimpleSettings
+// MARK: ExteraGram
+import EGSimpleSettings
 
 import Foundation
 import UIKit
@@ -393,8 +393,8 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     strongSelf.chatListDisplayNode.willScrollToTop()
                     strongSelf.chatListDisplayNode.effectiveContainerNode.currentItemNode.scrollToPosition(.top(adjustForTempInset: false))
                 case let .known(offset):
-                    // MARK: Swiftgram
-                    let sgAllChatsHiddden = SGSimpleSettings.shared.allChatsHidden
+                    // MARK: ExteraGram
+                    let sgAllChatsHiddden = EGSimpleSettings.shared.allChatsHidden
                     var mainContainerNode_availableFilters = strongSelf.chatListDisplayNode.mainContainerNode.availableFilters
                     if sgAllChatsHiddden {
                         mainContainerNode_availableFilters.removeAll { $0 == .all }
@@ -404,7 +404,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     if offset <= ChatListNavigationBar.searchScrollHeight + 1.0 && strongSelf.chatListDisplayNode.inlineStackContainerNode != nil {
                         strongSelf.setInlineChatList(location: nil)
                     } else if offset <= ChatListNavigationBar.searchScrollHeight + 1.0 && !isFirstFilter {
-                        // MARK: Swiftgram
+                        // MARK: ExteraGram
                         var effectiveContainerNode_availableFilters = strongSelf.chatListDisplayNode.mainContainerNode.availableFilters
                         if sgAllChatsHiddden {
                             effectiveContainerNode_availableFilters.removeAll { $0 == .all }
@@ -746,7 +746,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 if let navigationBarView = strongSelf.chatListDisplayNode.navigationBarView.view as? ChatListNavigationBar.View, let headerPanelsView = navigationBarView.headerPanels as? HeaderPanelContainerComponent.View, let tabsView = headerPanelsView.tabs as? HorizontalTabsComponent.View {
                     tabsView.updateTabSwitchFraction(fraction: fraction, isDragging: strongSelf.chatListDisplayNode.mainContainerNode.isSwitchingCurrentItemFilterByDragging, transition: ComponentTransition(transition))
                 }
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 let switchingToFilterId: Int32
                 switch (filter) {
                     case let .filter(filterId):
@@ -757,8 +757,8 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 
                 if fraction.isZero {
                     let accountId = "\(strongSelf.context.account.peerId.id._internalGetInt64Value())"
-                    if SGSimpleSettings.shared.lastAccountFolders[accountId] != switchingToFilterId {
-                        SGSimpleSettings.shared.lastAccountFolders[accountId] = switchingToFilterId
+                    if EGSimpleSettings.shared.lastAccountFolders[accountId] != switchingToFilterId {
+                        EGSimpleSettings.shared.lastAccountFolders[accountId] = switchingToFilterId
                     }
                 }
 
@@ -2144,7 +2144,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             if self.previewing {
                 self.storiesReady.set(.single(true))
             } else {
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 let hideStoriesSignal = sgSimpleSettingsBoolSignal(.hideStories, defaultValue: false)
                 
                 self.storySubscriptionsDisposable = (combineLatest(self.context.engine.messages.storySubscriptions(isHidden: self.location == .chatList(groupId: .archive)), hideStoriesSignal)
@@ -3554,7 +3554,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         if let layout = self.validLayout {
             self.updateLayout(layout: layout, transition: .animated(duration: 0.2, curve: .easeInOut))
         }
-        if SGSimpleSettings.shared.hideTabBar {
+        if EGSimpleSettings.shared.hideTabBar {
             (self.parent as? TabBarController)?.updateIsTabBarHidden(false, transition: .animated(duration: 0.2, curve: .easeInOut))
         }
     }
@@ -3583,7 +3583,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 self.updateLayout(layout: layout, transition: .animated(duration: 0.2, curve: .easeInOut))
             }
         }
-        if SGSimpleSettings.shared.hideTabBar {
+        if EGSimpleSettings.shared.hideTabBar {
             (self.parent as? TabBarController)?.updateIsTabBarHidden(true, transition: .animated(duration: 0.2, curve: .easeInOut))
         }
     }
@@ -3962,7 +3962,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         let filterItems = chatListFilterItems(context: self.context)
         var notifiedFirstUpdate = false
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         let experimentalUISettingsKey: ValueBoxKey = ApplicationSpecificSharedDataKeys.experimentalUISettings
         let displayTabsAtBottomSignal = self.context.sharedContext.accountManager.sharedData(keys: Set([experimentalUISettingsKey]))
         |> map { sharedData -> Bool in
@@ -4022,9 +4022,9 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 case let .filter(id, _, _, _):
                     firstItemEntryId = .filter(id)
             }
-            // MARK: Swiftgram
-            if !strongSelf.initializedFilters && SGSimpleSettings.shared.rememberLastFolder {
-                if let lastFolder = SGSimpleSettings.shared.lastAccountFolders["\(strongSelf.context.account.peerId.id._internalGetInt64Value())"]{
+            // MARK: ExteraGram
+            if !strongSelf.initializedFilters && EGSimpleSettings.shared.rememberLastFolder {
+                if let lastFolder = EGSimpleSettings.shared.lastAccountFolders["\(strongSelf.context.account.peerId.id._internalGetInt64Value())"]{
                     firstItemEntryId = lastFolder == -1 ? .all : .filter(lastFolder)
                 }
             }
@@ -4785,7 +4785,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         completion?()
         
         self.updateTabBarSearchState(ViewController.TabBarSearchState(isActive: false), transition: transition)
-        (self.parent as? TabBarController)?.updateIsTabBarHidden(SGSimpleSettings.shared.hideTabBar ? true : false, transition: transition)
+        (self.parent as? TabBarController)?.updateIsTabBarHidden(EGSimpleSettings.shared.hideTabBar ? true : false, transition: transition)
         
         self.isSearchActive = false
         if let navigationController = self.navigationController as? NavigationController {
@@ -6772,7 +6772,7 @@ private final class ChatListLocationContext {
             return lhs == rhs
         })
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         let hideStoriesSignal = sgSimpleSettingsBoolSignal(.hideStories, defaultValue: false)
         
         let passcode = context.sharedContext.accountManager.accessChallengeData()
@@ -7067,7 +7067,7 @@ private final class ChatListLocationContext {
             }
             var transition: ContainedViewLayoutTransition = .immediate
             let previousToolbar = previousToolbarValue.swap(toolbar)
-            if SGSimpleSettings.shared.hideTabBar {
+            if EGSimpleSettings.shared.hideTabBar {
                 transition = .animated(duration: 0.2, curve: .easeInOut)
             } else if (previousToolbar == nil) != (toolbar == nil) {
                 transition = .animated(duration: 0.4, curve: .spring)
@@ -7224,8 +7224,8 @@ private final class ChatListLocationContext {
                     self.storyButton = nil
                 }
                 
-                // MARK: Swiftgram
-                if SGSimpleSettings.shared.hideTabBar {
+                // MARK: ExteraGram
+                if EGSimpleSettings.shared.hideTabBar {
                     self.settingsButton = AnyComponentWithIdentity(id: "settings", component: AnyComponent(NavigationButtonComponent(
                         content: .more,
                         pressed: { [weak self] _ in
@@ -7488,7 +7488,7 @@ private final class AdsInfoContextReferenceContentSource: ContextReferenceConten
     }
 }
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 extension ChatListControllerImpl {
 
     @objc fileprivate func settingsPressed() {

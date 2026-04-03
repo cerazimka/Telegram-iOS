@@ -6,32 +6,32 @@ load(
 )
 
 sgdeps = [
-    "//Swiftgram/SGSettingsUI:SGSettingsUI",
-    "//Swiftgram/SGConfig:SGConfig",
-    "//Swiftgram/SGAPIWebSettings:SGAPIWebSettings",
-    "//Swiftgram/SGAppGroupIdentifier:SGAppGroupIdentifier",
-    "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-    "//Swiftgram/SFSafariViewControllerPlus:SFSafariViewControllerPlus",
-    "//Swiftgram/SGLogging:SGLogging",
-    "//Swiftgram/SGStrings:SGStrings",
-    "//Swiftgram/SGActionRequestHandlerSanitizer:SGActionRequestHandlerSanitizer",
-    "//Swiftgram/Wrap:Wrap",
-    "//Swiftgram/SGDeviceToken:SGDeviceToken",
-    "//Swiftgram/SGDebugUI:SGDebugUI",
-    "//Swiftgram/SGInputToolbar:SGInputToolbar",
-    "//Swiftgram/SGIAP:SGIAP",
-    "//Swiftgram/SGPayWall:SGPayWall",
-    "//Swiftgram/SGProUI:SGProUI",
-    "//Swiftgram/SGKeychainBackupManager:SGKeychainBackupManager",
-    "//Swiftgram/SGGHSettings:SGGHSettings",
-    # "//Swiftgram/SGContentAnalysis:SGContentAnalysis"
+    "//ExteraGram/EGSettingsUI:EGSettingsUI",
+    "//ExteraGram/EGConfig:EGConfig",
+    "//ExteraGram/EGAPIWebSettings:EGAPIWebSettings",
+    "//ExteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier",
+    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//ExteraGram/SFSafariViewControllerPlus:SFSafariViewControllerPlus",
+    "//ExteraGram/EGLogging:EGLogging",
+    "//ExteraGram/EGStrings:EGStrings",
+    "//ExteraGram/EGActionRequestHandlerSanitizer:EGActionRequestHandlerSanitizer",
+    "//ExteraGram/Wrap:Wrap",
+    "//ExteraGram/EGDeviceToken:EGDeviceToken",
+    "//ExteraGram/EGDebugUI:EGDebugUI",
+    "//ExteraGram/EGInputToolbar:EGInputToolbar",
+    "//ExteraGram/EGIAP:EGIAP",
+    "//ExteraGram/EGPayWall:EGPayWall",
+    "//ExteraGram/EGProUI:EGProUI",
+    "//ExteraGram/EGKeychainBackupManager:EGKeychainBackupManager",
+    "//ExteraGram/EGGHSettings:EGGHSettings",
+    # "//ExteraGram/EGContentAnalysis:EGContentAnalysis"
 ]
 
 sgsrcs = [
-    "//Swiftgram/SGDBReset:SGDBReset",
-    "//Swiftgram/SGShowMessageJson:SGShowMessageJson",
-    "//Swiftgram/ChatControllerImplExtension:ChatControllerImplExtension",
-    "//Swiftgram/SGSharedAccountContextMigration:SGSharedAccountContextMigration"
+    "//ExteraGram/EGDBReset:EGDBReset",
+    "//ExteraGram/EGShowMessageJson:EGShowMessageJson",
+    "//ExteraGram/ChatControllerImplExtension:ChatControllerImplExtension",
+    "//ExteraGram/EGSharedAccountContextMigration:EGSharedAccountContextMigration"
 ]
 
 filegroup(

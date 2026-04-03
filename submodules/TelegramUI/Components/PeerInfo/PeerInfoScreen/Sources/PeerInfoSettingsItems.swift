@@ -20,8 +20,8 @@ enum SettingsSection: Int, CaseIterable {
     case accounts
     case myProfile
     case proxy
-    case swiftgram
-    case swiftgramPro
+    case exteragram
+    case exteragramPro
     case apps
     case shortcuts
     case advanced
@@ -82,7 +82,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
         }))
     }
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     if showProfileId {
         var idText = ""
         
@@ -172,7 +172,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
 //                interaction.openSettings(.addAccount)
 //            }))
         }
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         items[.accounts]!.append(PeerInfoScreenActionItem(id: 1000, text: presentationData.strings.Settings_AddAccount, icon: PresentationResourcesItemList.plusIconImage(presentationData.theme), action: {
             interaction.openSettings(.addAccount)
         }))
@@ -200,36 +200,36 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
     }
     
     // let locale = presentationData.strings.baseLanguageCode
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     let hasNewSGFeatures = {
         return false
     }
-    let swiftgramLabel: PeerInfoScreenDisclosureItem.Label
+    let exteragramLabel: PeerInfoScreenDisclosureItem.Label
     if hasNewSGFeatures() {
-        swiftgramLabel = .titleBadge(presentationData.strings.Settings_New, presentationData.theme.list.itemAccentColor)
+        exteragramLabel = .titleBadge(presentationData.strings.Settings_New, presentationData.theme.list.itemAccentColor)
     } else {
-        swiftgramLabel = .none
+        exteragramLabel = .none
     }
 
     let hasNewSGProFeatures = {
         return false
     }
-    let swiftgramProLabel: PeerInfoScreenDisclosureItem.Label
+    let exteragramProLabel: PeerInfoScreenDisclosureItem.Label
     if hasNewSGProFeatures() {
-        swiftgramProLabel = .titleBadge(presentationData.strings.Settings_New, presentationData.theme.list.itemAccentColor)
+        exteragramProLabel = .titleBadge(presentationData.strings.Settings_New, presentationData.theme.list.itemAccentColor)
     } else {
-        swiftgramProLabel = .none
+        exteragramProLabel = .none
     }
     
     
     let sgWebSettings = context.currentAppConfiguration.with({ $0 }).sgWebSettings
     if sgWebSettings.global.paymentsEnabled || context.sharedContext.immediateSGStatus.status > 1 {
-        items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 0, label: swiftgramProLabel, text: "Swiftgram Pro", icon: PresentationResourcesSettings.swiftgramPro, action: {
-            interaction.openSettings(.swiftgramPro)
+        items[.exteragram]!.append(PeerInfoScreenDisclosureItem(id: 0, label: exteragramProLabel, text: "ExteraGram Pro", icon: PresentationResourcesSettings.exteragramPro, action: {
+            interaction.openSettings(.exteragramPro)
         }))
     }
-    items[.swiftgram]!.append(PeerInfoScreenDisclosureItem(id: 1, label: swiftgramLabel, text: "Swiftgram", icon: PresentationResourcesSettings.swiftgram, action: {
-        interaction.openSettings(.swiftgram)
+    items[.exteragram]!.append(PeerInfoScreenDisclosureItem(id: 1, label: exteragramLabel, text: "ExteraGram", icon: PresentationResourcesSettings.exteragram, action: {
+        interaction.openSettings(.exteragram)
     }))
 
     var appIndex = 1000

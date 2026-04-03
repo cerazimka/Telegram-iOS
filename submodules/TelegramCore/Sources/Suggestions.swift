@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import Postbox
 import SwiftSignalKit
@@ -228,7 +228,7 @@ func _internal_dismissPeerSpecificServerProvidedSuggestion(account: Account, pee
 }
 
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 private var dismissedSGSuggestionsPromise = ValuePromise<Set<String>>(Set())
 private var dismissedSGSuggestions: Set<String> = Set() {
     didSet {
@@ -239,7 +239,7 @@ private var dismissedSGSuggestions: Set<String> = Set() {
 
 public func dismissSGProvidedSuggestion(suggestionId: String) {
     dismissedSGSuggestions.insert(suggestionId)
-    SGSimpleSettings.shared.dismissedSGSuggestions.append(suggestionId)
+    EGSimpleSettings.shared.dismissedSGSuggestions.append(suggestionId)
 }
 
 public func getSGProvidedSuggestions(account: Account) -> Signal<Data?, NoError> {
@@ -272,7 +272,7 @@ public func getSGProvidedSuggestions(account: Account) -> Signal<Data?, NoError>
                 return true
             }
             return !dismissedSuggestionsValue.contains(id) &&
-                   !SGSimpleSettings.shared.dismissedSGSuggestions.contains(id)
+                   !EGSimpleSettings.shared.dismissedSGSuggestions.contains(id)
         }
 
         guard let modifiedData = try? JSONSerialization.data(withJSONObject: filteredSuggestions, options: []) else {

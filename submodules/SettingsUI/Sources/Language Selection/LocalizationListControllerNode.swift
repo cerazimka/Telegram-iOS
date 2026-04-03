@@ -1,4 +1,4 @@
-import SGStrings
+import EGStrings
 import Foundation
 import UIKit
 import Display
@@ -462,7 +462,7 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
         default:
             break
         }
-        chatTranslationAvailable = true; translateButtonAvailable = true // MARK: Swiftgram
+        chatTranslationAvailable = true; translateButtonAvailable = true // MARK: ExteraGram
         let previousState = Atomic<LocalizationListState?>(value: nil)
         let previousEntriesHolder = Atomic<([LanguageListEntry], PresentationTheme, PresentationStrings)?>(value: nil)
         self.listDisposable = combineLatest(
@@ -479,7 +479,7 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
                 return
             }
             
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             let isPremium = peer?.isPremium ?? false
                         
             var entries: [LanguageListEntry] = []
@@ -589,7 +589,7 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
                 }
                 
                 // MARK: Swiftrgam
-                for info in SGLocalizations {
+                for info in EGLocalizations {
                     if existingIds.contains(info.languageCode) {
                         continue
                     }
@@ -784,10 +784,10 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
                 
                     self?.context.engine.messages.refreshAttachMenuBots()
                     
-                    // MARK: Swiftgram
-                    // TODO(swiftgram): consider moving to downloadAndApplyLocalization for an app-wide strings update
+                    // MARK: ExteraGram
+                    // TODO(exteragram): consider moving to downloadAndApplyLocalization for an app-wide strings update
                     if let baseLanguageCode = info.baseLanguageCode {
-                        SGLocalizationManager.shared.downloadLocale(baseLanguageCode)
+                        EGLocalizationManager.shared.downloadLocale(baseLanguageCode)
                     }
 
                 }))

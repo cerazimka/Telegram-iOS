@@ -1,21 +1,21 @@
 import Foundation
 import Postbox
-import SGWebSettingsScheme
-import SGGHSettingsScheme
+import EGWebSettingsScheme
+import EGGHSettingsScheme
 
 public struct AppConfiguration: Codable, Equatable {
-    // MARK: Swiftgram
-    public var sgWebSettings: SGWebSettings
-    public var sgGHSettings: SGGHSettings
+    // MARK: ExteraGram
+    public var sgWebSettings: EGWebSettings
+    public var sgGHSettings: EGGHSettings
     
     public var data: JSON?
     public var hash: Int32
     
     public static var defaultValue: AppConfiguration {
-        return AppConfiguration(sgWebSettings: SGWebSettings.defaultValue, sgGHSettings: SGGHSettings.defaultValue, data: nil, hash: 0)
+        return AppConfiguration(sgWebSettings: EGWebSettings.defaultValue, sgGHSettings: EGGHSettings.defaultValue, data: nil, hash: 0)
     }
     
-    init(sgWebSettings: SGWebSettings, sgGHSettings: SGGHSettings, data: JSON?, hash: Int32) {
+    init(sgWebSettings: EGWebSettings, sgGHSettings: EGGHSettings, data: JSON?, hash: Int32) {
         self.sgWebSettings = sgWebSettings
         self.sgGHSettings = sgGHSettings
         self.data = data
@@ -25,8 +25,8 @@ public struct AppConfiguration: Codable, Equatable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: StringCodingKey.self)
         
-        self.sgWebSettings = (try container.decodeIfPresent(SGWebSettings.self, forKey: "sg")) ?? SGWebSettings.defaultValue
-        self.sgGHSettings = (try container.decodeIfPresent(SGGHSettings.self, forKey: "sggh")) ?? SGGHSettings.defaultValue
+        self.sgWebSettings = (try container.decodeIfPresent(EGWebSettings.self, forKey: "sg")) ?? EGWebSettings.defaultValue
+        self.sgGHSettings = (try container.decodeIfPresent(EGGHSettings.self, forKey: "sggh")) ?? EGGHSettings.defaultValue
         self.data = try container.decodeIfPresent(JSON.self, forKey: "data")
         self.hash = (try container.decodeIfPresent(Int32.self, forKey: "storedHash")) ?? 0
     }

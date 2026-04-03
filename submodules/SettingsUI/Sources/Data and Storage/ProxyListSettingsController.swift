@@ -1,6 +1,6 @@
-// MARK: Swiftgram
-import SGSimpleSettings
-import SGStrings
+// MARK: ExteraGram
+import EGSimpleSettings
+import EGStrings
 
 import Foundation
 import UIKit
@@ -303,8 +303,8 @@ private func proxySettingsControllerEntries(theme: PresentationTheme, strings: P
     var entries: [ProxySettingsControllerEntry] = []
 
     entries.append(.enabled(theme, strings.ChatSettings_ConnectionType_UseProxy, proxySettings.enabled, proxySettings.servers.isEmpty))
-    // MARK: Swiftgram
-    entries.append(.localDNSToggle(theme, i18n("ProxySettings.UseSystemDNS", strings.baseLanguageCode), SGSimpleSettings.shared.localDNSForProxyHost))
+    // MARK: ExteraGram
+    entries.append(.localDNSToggle(theme, i18n("ProxySettings.UseSystemDNS", strings.baseLanguageCode), EGSimpleSettings.shared.localDNSForProxyHost))
     entries.append(.localDNSNotice(theme, i18n("ProxySettings.UseSystemDNS.Notice", strings.baseLanguageCode)))
     entries.append(.serversHeader(theme, strings.SocksProxySetup_SavedProxies))
     entries.append(.addServer(theme, strings.SocksProxySetup_AddProxy, state.editing))
@@ -408,7 +408,7 @@ public func proxySettingsController(accountManager: AccountManager<TelegramAccou
     var shareProxyListImpl: (() -> Void)?
     
     let arguments = ProxySettingsControllerArguments(toggleLocalDNS: { value in
-        SGSimpleSettings.shared.localDNSForProxyHost = value
+        EGSimpleSettings.shared.localDNSForProxyHost = value
         guard let context = context else {
             return
         }
@@ -634,7 +634,7 @@ public func proxySettingsController(accountManager: AccountManager<TelegramAccou
             }
         }
     }
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     presentControllerImpl = { [weak controller] c, a in
         controller?.present(c, in: .window(.root), with: a)
     }

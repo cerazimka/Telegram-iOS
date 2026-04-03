@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import Postbox
@@ -572,7 +572,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
     var translationStateDisposable: Disposable?
     var premiumGiftSuggestionDisposable: Disposable?
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     private var sgShowHiddenPinnedMessagesObserver: NSObjectProtocol?
     public var overlayTitle: String? {
          var title: String?
@@ -1650,7 +1650,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
             if let strongSelf = self {
                 var result: String?
                 if let chatPeerId = strongSelf.chatLocation.peerId {
-                    result = SGSimpleSettings.shared.outgoingLanguageTranslation[SGSimpleSettings.makeOutgoingLanguageTranslationKey(accountId: strongSelf.context.account.peerId.id._internalGetInt64Value(), peerId: chatPeerId.id._internalGetInt64Value())]
+                    result = EGSimpleSettings.shared.outgoingLanguageTranslation[EGSimpleSettings.makeOutgoingLanguageTranslationKey(accountId: strongSelf.context.account.peerId.id._internalGetInt64Value(), peerId: chatPeerId.id._internalGetInt64Value())]
                 }
                 return result ?? strongSelf.contentData?.state.predictedChatLanguage
             }
@@ -6377,9 +6377,9 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
             })
         }
 
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         self.sgShowHiddenPinnedMessagesObserver = NotificationCenter.default.addObserver(
-            forName: NSNotification.Name("SGShowHiddenPinnedMessages"),
+            forName: NSNotification.Name("EGShowHiddenPinnedMessages"),
             object: nil,
             queue: nil,
             using: { [weak self] notification in
@@ -6410,7 +6410,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
     }
     
     deinit {
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if let observer = sgShowHiddenPinnedMessagesObserver { NotificationCenter.default.removeObserver(observer) }
         let _ = ChatControllerCount.modify { value in
             return value - 1
@@ -9400,7 +9400,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
     }
     
     func displayMediaRecordingTooltip() {
-        if ({ return true })() { return } // MARK: Swiftgram
+        if ({ return true })() { return } // MARK: ExteraGram
         guard let peer = self.presentationInterfaceState.renderedPeer?.peer else {
             return
         }

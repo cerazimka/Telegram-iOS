@@ -222,7 +222,7 @@ NSString *const TGMessageViewControllerIdentifier = @"TGMessageViewController";
             }]];
         }];
     };
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     controller.replyWithoutPresetPressed = ^
     {
         __strong TGMessageViewController *strongSelf = weakSelf;

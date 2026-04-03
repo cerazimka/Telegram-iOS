@@ -1,6 +1,6 @@
-// MARK: Swiftgram
+// MARK: ExteraGram
 import TelegramUIPreferences
-import SGSimpleSettings
+import EGSimpleSettings
 
 import Foundation
 import UIKit
@@ -432,7 +432,7 @@ private final class StoryContainerScreenComponent: Component {
         private var pendingNavigationToItemId: StoryId?
         
         private let storiesWarning = ComponentView<Empty>()
-        private var requestedDisplayStoriesWarning: Bool = SGSimpleSettings.shared.warnOnStoriesOpen // MARK: Swiftgram
+        private var requestedDisplayStoriesWarning: Bool = EGSimpleSettings.shared.warnOnStoriesOpen // MARK: ExteraGram
         private var displayStoriesWarningDisposable: Disposable?
         private var isDisplayingStoriesWarning: Bool = false
         
@@ -1327,8 +1327,8 @@ private final class StoryContainerScreenComponent: Component {
                     }
                 })
                 
-                // MARK: Swiftgram
-                self.requestedDisplayStoriesWarning = SGSimpleSettings.shared.warnOnStoriesOpen
+                // MARK: ExteraGram
+                self.requestedDisplayStoriesWarning = EGSimpleSettings.shared.warnOnStoriesOpen
                 if self.requestedDisplayStoriesWarning {
                     self.isDisplayingStoriesWarning = true
                     if update {
@@ -1395,7 +1395,7 @@ private final class StoryContainerScreenComponent: Component {
                         if case .file = slice.item.storyItem.media {
                             isVideo = true
                         }
-                        // TODO(swiftgram): Show warning on each new peerId story
+                        // TODO(exteragram): Show warning on each new peerId story
                         /* if self.requestedDisplayStoriesWarning, let previousSlice = stateValue?.previousSlice, previousSlice.peer.id != slice.peer.id {
                             self.isDisplayingStoriesWarning = self.requestedDisplayStoriesWarning
                             update = false
@@ -1993,21 +1993,21 @@ private final class StoryContainerScreenComponent: Component {
                 controller.presentationContext.containerLayoutUpdated(subLayout, transition: transition.containedViewLayoutTransition)
             }
             
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             if self.isDisplayingStoriesWarning {
                 let _ = self.storiesWarning.update(
                     transition: .immediate,
                     component: AnyComponent(
-                        SGStoryWarningComponent(
+                        EGStoryWarningComponent(
                             context: component.context,
                             theme: environment.theme,
                             strings: environment.strings,
                             peer: component.content.stateValue?.slice?.peer,
-                            isInStealthMode: stealthModeTimeout != nil || SGSimpleSettings.shared.isStealthModeEnabled,
+                            isInStealthMode: stealthModeTimeout != nil || EGSimpleSettings.shared.isStealthModeEnabled,
                             action: { [weak self] in
                                 self?.isDisplayingStoriesWarning = false
                                 self?.state?.updated(transition: .immediate)
-                                if let view = self?.storiesWarning.view as? SGStoryWarningComponent.View {
+                                if let view = self?.storiesWarning.view as? EGStoryWarningComponent.View {
                                     view.animateOut(completion: {
                                         view.removeFromSuperview()
                                     })
@@ -2015,7 +2015,7 @@ private final class StoryContainerScreenComponent: Component {
                             },
                             close: { [weak self] in
                                 self?.environment?.controller()?.dismiss()
-                                if let view = self?.storiesWarning.view as? SGStoryWarningComponent.View {
+                                if let view = self?.storiesWarning.view as? EGStoryWarningComponent.View {
                                     view.animateOut(completion: {
                                         view.removeFromSuperview()
                                     })
@@ -2026,7 +2026,7 @@ private final class StoryContainerScreenComponent: Component {
                     environment: {},
                     containerSize: availableSize
                 )
-                if let view = self.storiesWarning.view as? SGStoryWarningComponent.View {
+                if let view = self.storiesWarning.view as? EGStoryWarningComponent.View {
                     if view.superview == nil {
                         self.addSubview(view)
                         

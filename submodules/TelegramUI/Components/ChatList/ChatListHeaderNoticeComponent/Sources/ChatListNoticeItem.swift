@@ -186,7 +186,7 @@ final class ChatListNoticeItemNode: ItemListRevealOptionsItemNode {
             var alignment: NSTextAlignment = .left
             
             switch item.notice {
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             case let .sgUrl(_, title, text, _, _, _):
                 let titleStringValue = NSMutableAttributedString(attributedString: NSAttributedString(string: title, font: titleFont, textColor: item.theme.rootController.navigationBar.primaryTextColor))
                 titleString = titleStringValue

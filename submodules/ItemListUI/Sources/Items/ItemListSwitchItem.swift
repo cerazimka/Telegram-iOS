@@ -322,7 +322,7 @@ public class ItemListSwitchItemNode: ListViewItemNode, ItemListItemNode {
                 insets.bottom = 0.0
             }
             
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             let titleConstrainedWidth = max(1.0, params.width - leftInset - params.rightInset - (item.maximumNumberOfLines == 1 ? 64.0 : 84.0))
             //
             let (titleLayout, titleApply) = makeTitleLayout(TextNodeLayoutArguments(attributedString: NSAttributedString(string: item.title, font: titleFont, textColor: item.presentationData.theme.list.itemPrimaryTextColor), backgroundColor: nil, maximumNumberOfLines: item.maximumNumberOfLines, truncationType: .end, constrainedSize: CGSize(width: titleConstrainedWidth, height: CGFloat.greatestFiniteMagnitude), alignment: .natural, cutout: nil, insets: UIEdgeInsets()))

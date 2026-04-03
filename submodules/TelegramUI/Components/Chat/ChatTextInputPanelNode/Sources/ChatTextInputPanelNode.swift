@@ -1,8 +1,8 @@
-// MARK: Swiftgram
+// MARK: ExteraGram
 import TelegramUIPreferences
-import SGSimpleSettings
+import EGSimpleSettings
 import SwiftUI
-import SGInputToolbar
+import EGInputToolbar
 
 import Foundation
 import UniformTypeIdentifiers
@@ -339,7 +339,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
     
     private let hapticFeedback = HapticFeedback()
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     private var sendWithReturnKey: Bool
     private var sendWithReturnKeyDisposable: Disposable?
 //    private var toolbarHostingController: UIViewController? //Any? //  UIHostingController<ChatToolbarView>?
@@ -632,8 +632,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         self.textInputViewInternalInsets = UIEdgeInsets(top: 5.0, left: 12.0, bottom: 4.0, right: 11.0)
 
 
-        // MARK: Swiftgram
-        self.sendWithReturnKey = SGSimpleSettings.shared.sendWithReturnKey // MARK: Swiftgram
+        // MARK: ExteraGram
+        self.sendWithReturnKey = EGSimpleSettings.shared.sendWithReturnKey // MARK: ExteraGram
         //
 
         var hasSpoilers = true
@@ -774,7 +774,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
             self.enableBounceAnimations = false
         }*/
 
-                // MARK: Swiftgram
+                // MARK: ExteraGram
         self.initToolbarIfNeeded(context: context)
         //
 
@@ -840,7 +840,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
             }
         }
         self.attachmentButtonDisabledNode.addTarget(self, action: #selector(self.attachmentButtonPressed), forControlEvents: .touchUpInside)
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         let longPressGesture = UILongPressGestureRecognizer(target: self, action: #selector(self.attachmentButtonLongPressed(_:)))
         longPressGesture.minimumPressDuration = 1.0
         self.attachmentButton.addGestureRecognizer(longPressGesture)
@@ -2251,7 +2251,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         if buttonTitleUpdated && !transition.isAnimated {
             transition = .animated(duration: 0.3, curve: .easeInOut)
         }
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         let originalLeftInset = leftInset
         //
         
@@ -2434,7 +2434,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         if additionalSideInsets.right > 0.0 {
             textFieldInsets.right += additionalSideInsets.right / 3.0
         }
-        if SGSimpleSettings.shared.hideRecordingButton || inputHasText || self.extendedSearchLayout || hasMediaDraft || hasForward || hasSlowmodeButton {
+        if EGSimpleSettings.shared.hideRecordingButton || inputHasText || self.extendedSearchLayout || hasMediaDraft || hasForward || hasSlowmodeButton {
         } else {
             if let customRightAction = self.customRightAction, case .empty = customRightAction {
                 textFieldInsets.right = 8.0
@@ -3557,7 +3557,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         transition.updateFrame(view: self.glassBackgroundContainer, frame: containerFrame)
         self.glassBackgroundContainer.update(size: containerFrame.size, isDark: interfaceState.theme.overallDarkAppearance, transition: ComponentTransition(transition))
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         var toolbarOffset: CGFloat = 0.0
         toolbarOffset = layoutToolbar(transition: transition, panelHeight: contentHeight, width: width, leftInset: originalLeftInset, rightInset: rightInset, displayBotStartButton: displayBotStartButton)
         
@@ -4374,8 +4374,8 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         let blurTransitionOut: ComponentTransition = transition.isAnimated ? .easeInOut(duration: 0.18) : .immediate
         let sendButtonBlurOut: CGFloat = 4.0
         
-        var hideMicButton = SGSimpleSettings.shared.hideRecordingButton
-        var hideMicButtonBackground = SGSimpleSettings.shared.hideRecordingButton
+        var hideMicButton = EGSimpleSettings.shared.hideRecordingButton
+        var hideMicButtonBackground = EGSimpleSettings.shared.hideRecordingButton
         
         if self.customRightAction != nil {
             self.mediaActionButtons.isHidden = true
@@ -4453,7 +4453,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
                 }
             }
             
-            if (SGSimpleSettings.shared.hideRecordingButton || hasText || keepSendButtonEnabled && !mediaInputIsActive && !hasSlowModeButton) {
+            if (EGSimpleSettings.shared.hideRecordingButton || hasText || keepSendButtonEnabled && !mediaInputIsActive && !hasSlowModeButton) {
                 if self.sendActionButtons.sendContainerNode.alpha.isZero && self.rightSlowModeInset.isZero {
                     alphaTransition.updateAlpha(node: self.sendActionButtons.sendContainerNode, alpha: 1.0)
                     blurTransitionIn.setBlur(layer: self.sendActionButtons.sendContainerNode.layer, radius: 0.0)
@@ -5024,7 +5024,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         
         self.updateActivity()
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if self.sendWithReturnKey && text == "\n" {
             self.sendButtonPressed()
             return false
@@ -5256,7 +5256,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         }
     }
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     @objc func attachmentButtonLongPressed(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began else { return }
     }
@@ -5560,12 +5560,12 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
 }
 
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 extension ChatTextInputPanelNode {
     
     func initToolbarIfNeeded(context: AccountContext) {
         guard #available(iOS 13.0, *) else { return }
-        guard SGSimpleSettings.shared.inputToolbar else { return }
+        guard EGSimpleSettings.shared.inputToolbar else { return }
         guard context.sharedContext.immediateSGStatus.status > 1 else { return }
         guard self.toolbarNode == nil else { return }
         let toolbarView = ChatToolbarView(
@@ -5618,7 +5618,7 @@ extension ChatTextInputPanelNode {
                 guard let strongSelf = self else { return }
                 strongSelf.interfaceInteraction?.sgSetNewLine()
             },
-            // TODO(swiftgram): Binding
+            // TODO(exteragram): Binding
             showNewLine: .constant(true), //.constant(self.sendWithReturnKey)
             onClearFormatting: { [weak self] in
                 guard let strongSelf = self else { return }

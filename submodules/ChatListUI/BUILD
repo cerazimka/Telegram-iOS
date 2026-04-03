@@ -1,12 +1,12 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgdeps = [
-    "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-    "//Swiftgram/SGAPIWebSettings:SGAPIWebSettings",
-    "//Swiftgram/SGAPIToken:SGAPIToken"
+    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//ExteraGram/EGAPIWebSettings:EGAPIWebSettings",
+    "//ExteraGram/EGAPIToken:EGAPIToken"
 ]
 sgsrcs = [
-    "//Swiftgram/SGChatListSimpleSettingsSignal:SGChatListSimpleSettingsSignal",
+    "//ExteraGram/EGChatListSimpleSettingsSignal:EGChatListSimpleSettingsSignal",
 ]
 
 swift_library(

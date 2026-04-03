@@ -1,7 +1,7 @@
 #if DEBUG
-import SGSimpleSettings
+import EGSimpleSettings
 #endif
-import SGTranslationLangFix
+import EGTranslationLangFix
 import SwiftSoup
 
 import Foundation
@@ -383,7 +383,7 @@ func _internal_togglePeerMessagesTranslationHidden(account: Account, peerId: Eng
     }
 }
 
-// TODO(swiftgram): Refactor
+// TODO(exteragram): Refactor
 public struct TranslateRule: Codable {
     public let name: String
     public let pattern: String

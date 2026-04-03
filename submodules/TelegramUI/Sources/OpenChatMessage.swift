@@ -1,5 +1,5 @@
 import Foundation
-import SGSimpleSettings
+import EGSimpleSettings
 import Display
 import AsyncDisplayKit
 import Postbox

@@ -179,7 +179,7 @@ final class ChatTranslationPanelNode: ASDisplayNode {
         let closeButtonSize = self.closeButton.measure(CGSize(width: 100.0, height: 100.0))
         self.closeButton.frame = CGRect(origin: CGPoint(x: width - contentRightInset - closeButtonSize.width, y: floorToScreenPixels((panelHeight - closeButtonSize.height) / 2.0)), size: closeButtonSize)
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         // if info.isPremium {
             self.moreButton.isHidden = false
             self.closeButton.isHidden = true

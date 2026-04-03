@@ -1964,7 +1964,7 @@ extension ChatControllerImpl {
                 strongSelf.commitPurposefulAction()
                 if let forwardMessageIdsSet = strongSelf.presentationInterfaceState.interfaceState.selectionState?.selectedIds {
                     let forwardMessageIds = Array(forwardMessageIdsSet).sorted()
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     if let mode = mode {
                         switch (mode) {
                         case "toCloud":
@@ -1994,7 +1994,7 @@ extension ChatControllerImpl {
                 
                 strongSelf.commitPurposefulAction()
                 let forwardMessageIds = messages.map { $0.id }.sorted()
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 if let mode = mode {
                     switch (mode) {
                         case "forwardMessagesToCloudWithNoNamesAndOpen":

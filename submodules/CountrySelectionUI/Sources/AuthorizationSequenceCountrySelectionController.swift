@@ -76,7 +76,7 @@ private func loadCountryCodes() -> [Country] {
 
 private var countryCodes: [Country] = loadCountryCodes()
 private var countryCodesByPrefix: [String: (Country, Country.CountryCode)] = [:]
-// MARK: Swiftgram
+// MARK: ExteraGram
 private var sgCountryCodesByPrefix: [String: (Country, Country.CountryCode)] = ["999": (Country(id: "XX", name: "Demo", localizedName: nil, countryCodes: [Country.CountryCode(code: "999", prefixes: [], patterns: ["XX X XXXX"])], hidden: false), Country.CountryCode(code: "999", prefixes: [], patterns: ["XX X XXXX"]))]
 
 public func loadServerCountryCodes(accountManager: AccountManager<TelegramAccountManagerTypes>, engine: TelegramEngineUnauthorized, completion: @escaping () -> Void) {

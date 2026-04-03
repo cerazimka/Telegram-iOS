@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import AsyncDisplayKit
@@ -705,7 +705,7 @@ private func revealOptions(strings: PresentationStrings, theme: PresentationThem
             }
         }
     }
-    if canDelete && !SGSimpleSettings.shared.disableDeleteChatSwipeOption {
+    if canDelete && !EGSimpleSettings.shared.disableDeleteChatSwipeOption {
         options.append(ItemListRevealOption(key: RevealOptionKey.delete.rawValue, title: strings.Common_Delete, icon: deleteIcon, color: theme.list.itemDisclosureActions.destructive.fillColor, textColor: theme.list.itemDisclosureActions.destructive.foregroundColor))
     }
     if case .savedMessagesChats = location {
@@ -793,7 +793,7 @@ private func forumThreadRevealOptions(strings: PresentationStrings, theme: Prese
             }
         }
     }
-    if canDelete && !SGSimpleSettings.shared.disableDeleteChatSwipeOption {
+    if canDelete && !EGSimpleSettings.shared.disableDeleteChatSwipeOption {
         options.append(ItemListRevealOption(key: RevealOptionKey.delete.rawValue, title: strings.Common_Delete, icon: deleteIcon, color: theme.list.itemDisclosureActions.destructive.fillColor, textColor: theme.list.itemDisclosureActions.destructive.foregroundColor))
     }
     if canOpenClose {
@@ -1757,10 +1757,10 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
         } else if case let .groupReference(groupReference) = item.content {
             storyState = groupReference.storyState
         }
-        // MARK: Swiftgram
-        let sgCompactChatList = SGSimpleSettings.shared.compactChatList
-        let sgCompactMessagePreview = SGCompactMessagePreviewLayout.isEnabled()
-        let sgAvatarScaleDivisor: CGFloat = SGCompactMessagePreviewLayout.avatarScaleDivisor(compactChatList: sgCompactChatList, compactMessagePreview: sgCompactMessagePreview)
+        // MARK: ExteraGram
+        let sgCompactChatList = EGSimpleSettings.shared.compactChatList
+        let sgCompactMessagePreview = EGCompactMessagePreviewLayout.isEnabled()
+        let sgAvatarScaleDivisor: CGFloat = EGCompactMessagePreviewLayout.avatarScaleDivisor(compactChatList: sgCompactChatList, compactMessagePreview: sgCompactMessagePreview)
         var peer: EnginePeer?
         var displayAsMessage = false
         var enablePreview = true
@@ -1921,7 +1921,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     isForumAvatar = true
                 }
             }
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             var avatarDiameter = min(60.0, floor(item.presentationData.fontSize.baseDisplaySize * 60.0 / 17.0)) / sgAvatarScaleDivisor
             
             if case let .peer(peerData) = item.content, let customMessageListData = peerData.customMessageListData, customMessageListData.commandPrefix != nil {
@@ -2174,10 +2174,10 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
         let currentCustomTextEntities = self.cachedCustomTextEntities
         
         
-        // MARK: Swiftgram
-        let sgCompactChatList = SGSimpleSettings.shared.compactChatList
-        let sgCompactMessagePreview = SGCompactMessagePreviewLayout.isEnabled()
-        let sgAvatarScaleDivisor: CGFloat = SGCompactMessagePreviewLayout.avatarScaleDivisor(compactChatList: sgCompactChatList, compactMessagePreview: sgCompactMessagePreview)
+        // MARK: ExteraGram
+        let sgCompactChatList = EGSimpleSettings.shared.compactChatList
+        let sgCompactMessagePreview = EGCompactMessagePreviewLayout.isEnabled()
+        let sgAvatarScaleDivisor: CGFloat = EGCompactMessagePreviewLayout.avatarScaleDivisor(compactChatList: sgCompactChatList, compactMessagePreview: sgCompactMessagePreview)
         
         return { item, params, first, last, firstWithHeader, nextIsPinned in
             let titleFont = Font.medium(floor(item.presentationData.fontSize.itemListBaseFontSize * 16.0 / 17.0))
@@ -2437,7 +2437,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
             }
             
             let enableChatListPhotos = true
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             // if changed, adjust setupItem accordingly
             var avatarDiameter = min(60.0, floor(item.presentationData.fontSize.baseDisplaySize * 60.0 / 17.0)) / sgAvatarScaleDivisor
             let avatarLeftInset: CGFloat
@@ -2507,7 +2507,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     contentData = .group(peers: groupPeers)
                     hideAuthor = true
             }
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             let sgInlineAuthorPrefix = sgCompactMessagePreview && !hideAuthor
             if sgCompactChatList || sgCompactMessagePreview { hideAuthor = true };
             var attributedText: NSAttributedString
@@ -2537,7 +2537,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     }
                 }
             }
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             if sgCompactChatList || sgInlineAuthorPrefix { useInlineAuthorPrefix = true };
             if useInlineAuthorPrefix {
                 if case let .user(author) = messages.last?.author {
@@ -3603,7 +3603,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                 textMaxWidth -= 18.0
             }
             
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             let sgChatListMaxLines: Int
             if sgCompactMessagePreview {
                 sgChatListMaxLines = 1
@@ -3615,7 +3615,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
             let maxTitleLines: Int
             switch item.index {
             case .forum:
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 if sgCompactChatList { maxTitleLines = 1 } else {
                 maxTitleLines = 2
                 }
@@ -3745,8 +3745,8 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                                 peerRevealOptions = [
                                     ItemListRevealOption(key: RevealOptionKey.hidePsa.rawValue, title: item.presentationData.strings.ChatList_HideAction, icon: deleteIcon, color: item.presentationData.theme.list.itemDisclosureActions.inactive.fillColor, textColor: item.presentationData.theme.list.itemDisclosureActions.neutral1.foregroundColor)
                                 ]
-                                // MARK: Swiftgram
-                                if SGSimpleSettings.shared.disableDeleteChatSwipeOption { peerRevealOptions.removeLast() }
+                                // MARK: ExteraGram
+                                if EGSimpleSettings.shared.disableDeleteChatSwipeOption { peerRevealOptions.removeLast() }
                                 peerLeftRevealOptions = []
                             } else if case let .peer(peerData) = item.content, let customMessageListData = peerData.customMessageListData {
                                 peerLeftRevealOptions = []
@@ -3755,8 +3755,8 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                                         ItemListRevealOption(key: RevealOptionKey.edit.rawValue, title: item.presentationData.strings.ChatList_ItemMenuEdit, icon: .none, color: item.presentationData.theme.list.itemDisclosureActions.neutral2.fillColor, textColor: item.presentationData.theme.list.itemDisclosureActions.neutral2.foregroundColor),
                                         ItemListRevealOption(key: RevealOptionKey.delete.rawValue, title: item.presentationData.strings.ChatList_ItemMenuDelete, icon: .none, color: item.presentationData.theme.list.itemDisclosureActions.destructive.fillColor, textColor: item.presentationData.theme.list.itemDisclosureActions.destructive.foregroundColor)
                                     ]
-                                    // MARK: Swiftgram
-                                    if SGSimpleSettings.shared.disableDeleteChatSwipeOption { peerRevealOptions.removeLast() }
+                                    // MARK: ExteraGram
+                                    if EGSimpleSettings.shared.disableDeleteChatSwipeOption { peerRevealOptions.removeLast() }
                                 } else {
                                     peerRevealOptions = []
                                 }
@@ -3799,7 +3799,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                 peerRevealOptions = []
                 peerLeftRevealOptions = []
             }
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             if sgCompactChatList {
                 peerRevealOptions = peerRevealOptions.map { option in
                     ItemListRevealOption(key: option.key, title: option.title, icon: .none, color: option.color, textColor: option.textColor)
@@ -3831,7 +3831,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                 itemHeight += titleSpacing
                 itemHeight += authorSpacing
             }
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             itemHeight = itemHeight / (sgCompactChatList ? 1.5 : 1.0)
             let rawContentRect = CGRect(origin: CGPoint(x: 2.0, y: layoutOffset + floor(item.presentationData.fontSize.itemListBaseFontSize * 8.0 / 17.0)), size: CGSize(width: rawContentWidth, height: itemHeight - 12.0 - 9.0))
             
@@ -3990,7 +3990,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     var avatarScaleOffset: CGFloat = 0.0
                     var avatarScale: CGFloat = 1.0
                     if let inlineNavigationLocation = item.interaction.inlineNavigationLocation {
-                        // MARK: Swiftgram
+                        // MARK: ExteraGram
                         let targetAvatarScale: CGFloat = floor(item.presentationData.fontSize.itemListBaseFontSize * 54.0 / 17.0) / sgAvatarScaleDivisor / avatarFrame.width
                         avatarScale = targetAvatarScale * inlineNavigationLocation.progress + 1.0 * (1.0 - inlineNavigationLocation.progress)
                         
@@ -4344,9 +4344,9 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     strongSelf.statusNode.fontSize = item.presentationData.fontSize.itemListBaseFontSize
                     let _ = strongSelf.statusNode.transitionToState(statusState, animated: animateContent)
                     
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     let sizeFactor = item.presentationData.fontSize.itemListBaseFontSize / 17.0
-                    let sgCompactMessagePreviewBadgeOffset = SGCompactMessagePreviewLayout.badgeOffset(sizeFactor: sizeFactor, compactMessagePreview: sgCompactMessagePreview, compactChatList: sgCompactChatList)
+                    let sgCompactMessagePreviewBadgeOffset = EGCompactMessagePreviewLayout.badgeOffset(sizeFactor: sizeFactor, compactMessagePreview: sgCompactMessagePreview, compactChatList: sgCompactChatList)
 
                     var nextBadgeX: CGFloat = contentRect.maxX
                     if let _ = currentBadgeBackgroundImage {
@@ -4382,7 +4382,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                         let actionButtonBottomInset = floor(item.presentationData.fontSize.itemListBaseFontSize * 4.0 / 17.0)
                         
                         var actionButtonSize = CGSize(width: actionButtonTitleNodeLayout.size.width + actionButtonSideInset * 2.0, height: actionButtonTitleNodeLayout.size.height + actionButtonTopInset + actionButtonBottomInset)
-                        // MARK: Swiftgram
+                        // MARK: ExteraGram
                         let sgActionButtonScaleDivisor: CGFloat = sgCompactChatList ? 1.5 : 1.0
                         if sgCompactChatList {
                             let sgCompactActionButtonSideInset = floor(item.presentationData.fontSize.itemListBaseFontSize * 3.0 / 17.0)
@@ -4448,9 +4448,9 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                         }
                     }
                     
-                    // MARK: Swiftgram
-                    let sgCompactMessagePreviewVerticalOffset: CGFloat = SGCompactMessagePreviewLayout.textVerticalOffset(sizeFactor: sizeFactor, compactMessagePreview: sgCompactMessagePreview, compactChatList: sgCompactChatList, hasAuthorLine: !authorLayout.height.isZero)
-                    let sgCompactMessagePreviewTitleTextSpacing: CGFloat = SGCompactMessagePreviewLayout.titleTextSpacing(sizeFactor: sizeFactor, compactMessagePreview: sgCompactMessagePreview, compactChatList: sgCompactChatList, hasAuthorLine: !authorLayout.height.isZero)
+                    // MARK: ExteraGram
+                    let sgCompactMessagePreviewVerticalOffset: CGFloat = EGCompactMessagePreviewLayout.textVerticalOffset(sizeFactor: sizeFactor, compactMessagePreview: sgCompactMessagePreview, compactChatList: sgCompactChatList, hasAuthorLine: !authorLayout.height.isZero)
+                    let sgCompactMessagePreviewTitleTextSpacing: CGFloat = EGCompactMessagePreviewLayout.titleTextSpacing(sizeFactor: sizeFactor, compactMessagePreview: sgCompactMessagePreview, compactChatList: sgCompactChatList, hasAuthorLine: !authorLayout.height.isZero)
                     //
                     var titleOffset: CGFloat = titleLeftOffset
                     if let currentSecretIconImage = currentSecretIconImage {
@@ -4661,8 +4661,8 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     
                     if !itemTags.isEmpty {
                         let sizeFactor = item.presentationData.fontSize.itemListBaseFontSize / 17.0
-                        // MARK: Swiftgram
-                        let sgCompactMessagePreviewTagListOffset = max(0.0, SGCompactMessagePreviewLayout.textBlockOffset(sizeFactor: sizeFactor, compactMessagePreview: sgCompactMessagePreview, compactChatList: sgCompactChatList, hasAuthorLine: false) - floorToScreenPixels(4.0 * sizeFactor))
+                        // MARK: ExteraGram
+                        let sgCompactMessagePreviewTagListOffset = max(0.0, EGCompactMessagePreviewLayout.textBlockOffset(sizeFactor: sizeFactor, compactMessagePreview: sgCompactMessagePreview, compactChatList: sgCompactChatList, hasAuthorLine: false) - floorToScreenPixels(4.0 * sizeFactor))
                         //
                         
                         let itemTagListFrame = CGRect(origin: CGPoint(x: contentRect.minX, y: contentRect.minY + measureLayout.size.height * 2.0 + floorToScreenPixels(2.0 * sizeFactor) + sgCompactMessagePreviewTagListOffset), size: CGSize(width: contentRect.width, height: floorToScreenPixels(20.0 * sizeFactor)))
@@ -5152,7 +5152,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     
                     strongSelf.updateLayout(size: CGSize(width: layout.contentSize.width, height: itemHeight), leftInset: params.leftInset, rightInset: params.rightInset)
                     
-                    if item.editing || SGSimpleSettings.shared.disableChatSwipeOptions {
+                    if item.editing || EGSimpleSettings.shared.disableChatSwipeOptions {
                         strongSelf.setRevealOptions((left: [], right: []), enableAnimations: item.context.sharedContext.energyUsageSettings.fullTranslucency)
                     } else {
                         strongSelf.setRevealOptions((left: peerLeftRevealOptions, right: peerRevealOptions), enableAnimations: item.context.sharedContext.energyUsageSettings.fullTranslucency)

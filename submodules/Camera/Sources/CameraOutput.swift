@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 
 import Foundation
 import AVFoundation
@@ -369,8 +369,8 @@ final class CameraOutput: NSObject {
                 AVVideoWidthKey: Int(dimensions.width),
                 AVVideoHeightKey: Int(dimensions.height)
             ]
-            // MARK: Swiftgram
-            if SGSimpleSettings.shared.startTelescopeWithRearCam {
+            // MARK: ExteraGram
+            if EGSimpleSettings.shared.startTelescopeWithRearCam {
                 self.currentPosition = .back
             }
         } else {

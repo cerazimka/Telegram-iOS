@@ -124,7 +124,7 @@ def decrypt_codesigning_directory_recursively(source_base_path, destination_base
 
 
 def load_codesigning_data_from_git(working_dir, repo_url, temp_key_path, branch, password, always_fetch):
-    # MARK: Swiftgram
+    # MARK: ExteraGram
     branch = "master"
     if not os.path.exists(working_dir):
         os.makedirs(working_dir, exist_ok=True)
@@ -166,7 +166,7 @@ def load_codesigning_data_from_git(working_dir, repo_url, temp_key_path, branch,
 
 def copy_profiles_from_directory(source_path, destination_path, team_id, bundle_id):
     profile_name_mapping = {
-        # Swiftgram
+        # ExteraGram
         # '.SGActionRequestHandler': 'SGActionRequestHandler',
         '.SiriIntents': 'Intents',
         '.NotificationContent': 'NotificationContent',

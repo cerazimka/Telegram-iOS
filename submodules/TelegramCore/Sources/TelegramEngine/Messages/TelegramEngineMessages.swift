@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import SwiftSignalKit
 import Postbox
@@ -114,7 +114,7 @@ public extension TelegramEngine {
 
         public func searchMessages(location: SearchMessagesLocation, query: String, state: SearchMessagesState?, centerId: MessageId? = nil, limit: Int32 = 100) -> Signal<(SearchMessagesResult, SearchMessagesState), NoError> {
             return _internal_searchMessages(account: self.account, location: location, query: query, state: state, centerId: centerId, limit: limit)
-            // TODO(swiftgram): Try to fallback on error when searching. RX is hard...
+            // TODO(exteragram): Try to fallback on error when searching. RX is hard...
             |> mapToSignal { result -> Signal<(SearchMessagesResult, SearchMessagesState), NoError> in
                 if (result.0.totalCount > 0) {
                     return .single(result)
@@ -615,7 +615,7 @@ public extension TelegramEngine {
             return sgWrappedTranslateMultiple(texts: texts,toLang: toLang, default: _internal_translateTexts(network: self.account.network, texts: texts, toLang: toLang))
         }
 
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         public func translateMessagesViaText(messagesDict: [EngineMessage.Id: String], fromLang: String?, toLang: String, generateEntitiesFunction: @escaping (String) -> [MessageTextEntity], enableLocalIfPossible: Bool) -> Signal<Never, TranslationError> {
             return _internal_translateMessagesViaText(account: self.account, messagesDict: messagesDict, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible, generateEntitiesFunction: generateEntitiesFunction)
         }
@@ -1509,8 +1509,8 @@ public extension TelegramEngine {
         }
         
         public func markStoryAsSeen(peerId: EnginePeer.Id, id: Int32, asPinned: Bool) -> Signal<Never, NoError> {
-            // MARK: Swiftgram
-            if SGSimpleSettings.shared.isStealthModeEnabled {
+            // MARK: ExteraGram
+            if EGSimpleSettings.shared.isStealthModeEnabled {
                 return .never()
             }
             return _internal_markStoryAsSeen(account: self.account, peerId: peerId, id: id, asPinned: asPinned)
@@ -1768,13 +1768,13 @@ func _internal_monoforumPerformSuggestedPostAction(account: Account, id: EngineM
 
 
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 private func sgWrappedTranslateSingle(
     text: String,
     toLang: String,
     `default`: Signal<(String, [MessageTextEntity])?, TranslationError>
 ) -> Signal<(String, [MessageTextEntity])?, TranslationError> {
-    if SGSimpleSettings.shared.translationBackend == SGSimpleSettings.TranslationBackend.gtranslate.rawValue {
+    if EGSimpleSettings.shared.translationBackend == EGSimpleSettings.TranslationBackend.gtranslate.rawValue {
         return gtranslate(text, toLang)
             |> map { ($0, []) }
             |> mapError { _ in .generic }
@@ -1793,7 +1793,7 @@ private func sgWrappedTranslateMultiple(
     toLang: String,
     `default`: Signal<[(String, [MessageTextEntity])], TranslationError>
 ) -> Signal<[(String, [MessageTextEntity])], TranslationError> {
-    if SGSimpleSettings.shared.translationBackend == SGSimpleSettings.TranslationBackend.gtranslate.rawValue {
+    if EGSimpleSettings.shared.translationBackend == EGSimpleSettings.TranslationBackend.gtranslate.rawValue {
         let translatedSignals: [Signal<(String, [MessageTextEntity]), TranslationError>] = texts.map { (text, _) in
             gtranslate(text, toLang)
                 |> map { ($0, []) }

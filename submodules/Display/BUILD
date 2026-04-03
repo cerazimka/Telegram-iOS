@@ -1,12 +1,12 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgsrc = [
-    "//Swiftgram/SGAppBadgeOffset:SGAppBadgeOffset"
+    "//ExteraGram/EGAppBadgeOffset:EGAppBadgeOffset"
 ]
 
 sgdeps = [
     "//submodules/Utils/DeviceModel",
-    "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
+    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
 ]
 
 swift_library(

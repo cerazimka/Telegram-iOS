@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import LegacyComponents
@@ -416,8 +416,8 @@ public func legacyAssetPickerEnqueueMessages(context: AccountContext, account: A
                                         defer {
                                             TempBox.shared.dispose(tempFile)
                                         }
-                                        // MARK: Swiftgram
-                                        if let scaledImageData = compressImageToJPEG(scaledImage, quality: Float(SGSimpleSettings.shared.outgoingPhotoQuality) / 100.0, tempFilePath: tempFile.path) {
+                                        // MARK: ExteraGram
+                                        if let scaledImageData = compressImageToJPEG(scaledImage, quality: Float(EGSimpleSettings.shared.outgoingPhotoQuality) / 100.0, tempFilePath: tempFile.path) {
                                             let _ = try? scaledImageData.write(to: URL(fileURLWithPath: tempFilePath))
 
                                             let resource = LocalFileReferenceMediaResource(localFilePath: tempFilePath, randomId: randomId)
@@ -854,8 +854,8 @@ public func legacyAssetPickerEnqueueMessages(context: AccountContext, account: A
                                 preset = TGMediaVideoConversionPresetAnimation
                             }
                             
-                            // MARK: Swiftgram
-                            // TODO(swiftgram): Nice thumbnail
+                            // MARK: ExteraGram
+                            // TODO(exteragram): Nice thumbnail
                             var asTelescope = false
                             if let strongAdjustments = adjustments, strongAdjustments.sendAsTelescope {
                                 asTelescope = true
@@ -1007,7 +1007,7 @@ public func legacyAssetPickerEnqueueMessages(context: AccountContext, account: A
                                 attributes.append(EmbeddedMediaStickersMessageAttribute(files: stickerFiles))
                                 fileAttributes.append(.HasLinkedStickers)
                             }
-                            // MARK: Swiftgram
+                            // MARK: ExteraGram
                             if asTelescope {
                                 fileAttributes = [.FileName(fileName: "video.mp4"), .Video(duration: finalDuration, size: PixelDimensions(finalDimensions), flags: [.instantRoundVideo], preloadSize: nil, coverTime: nil, videoCodec: nil)]
                             }

@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import TelegramCore
@@ -170,8 +170,8 @@ public func transformOutgoingMessageMedia(postbox: Postbox, network: Network, me
                             defer {
                                 TempBox.shared.dispose(tempFile)
                             }
-                            // MARK: Swiftgram
-                            if let fullImage = UIImage(contentsOfFile: data.path), let smallestImage = generateScaledImage(image: fullImage, size: smallestSize, scale: 1.0), let smallestData = compressImageToJPEG(smallestImage, quality: Float(SGSimpleSettings.shared.outgoingPhotoQuality) / 100.0, tempFilePath: tempFile.path) {
+                            // MARK: ExteraGram
+                            if let fullImage = UIImage(contentsOfFile: data.path), let smallestImage = generateScaledImage(image: fullImage, size: smallestSize, scale: 1.0), let smallestData = compressImageToJPEG(smallestImage, quality: Float(EGSimpleSettings.shared.outgoingPhotoQuality) / 100.0, tempFilePath: tempFile.path) {
                                 var representations = image.representations
                                 
                                 let thumbnailResource = LocalFileMediaResource(fileId: Int64.random(in: Int64.min ... Int64.max))

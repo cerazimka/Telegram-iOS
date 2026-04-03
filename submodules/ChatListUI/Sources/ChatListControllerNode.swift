@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import AsyncDisplayKit
@@ -533,8 +533,8 @@ public final class ChatListContainerNode: ASDisplayNode, ASGestureRecognizerDele
         
         self.applyItemNodeAsCurrent(id: .all, itemNode: itemNode)
         
-        let panRecognizer = InteractiveTransitionGestureRecognizer(target: self, action: #selector(self.panGesture(_:)), allowedDirections: { [weak self] _ in // MARK: Swiftgram
-            guard let self, self.availableFilters.count > 1 || (self.controller?.isStoryPostingAvailable == true && !(self.context.sharedContext.callManager?.hasActiveCall ?? false) && !SGSimpleSettings.shared.disableSwipeToRecordStory) else {
+        let panRecognizer = InteractiveTransitionGestureRecognizer(target: self, action: #selector(self.panGesture(_:)), allowedDirections: { [weak self] _ in // MARK: ExteraGram
+            guard let self, self.availableFilters.count > 1 || (self.controller?.isStoryPostingAvailable == true && !(self.context.sharedContext.callManager?.hasActiveCall ?? false) && !EGSimpleSettings.shared.disableSwipeToRecordStory) else {
                 return []
             }
             guard case .chatList(.root) = self.location else {
@@ -556,7 +556,7 @@ public final class ChatListContainerNode: ASDisplayNode, ASGestureRecognizerDele
             } else {
                 return [.rightEdge]
             }
-        }, edgeWidth: SGSimpleSettings.shared.disableChatSwipeOptions ? .widthMultiplier(factor: 1.0 / 6.0, min: 0.0, max: 0.0) : .widthMultiplier(factor: 1.0 / 6.0, min: 22.0, max: 80.0))
+        }, edgeWidth: EGSimpleSettings.shared.disableChatSwipeOptions ? .widthMultiplier(factor: 1.0 / 6.0, min: 0.0, max: 0.0) : .widthMultiplier(factor: 1.0 / 6.0, min: 22.0, max: 80.0))
         panRecognizer.delegate = self.wrappedGestureRecognizerDelegate
         panRecognizer.delaysTouchesBegan = false
         panRecognizer.cancelsTouchesInView = true
@@ -585,9 +585,9 @@ public final class ChatListContainerNode: ASDisplayNode, ASGestureRecognizerDele
     }
     
     @objc private func panGesture(_ recognizer: UIPanGestureRecognizer) {
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         var _availableFilters = self.availableFilters
-        if SGSimpleSettings.shared.allChatsHidden {
+        if EGSimpleSettings.shared.allChatsHidden {
             _availableFilters.removeAll { $0 == .all }
         }
         let filtersLimit = self.filtersLimit.flatMap({ $0 + 1 }) ?? Int32(_availableFilters.count)
@@ -644,7 +644,7 @@ public final class ChatListContainerNode: ASDisplayNode, ASGestureRecognizerDele
                     hasLiveStream = true
                 }
                      
-                if case .compact = layout.metrics.widthClass, self.controller?.isStoryPostingAvailable == true && !(self.context.sharedContext.callManager?.hasActiveCall ?? false) && !SGSimpleSettings.shared.disableSwipeToRecordStory {
+                if case .compact = layout.metrics.widthClass, self.controller?.isStoryPostingAvailable == true && !(self.context.sharedContext.callManager?.hasActiveCall ?? false) && !EGSimpleSettings.shared.disableSwipeToRecordStory {
                     if hasLiveStream {
                         if translation.x >= 30.0 {
                             self.panRecognizer?.cancel()
@@ -1507,7 +1507,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
         }
         
         var navigationHeaderPanels: AnyComponent<Empty>?
-        var tabs: AnyComponent<Empty>? // MARK: Swiftgram
+        var tabs: AnyComponent<Empty>? // MARK: ExteraGram
         if self.controller?.tabContainerData != nil || !panels.isEmpty {
             if let tabContainerData = self.controller?.tabContainerData, tabContainerData.0.count > 1 {
                 let selectedTab: HorizontalTabsComponent.Tab.Id
@@ -1631,7 +1631,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
                 
             navigationHeaderPanels = AnyComponent(HeaderPanelContainerComponent(
                 theme: self.presentationData.theme,
-                tabs: (self.controller?.tabContainerData?.1 ?? false) ? nil : tabs, // MARK: Swiftgram
+                tabs: (self.controller?.tabContainerData?.1 ?? false) ? nil : tabs, // MARK: ExteraGram
                 panels: panels
             ))
         }
@@ -1823,7 +1823,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
         
         self.containerLayout = (layout, navigationBarHeight, visualNavigationHeight, cleanNavigationBarHeight, storiesInset)
 
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         let sgComponentTransition = ComponentTransition(transition)
         let sgDisplayTabsAtBottom = self.controller?.tabContainerData?.1 ?? false
         let sgShouldDisplayBottomFolders = sgDisplayTabsAtBottom && self.isSearchDisplayControllerActive == nil
@@ -1892,7 +1892,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
             })
         }
 
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if sgShouldDisplayBottomFolders && sgFoldersSize.height > 0.0 {
             insets.bottom += sgFoldersSize.height + 16.0 + 8.0
         }
@@ -1961,7 +1961,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
             navigationBarComponentView.applyCurrentScroll(transition: ComponentTransition(transition))
         }
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if let sgFoldersView = self.sgFoldersView.view as? HeaderPanelContainerComponent.View {
             if sgShouldDisplayBottomFolders && sgFoldersSize.height > 0.0 {
                 if sgFoldersView.superview == nil {
@@ -1986,7 +1986,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
 //                    tabBarHeight = 49.0 - heightInset + bottomInset
 //                }
                 //
-                // TODO(swiftgram):
+                // TODO(exteragram):
                 sgComponentTransition.setFrame(view: sgFoldersView, frame: CGRect(origin: CGPoint(x: 0.0, y: layout.size.height - bottomInset - sgFoldersSize.height - 16.0), size: sgFoldersSize))
             } else {
                 sgFoldersView.layer.animateAlpha(from: 1.0, to: 0.0, duration: 0.2, removeOnCompletion: false, completion: { [weak sgFoldersView] _ in

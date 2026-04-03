@@ -274,7 +274,7 @@ public final class AppLockContextImpl: AppLockContext {
     
     private func updateTimestampRenewTimer(shouldRun: Bool) {
         if shouldRun {
-            if self.timestampRenewTimer == nil { // MARK: Swiftgram
+            if self.timestampRenewTimer == nil { // MARK: ExteraGram
                 let timestampRenewTimer = SwiftSignalKit.Timer(timeout: 2.5, repeat: true, completion: { [weak self] in
                     guard let strongSelf = self else {
                         return

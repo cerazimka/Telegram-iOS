@@ -462,7 +462,7 @@ public final class ChatPanelInterfaceInteraction {
         self.chatController = chatController
         self.statuses = statuses
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         self.sgSelectLastWordIfIdle = {
             updateTextInputStateAndMode { current, inputMode in
                 // No changes to current selection

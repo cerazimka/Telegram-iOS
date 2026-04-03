@@ -1,13 +1,13 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgdeps = [
-    "//Swiftgram/SGSettingsUI:SGSettingsUI",
-    "//Swiftgram/SGStrings:SGStrings",
-    "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
+    "//ExteraGram/EGSettingsUI:EGSettingsUI",
+    "//ExteraGram/EGStrings:EGStrings",
+    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
 
-    "//Swiftgram/SGRegDate:SGRegDate",
-    "//Swiftgram/SGRegDateScheme:SGRegDateScheme",
-    "//Swiftgram/SGDebugUI:SGDebugUI",
+    "//ExteraGram/EGRegDate:EGRegDate",
+    "//ExteraGram/EGRegDateScheme:EGRegDateScheme",
+    "//ExteraGram/EGDebugUI:EGDebugUI",
 ]
 
 

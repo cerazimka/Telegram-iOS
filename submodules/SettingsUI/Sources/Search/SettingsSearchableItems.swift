@@ -4312,7 +4312,7 @@ func settingsSearchableItems(
     webSessionsContext: Signal<WebSessionsContext?, NoError> = .single(nil)
 ) -> Signal<[SettingsSearchableItem], NoError> {
 
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     let watchAppInstalled = (context.watchManager?.watchAppInstalled ?? .single(false))
     |> take(1)
     //
@@ -4401,7 +4401,7 @@ func settingsSearchableItems(
     }
     
     return combineLatest(
-        watchAppInstalled, // MARK: Swiftgram
+        watchAppInstalled, // MARK: ExteraGram
         canAddAccount,
         localizations,
         notificationSettings,
@@ -4416,7 +4416,7 @@ func settingsSearchableItems(
     )
     |> deliverOnMainQueue
     |> map {
-        watchAppInstalled, // MARK: Swiftgram
+        watchAppInstalled, // MARK: ExteraGram
         canAddAccount,
         localizations,
         notificationSettings,
@@ -4485,7 +4485,7 @@ func settingsSearchableItems(
         
         let storiesItems = myProfileSearchableItems(context: context)
         allItems.append(contentsOf: storiesItems)
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if watchAppInstalled {
             let watch = SettingsSearchableItem(id: "watch", title: strings.Settings_AppleWatch, alternate: synonyms(strings.SettingsSearch_Synonyms_Watch), icon: .watch, breadcrumbs: [], present: { context, _, present in
                 present(.push, watchSettingsController(context: context))

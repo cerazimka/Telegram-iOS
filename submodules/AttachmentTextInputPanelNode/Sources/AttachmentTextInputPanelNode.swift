@@ -1,7 +1,7 @@
-// MARK: Swiftgram
-import SGInputToolbar
+// MARK: ExteraGram
+import EGInputToolbar
 import SwiftUI
-import SGSimpleSettings
+import EGSimpleSettings
 
 import Foundation
 import UIKit
@@ -306,7 +306,7 @@ public class AttachmentTextInputPanelNode: ASDisplayNode, TGCaptionPanelView, AS
     
     private let hapticFeedback = HapticFeedback()
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     //    private var toolbarHostingController: UIViewController? //Any? //  UIHostingController<ChatToolbarView>?
     private var toolbarNode: ASDisplayNode?
     
@@ -530,7 +530,7 @@ public class AttachmentTextInputPanelNode: ASDisplayNode, TGCaptionPanelView, AS
             })
         }
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         self.initToolbarIfNeeded(context: context)
     }
     
@@ -982,7 +982,7 @@ public class AttachmentTextInputPanelNode: ASDisplayNode, TGCaptionPanelView, AS
             panelHeight += 11.0
         }
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         var toolbarOffset: CGFloat = 0.0
         toolbarOffset = layoutToolbar(transition: transition, panelHeight: panelHeight, width: width, leftInset: leftInset, rightInset: rightInset)
 
@@ -1986,12 +1986,12 @@ public class AttachmentTextInputPanelNode: ASDisplayNode, TGCaptionPanelView, AS
     }
 }
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 extension AttachmentTextInputPanelNode {
     
     func initToolbarIfNeeded(context: AccountContext) {
         guard #available(iOS 13.0, *) else { return }
-        guard SGSimpleSettings.shared.inputToolbar else { return }
+        guard EGSimpleSettings.shared.inputToolbar else { return }
         guard context.sharedContext.immediateSGStatus.status > 1 else { return }
         guard self.toolbarNode == nil else { return }
         let toolbarView = ChatToolbarView(
@@ -2044,7 +2044,7 @@ extension AttachmentTextInputPanelNode {
                 guard let strongSelf = self else { return }
                 strongSelf.interfaceInteraction?.sgSetNewLine()
             },
-            // TODO(swiftgram): Binding
+            // TODO(exteragram): Binding
             showNewLine: .constant(true), //.constant(self.sendWithReturnKey)
             onClearFormatting: { [weak self] in
                 guard let strongSelf = self else { return }

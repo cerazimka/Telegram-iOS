@@ -1,7 +1,7 @@
-// MARK: Swiftgram
+// MARK: ExteraGram
 import class SwiftUI.UIHostingController
-import SGSimpleSettings
-import SGInputToolbar
+import EGSimpleSettings
+import EGInputToolbar
 
 import Foundation
 import UIKit
@@ -608,7 +608,7 @@ public final class MessageInputPanelComponent: Component {
         private let counter = ComponentView<Empty>()
         private var header: ComponentView<Empty>?
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         private var toolbarView: UIView?
         
         private var disabledPlaceholder: ComponentView<Empty>?
@@ -715,7 +715,7 @@ public final class MessageInputPanelComponent: Component {
                 }
             )
             
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             self.initToolbarIfNeeded(context: context)
         }
         
@@ -926,7 +926,7 @@ public final class MessageInputPanelComponent: Component {
                 return panelResult
             }
             
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             if result == nil, let toolbarView = self.toolbarView, let toolbarResult = toolbarView.hitTest(self.convert(point, to: toolbarView), with: event) {
                 return toolbarResult
             }
@@ -2999,7 +2999,7 @@ public final class MessageInputPanelComponent: Component {
                 }
             }
             
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             size = self.layoutToolbar(transition: transition, layoutFromTop: layoutFromTop, size: size, availableSize: availableSize, defaultInsets: defaultInsets, textFieldSize: textFieldSize, previousComponent: previousComponent)
             
             return size
@@ -3060,7 +3060,7 @@ final class ViewForOverlayContent: UIView {
 extension MessageInputPanelComponent.View {
     func initToolbarIfNeeded(context: AccountContext) {
         guard #available(iOS 13.0, *) else { return }
-        guard SGSimpleSettings.shared.inputToolbar else { return }
+        guard EGSimpleSettings.shared.inputToolbar else { return }
         guard context.sharedContext.immediateSGStatus.status > 1 else { return }
         guard self.toolbarView == nil else { return }
         let notificationName = Notification.Name("sgToolbarAction")
@@ -3105,7 +3105,7 @@ extension MessageInputPanelComponent.View {
                 guard let _ = self else { return }
                 NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "newline"])
             },
-            // TODO(swiftgram): Binding
+            // TODO(exteragram): Binding
             showNewLine: .constant(true), //.constant(self.sendWithReturnKey)
             onClearFormatting: { [weak self] in
                 guard let _ = self else { return }
@@ -3133,7 +3133,7 @@ extension MessageInputPanelComponent.View {
     }
     
     func layoutToolbar(transition: ComponentTransition, layoutFromTop: Bool, size: CGSize, availableSize: CGSize, defaultInsets: UIEdgeInsets, textFieldSize: CGSize, previousComponent: MessageInputPanelComponent?) -> CGSize {
-        // TODO(swiftgram): Do not show if locked formatting
+        // TODO(exteragram): Do not show if locked formatting
         var transition = transition
         if let previousComponent = previousComponent {
             let previousLayoutFromTop = previousComponent.attachmentButtonMode == .captionDown

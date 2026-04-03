@@ -580,7 +580,7 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                         transaction.storeMediaIfNotPresent(media: file)
                     }
                 
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     var filteredEmojiItems = [NSRange: RecentEmojiItem]()
                     text.enumerateSubstrings(in: text.startIndex ..< text.endIndex, options: .byComposedCharacterSequences) { substring, range, _, _ in
                         if let substring, substring.isSingleEmoji {
@@ -709,7 +709,7 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                                         addedHashtags.append(hashtag)
                                     }
                                 } else if case let .CustomEmoji(_, fileId) = entity.type {
-                                    // MARK: Swiftgram
+                                    // MARK: ExteraGram
                                     let mediaId = MediaId(namespace: Namespaces.Media.CloudFile, id: fileId)
                                     let entityRange = NSRange(location: entity.range.lowerBound, length: entity.range.upperBound - entity.range.lowerBound)
                                     var file: TelegramMediaFile?
@@ -727,7 +727,7 @@ func enqueueMessages(transaction: Transaction, account: Account, peerId: PeerId,
                             break
                         }
                     }
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     emojiItems.insert(contentsOf: filteredEmojiItems.values, at: 0)
                                     
                     let (tags, globalTags) = tagsForStoreMessage(incoming: false, attributes: attributes, media: mediaList, textEntities: entitiesAttribute?.entities, isPinned: false)

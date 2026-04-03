@@ -344,7 +344,7 @@ func _internal_searchMessages(account: Account, location: SearchMessagesLocation
                     if let readState = transaction.getCombinedPeerReadState(peerId) {
                         readStates[peerId] = readState
                     }
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     var result: [Message] = []
                     if forceLocal {
                         transaction.withAllMessages(peerId: peerId, reversed: true, { message in

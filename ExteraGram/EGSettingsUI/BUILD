@@ -1,0 +1,43 @@
+load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
+
+filegroup(
+    name = "EGUIAssets",
+    srcs = glob(["Images.xcassets/**"]),
+    visibility = ["//visibility:public"],
+)
+
+swift_library(
+    name = "EGSettingsUI",
+    module_name = "EGSettingsUI",
+    srcs = glob([
+		"Sources/**/*.swift",
+    ]),
+    copts = [
+        "-warnings-as-errors",
+    ],
+    deps = [
+        "//ExteraGram/EGItemListUI:EGItemListUI",
+        "//ExteraGram/EGLogging:EGLogging",
+        "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//ExteraGram/EGStrings:EGStrings",
+#        "//ExteraGram/EGAPI:EGAPI",
+        "//ExteraGram/EGAPIToken:EGAPIToken",
+        "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
+        "//submodules/Display:Display",
+        "//submodules/Postbox:Postbox",
+        "//submodules/TelegramCore:TelegramCore",
+        "//submodules/MtProtoKit:MtProtoKit",
+        "//submodules/TelegramPresentationData:TelegramPresentationData",
+        "//submodules/TelegramUIPreferences:TelegramUIPreferences",
+        "//submodules/ItemListUI:ItemListUI",
+        "//submodules/PresentationDataUtils:PresentationDataUtils",
+        "//submodules/OverlayStatusController:OverlayStatusController",
+        "//submodules/AccountContext:AccountContext",
+        "//submodules/AppBundle:AppBundle",
+        "//submodules/TelegramUI/Components/Settings/PeerNameColorScreen",
+        "//submodules/UndoUI:UndoUI",
+    ],
+    visibility = [
+        "//visibility:public",
+    ],
+)

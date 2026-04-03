@@ -185,7 +185,7 @@ public func canTranslateChats(context: AccountContext) -> Bool {
     default:
         break
     }
-    return chatTranslationAvailable || true // MARK: Swiftgram
+    return chatTranslationAvailable || true // MARK: ExteraGram
 }
 
 public func canTranslateText(context: AccountContext, text: String, showTranslate: Bool, showTranslateIfTopical: Bool = false, ignoredLanguages: [String]?) -> (canTranslate: Bool, language: String?) {
@@ -205,7 +205,7 @@ public func canTranslateText(context: AccountContext, text: String, showTranslat
     default:
         break
     }
-    translateButtonAvailable = true // MARK: Swiftgram
+    translateButtonAvailable = true // MARK: ExteraGram
     let showTranslate = showTranslate && translateButtonAvailable
         
     if #available(iOS 12.0, *) {

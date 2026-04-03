@@ -1,15 +1,15 @@
-# Swiftgram
+# ExteraGram
 
 Supercharged Telegram fork for iOS
 
 [<img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="50">](https://apps.apple.com/app/apple-store/id6471879502?pt=126511626&ct=gh&mt=8)
 
 - Download: [App Store](https://apps.apple.com/app/apple-store/id6471879502?pt=126511626&ct=gh&mt=8)
-- Telegram channel: https://t.me/swiftgram
-- Telegram chat: https://t.me/swiftgramchat
-- TestFlight beta, local chats, translations and other [@SwiftgramLinks](https://t.me/s/SwiftgramLinks)
+- Telegram channel: https://t.me/exteragram
+- Telegram chat: https://t.me/exteragramchat
+- TestFlight beta, local chats, translations and other [@ExteraGramLinks](https://t.me/s/ExteraGramLinks)
 
-Swiftgram's compilation steps are the same as for the official app. Below you'll find a complete compilation guide based on the official app.
+ExteraGram's compilation steps are the same as for the official app. Below you'll find a complete compilation guide based on the official app.
 
 # Telegram iOS Source Code Compilation Guide
 
@@ -29,7 +29,7 @@ There are several things we require from **all developers** for the moment.
 ## Get the Code
 
 ```
-git clone --recursive -j8 https://github.com/Swiftgram/Telegram-iOS.git
+git clone --recursive -j8 https://github.com/ExteraGram/Telegram-iOS.git
 ```
 
 ## Setup Xcode
@@ -42,7 +42,7 @@ Install Xcode (directly from https://developer.apple.com/download/applications o
 ```
 openssl rand -hex 8
 ```
-2. Create a new Xcode project. Use `Swiftgram` as the Product Name. Use `org.{identifier from step 1}` as the Organization Identifier.
+2. Create a new Xcode project. Use `ExteraGram` as the Product Name. Use `org.{identifier from step 1}` as the Organization Identifier.
 3. Open `Keychain Access` and navigate to `Certificates`. Locate `Apple Development: your@email.address (XXXXXXXXXX)` and double tap the certificate. Under `Details`, locate `Organizational Unit`. This is the Team ID.
 4. Edit `build-system/template_minimal_development_configuration.json`. Use data from the previous steps.
 

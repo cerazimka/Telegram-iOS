@@ -1,5 +1,5 @@
-import SGStrings
-import SGSettingsUI
+import EGStrings
+import EGSettingsUI
 import Foundation
 import UIKit
 import Display
@@ -47,9 +47,9 @@ extension PeerInfoScreenNode {
             }
         }
         switch section {
-        case .swiftgram:
+        case .exteragram:
             self.controller?.push(sgSettingsController(context: self.context))
-        case .swiftgramPro:
+        case .exteragramPro:
             if self.context.sharedContext.immediateSGStatus.status > 1 {
                 self.controller?.push(self.context.sharedContext.makeSGProController(context: self.context))
             } else {
@@ -233,15 +233,15 @@ extension PeerInfoScreenNode {
                 guard let strongSelf = self else {
                     return
                 }
-                var maximumAvailableAccounts: Int = maximumSwiftgramNumberOfAccounts
+                var maximumAvailableAccounts: Int = maximumExteraGramNumberOfAccounts
                 if accountAndPeer?.1.isPremium == true && !strongSelf.context.account.testingEnvironment {
-                    maximumAvailableAccounts = maximumSwiftgramNumberOfAccounts
+                    maximumAvailableAccounts = maximumExteraGramNumberOfAccounts
                 }
                 var count: Int = 1
                 for (accountContext, peer, _) in accountsAndPeers {
                     if !accountContext.account.testingEnvironment {
                         if peer.isPremium {
-                            maximumAvailableAccounts = maximumSwiftgramNumberOfAccounts
+                            maximumAvailableAccounts = maximumExteraGramNumberOfAccounts
                         }
                         count += 1
                     }
@@ -261,7 +261,7 @@ extension PeerInfoScreenNode {
                         navigationController.pushViewController(controller)
                     }
                 } else {
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     if count + 1 > maximumSafeNumberOfAccounts {
                         let presentationData = strongSelf.context.sharedContext.currentPresentationData.with { $0 }
                         let alertController = textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.controller?.updatedPresentationData, title: presentationData.strings.ChatList_DeleteSavedMessagesConfirmationTitle, text: i18n("Auth.AccountBackupReminder", presentationData.strings.baseLanguageCode), actions: [

@@ -3,7 +3,7 @@ import TelegramCore
 import Postbox
 
 private enum ApplicationSpecificPreferencesKeyValues: Int32 {
-    case SGUISettings = 900
+    case EGUISettings = 900
     case voipDerivedState = 16
     case chatArchiveSettings = 17
     case chatListFilterSettings = 18
@@ -13,7 +13,7 @@ private enum ApplicationSpecificPreferencesKeyValues: Int32 {
 }
 
 public struct ApplicationSpecificPreferencesKeys {
-    public static let SGUISettings =  applicationSpecificPreferencesKey(ApplicationSpecificPreferencesKeyValues.SGUISettings.rawValue)
+    public static let EGUISettings =  applicationSpecificPreferencesKey(ApplicationSpecificPreferencesKeyValues.EGUISettings.rawValue)
     public static let voipDerivedState = applicationSpecificPreferencesKey(ApplicationSpecificPreferencesKeyValues.voipDerivedState.rawValue)
     public static let chatArchiveSettings = applicationSpecificPreferencesKey(ApplicationSpecificPreferencesKeyValues.chatArchiveSettings.rawValue)
     public static let chatListFilterSettings = applicationSpecificPreferencesKey(ApplicationSpecificPreferencesKeyValues.chatListFilterSettings.rawValue)
@@ -23,7 +23,7 @@ public struct ApplicationSpecificPreferencesKeys {
 }
 
 private enum ApplicationSpecificSharedDataKeyValues: Int32 {
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     case sgStatus = 999
     case inAppNotificationSettings = 0
     case presentationPasscodeSettings = 1
@@ -51,7 +51,7 @@ private enum ApplicationSpecificSharedDataKeyValues: Int32 {
 }
 
 public struct ApplicationSpecificSharedDataKeys {
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     public static let sgStatus = applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.sgStatus.rawValue)
     public static let inAppNotificationSettings = applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.inAppNotificationSettings.rawValue)
     public static let presentationPasscodeSettings = applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.presentationPasscodeSettings.rawValue)

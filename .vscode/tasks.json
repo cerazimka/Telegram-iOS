@@ -18,7 +18,7 @@
       "command": "./scripts/lldb_build.sh",
       "options": {
         "env": {
-          "BAZEL_LABEL_TO_RUN": "//Telegram:Swiftgram",
+          "BAZEL_LABEL_TO_RUN": "//Telegram:ExteraGram",
           "BAZEL_EXTRA_BUILD_FLAGS": ""
         }
       },
@@ -50,7 +50,7 @@
       "command": "./scripts/lldb_launch_and_debug.sh",
       "options": {
         "env": {
-          "BAZEL_LABEL_TO_RUN": "//Telegram:Swiftgram",
+          "BAZEL_LABEL_TO_RUN": "//Telegram:ExteraGram",
           "BAZEL_EXTRA_BUILD_FLAGS": "",
           "BAZEL_LAUNCH_ARGS": ""
         }
@@ -77,7 +77,7 @@
           "background": {
             "activeOnStart": true,
             "beginsPattern": "^Starting launch task\\.\\.\\.$",
-            "endsPattern": "^app.swiftgram.ios: .*"
+            "endsPattern": "^app.exteragram.ios: .*"
           }
         },
         {
@@ -98,7 +98,7 @@
           "background": {
             "activeOnStart": true,
             "beginsPattern": "^Starting launch task\\.\\.\\.$",
-            "endsPattern": "^app.swiftgram.ios: .*"
+            "endsPattern": "^app.exteragram.ios: .*"
           }
         }
       ],

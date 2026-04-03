@@ -1,4 +1,4 @@
-import SGAppGroupIdentifier
+import EGAppGroupIdentifier
 import Foundation
 import UserNotifications
 import SwiftSignalKit
@@ -524,19 +524,19 @@ private struct NotificationContent: CustomStringConvertible {
     var userInfo: [AnyHashable: Any] = [:]
     var attachments: [UNNotificationAttachment] = []
     var silent = false
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     var isEmpty: Bool
     var isMentionOrReply: Bool
     var isPinned: Bool = false
     let chatId: Int64?
-    let sgStatus: SGStatus
+    let sgStatus: EGStatus
 
     var senderPerson: INPerson?
     var senderImage: INImage?
     
     var isLockedMessage: String?
     
-    init(sgStatus: SGStatus, isLockedMessage: String?, isEmpty: Bool = false, isMentionOrReply: Bool = false, chatId: Int64? = nil) {
+    init(sgStatus: EGStatus, isLockedMessage: String?, isEmpty: Bool = false, isMentionOrReply: Bool = false, chatId: Int64? = nil) {
         self.sgStatus = sgStatus
         self.isLockedMessage = isLockedMessage
         self.isEmpty = isEmpty
@@ -603,7 +603,7 @@ private struct NotificationContent: CustomStringConvertible {
         var content = UNMutableNotificationContent()
         
         //Logger.shared.log("NotificationService", "Generating final content: \(self.description)")
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         #if DEBUG
         print("body:\(content.body) silent:\(self.silent) isMentionOrReply:\(self.isMentionOrReply) MENTION_AND_REPLY_ACTION:\(MENTION_AND_REPLY_ACTION) isPinned:\(self.isPinned) PINNED_MESSAGE_ACTION:\(PINNED_MESSAGE_ACTION)" +  " forceIsEmpty:\(self.forceIsEmpty) forceIsSilent:\(self.forceIsSilent)")
         #endif
@@ -731,7 +731,7 @@ private struct NotificationContent: CustomStringConvertible {
             }
         }
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if (self.isEmpty || self.forceIsEmpty) && LEGACY_NOTIFICATIONS_FIX {
             content.title = " "
             content.threadIdentifier = "empty-notification"
@@ -926,7 +926,7 @@ private final class NotificationServiceHandler {
             }
 
             let inAppNotificationSettings = sharedData.entries[ApplicationSpecificSharedDataKeys.inAppNotificationSettings]?.get(InAppNotificationSettings.self) ?? InAppNotificationSettings.defaultSettings
-            let sgStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(SGStatus.self) ?? SGStatus.default
+            let sgStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(EGStatus.self) ?? EGStatus.default
             
             let voiceCallSettings: VoiceCallSettings
             if let value = sharedData.entries[ApplicationSpecificSharedDataKeys.voiceCallSettings]?.get(VoiceCallSettings.self) {
@@ -1491,7 +1491,7 @@ private final class NotificationServiceHandler {
                                 let pollCompletion: (NotificationContent, Media?) -> Void = { content, customMedia in
                                     var content = content
 
-                                    // MARK: Swiftgram
+                                    // MARK: ExteraGram
                                     if let mediaAction = customMedia as? TelegramMediaAction, case .pinnedMessageUpdated = mediaAction.action {
                                         content.isPinned = true
                                     }
@@ -2601,7 +2601,7 @@ final class NotificationService: UNNotificationServiceExtension {
     private let content = Atomic<NotificationContent?>(value: nil)
     private var contentHandler: ((UNNotificationContent) -> Void)?
     private var episode: String?
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     private var emptyNotificationsRemoved: Bool = false
     private var notificationRemovalTries: Int32 = 0
     private let maxNotificationRemovalTries: Int32 = 30
@@ -2610,7 +2610,7 @@ final class NotificationService: UNNotificationServiceExtension {
         super.init()
     }
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     func removeEmptyNotificationsOnce() {
         if !LEGACY_NOTIFICATIONS_FIX {
             return
@@ -2695,7 +2695,7 @@ final class NotificationService: UNNotificationServiceExtension {
                         strongSelf.contentHandler = nil
                         
                         if let content = content.with({ $0 }) {
-                            // MARK: Swiftgram
+                            // MARK: ExteraGram
                             strongSelf.removeEmptyNotificationsOnce()
                             contentHandler(content.generate())
                             if content.isEmpty {

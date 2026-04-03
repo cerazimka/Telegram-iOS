@@ -1,5 +1,5 @@
 import Foundation
-import SGSimpleSettings
+import EGSimpleSettings
 import UIKit
 import AsyncDisplayKit
 import Postbox
@@ -1716,9 +1716,9 @@ class ChatControllerNode: ASDisplayNode, ASScrollViewDelegate {
         var dismissedAccessoryPanelNode: AccessoryPanelNode?
         var dismissedInputContextPanelNode: ChatInputContextPanelNode?
         var dismissedOverlayContextPanelNode: ChatInputContextPanelNode?
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         var inputPanelNodes = inputPanelForChatPresentationIntefaceState(self.chatPresentationInterfaceState, context: self.context, currentPanel: self.inputPanelNode, currentSecondaryPanel: self.secondaryInputPanelNode, textInputPanelNode: self.textInputPanelNode, chatControllerInteraction: self.controllerInteraction, interfaceInteraction: self.interfaceInteraction)
-        if SGSimpleSettings.shared.hideChannelBottomButton {
+        if EGSimpleSettings.shared.hideChannelBottomButton {
             // We still need the panel for messages multi-select or search. Likely can break in future.
             if self.chatPresentationInterfaceState.interfaceState.selectionState != nil || self.chatPresentationInterfaceState.search != nil {
                 self.inputPanelBackgroundNode.isHidden = false

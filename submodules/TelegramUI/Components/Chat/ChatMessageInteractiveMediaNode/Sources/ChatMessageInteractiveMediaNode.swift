@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import AsyncDisplayKit
@@ -948,7 +948,7 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
             var isSticker = false
             var maxDimensions = layoutConstants.image.maxDimensions
             var maxHeight = layoutConstants.image.maxDimensions.height
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             var imageOriginalMaxDimensions: CGSize?
             var isStory = false
             var isGift = false
@@ -972,8 +972,8 @@ public final class ChatMessageInteractiveMediaNode: ASDisplayNode, GalleryItemTr
                 }
             } else if let image = media as? TelegramMediaImage, let dimensions = largestImageRepresentation(image.representations)?.dimensions {
                 unboundSize = CGSize(width: max(10.0, floor(dimensions.cgSize.width * 0.5)), height: max(10.0, floor(dimensions.cgSize.height * 0.5)))
-                // MARK: Swiftgram
-                if let channel = message.peers[message.id.peerId] as? TelegramChannel, case .broadcast = channel.info, SGSimpleSettings.shared.wideChannelPosts {
+                // MARK: ExteraGram
+                if let channel = message.peers[message.id.peerId] as? TelegramChannel, case .broadcast = channel.info, EGSimpleSettings.shared.wideChannelPosts {
                     imageOriginalMaxDimensions = maxDimensions
                     switch sizeCalculation {
                     case let .constrained(constrainedSize):

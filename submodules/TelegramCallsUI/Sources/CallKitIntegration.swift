@@ -1,4 +1,4 @@
-import SGAppGroupIdentifier
+import EGAppGroupIdentifier
 import Foundation
 import UIKit
 import CallKit
@@ -159,8 +159,8 @@ class CallKitProviderDelegate: NSObject, CXProviderDelegate {
     }
     
     private static func providerConfiguration() -> CXProviderConfiguration {
-        // MARK: Swiftgram
-        let providerConfiguration = CXProviderConfiguration(localizedName: "Swiftgram")
+        // MARK: ExteraGram
+        let providerConfiguration = CXProviderConfiguration(localizedName: "ExteraGram")
         
         providerConfiguration.supportsVideo = true
         providerConfiguration.maximumCallsPerCallGroup = 1

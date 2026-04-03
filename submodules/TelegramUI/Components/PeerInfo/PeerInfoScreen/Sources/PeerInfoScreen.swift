@@ -1,8 +1,8 @@
-// MARK: Swiftgram
-import SGDebugUI
-import SGSimpleSettings
-import SGSettingsUI
-import SGStrings
+// MARK: ExteraGram
+import EGDebugUI
+import EGSimpleSettings
+import EGSettingsUI
+import EGStrings
 import CountrySelectionUI
 import Foundation
 import UIKit
@@ -163,8 +163,8 @@ enum PeerInfoContextSubject {
 }
 
 enum PeerInfoSettingsSection {
-    case swiftgram
-    case swiftgramPro
+    case exteragram
+    case exteragramPro
     case avatar
     case edit
     case proxy
@@ -276,7 +276,7 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
     
     private(set) var validLayout: (ContainerViewLayout, CGFloat)?
     private(set) var nearestChatParticipant: (String?, Int32?) = (nil, nil)
-    private(set) var showProfileId: Bool = SGSimpleSettings.shared.showProfileId // MARK: Swiftgram
+    private(set) var showProfileId: Bool = EGSimpleSettings.shared.showProfileId // MARK: ExteraGram
     private(set) var data: PeerInfoScreenData?
     
     var state = PeerInfoState(
@@ -360,7 +360,7 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
     }
     private var didSetReady = false
     
-    init(hidePhoneInSettings: Bool /* MARK: Swiftgram */, controller: PeerInfoScreenImpl, context: AccountContext, peerId: PeerId, avatarInitiallyExpanded: Bool, isOpenedFromChat: Bool, nearbyPeerDistance: Int32?, reactionSourceMessageId: MessageId?, callMessages: [Message], isSettings: Bool, isMyProfile: Bool, hintGroupInCommon: PeerId?, requestsContext: PeerInvitationImportersContext?, profileGiftsContext: ProfileGiftsContext?, starsContext: StarsContext?, tonContext: StarsContext?, chatLocation: ChatLocation, chatLocationContextHolder: Atomic<ChatLocationContextHolder?>, switchToGiftsTarget: PeerInfoSwitchToGiftsTarget?, switchToStoryFolder: Int64?, switchToMediaTarget: PeerInfoSwitchToMediaTarget?, initialPaneKey: PeerInfoPaneKey?, sharedMediaFromForumTopic: (EnginePeer.Id, Int64)?) {
+    init(hidePhoneInSettings: Bool /* MARK: ExteraGram */, controller: PeerInfoScreenImpl, context: AccountContext, peerId: PeerId, avatarInitiallyExpanded: Bool, isOpenedFromChat: Bool, nearbyPeerDistance: Int32?, reactionSourceMessageId: MessageId?, callMessages: [Message], isSettings: Bool, isMyProfile: Bool, hintGroupInCommon: PeerId?, requestsContext: PeerInvitationImportersContext?, profileGiftsContext: ProfileGiftsContext?, starsContext: StarsContext?, tonContext: StarsContext?, chatLocation: ChatLocation, chatLocationContextHolder: Atomic<ChatLocationContextHolder?>, switchToGiftsTarget: PeerInfoSwitchToGiftsTarget?, switchToStoryFolder: Int64?, switchToMediaTarget: PeerInfoSwitchToMediaTarget?, initialPaneKey: PeerInfoPaneKey?, sharedMediaFromForumTopic: (EnginePeer.Id, Int64)?) {
         self.controller = controller
         self.context = context
         self.peerId = peerId
@@ -2015,7 +2015,7 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
                     UIView.transition(with: strongSelf.view, duration: 0.3, options: [.transitionCrossDissolve], animations: {
                     }, completion: nil)
                 }
-                (strongSelf.controller?.parent as? TabBarController)?.updateIsTabBarHidden(SGSimpleSettings.shared.hideTabBar ? true : false, transition: .animated(duration: 0.3, curve: .linear))
+                (strongSelf.controller?.parent as? TabBarController)?.updateIsTabBarHidden(EGSimpleSettings.shared.hideTabBar ? true : false, transition: .animated(duration: 0.3, curve: .linear))
             case .select:
                 strongSelf.state = strongSelf.state.withSelectedMessageIds(Set())
                 if let (layout, navigationHeight) = strongSelf.validLayout {
@@ -2487,8 +2487,8 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
             guard let strongSelf = self else {
                 return
             }
-            // MARK: Swiftgram
-            strongSelf.showProfileId = SGSimpleSettings.shared.showProfileId
+            // MARK: ExteraGram
+            strongSelf.showProfileId = EGSimpleSettings.shared.showProfileId
             //
             strongSelf.nearestChatParticipant = nearestChatParticipant
             if data.isContact && forceIsContact {
@@ -4167,7 +4167,7 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
         }
     }
         
-    public func openParticipantsSection(section: PeerInfoParticipantsSection) { // MARK: Swiftgram
+    public func openParticipantsSection(section: PeerInfoParticipantsSection) { // MARK: ExteraGram
         guard let data = self.data, let peer = data.peer else {
             return
         }
@@ -5108,7 +5108,7 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
         controller.dismissAllTooltips()
         
         if self.isSettings {
-            (self.controller?.parent as? TabBarController)?.updateIsTabBarHidden(SGSimpleSettings.shared.hideTabBar ? true : false, transition: .animated(duration: 0.4, curve: .spring))
+            (self.controller?.parent as? TabBarController)?.updateIsTabBarHidden(EGSimpleSettings.shared.hideTabBar ? true : false, transition: .animated(duration: 0.4, curve: .spring))
             controller.updateTabBarSearchState(ViewController.TabBarSearchState(isActive: false), transition: .animated(duration: 0.4, curve: .spring))
         }
         
@@ -5841,7 +5841,7 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
             } else {
                 if self.isSettings {
                     leftNavigationButtons.append(PeerInfoHeaderNavigationButtonSpec(key: .qrCode, isForExpandedView: false))
-                    if SGSimpleSettings.shared.hideTabBar { leftNavigationButtons.append(PeerInfoHeaderNavigationButtonSpec(key: .back, isForExpandedView: false)) }
+                    if EGSimpleSettings.shared.hideTabBar { leftNavigationButtons.append(PeerInfoHeaderNavigationButtonSpec(key: .back, isForExpandedView: false)) }
                     rightNavigationButtons.append(PeerInfoHeaderNavigationButtonSpec(key: .edit, isForExpandedView: false))
                 } else if self.isMyProfile {
                     rightNavigationButtons.append(PeerInfoHeaderNavigationButtonSpec(key: .edit, isForExpandedView: false))
@@ -6398,7 +6398,7 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
     private var validLayout: (layout: ContainerViewLayout, navigationHeight: CGFloat)?
 
     public init(
-        hidePhoneInSettings: Bool = SGSimpleSettings.defaultValues[SGSimpleSettings.Keys.hidePhoneInSettings.rawValue] as! Bool,
+        hidePhoneInSettings: Bool = EGSimpleSettings.defaultValues[EGSimpleSettings.Keys.hidePhoneInSettings.rawValue] as! Bool,
         context: AccountContext,
         updatedPresentationData: (initial: PresentationData, signal: Signal<PresentationData, NoError>)?,
         peerId: PeerId,
@@ -7076,9 +7076,9 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
         
         var items: [ContextMenuItem] = []
 
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         #if DEBUG
-        items.append(.action(ContextMenuActionItem(text: "Swiftgram Debug", icon: { theme in
+        items.append(.action(ContextMenuActionItem(text: "ExteraGram Debug", icon: { theme in
             return generateTintedImage(image: nil, color: theme.contextMenu.primaryColor)
         }, action: { [weak self] _, f in
             guard let self = self else {
@@ -7478,7 +7478,7 @@ struct ClearPeerHistory {
 
 
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 extension PeerInfoScreenImpl {
 
     public func tabBarItemContextActionRawUIView(sourceView: UIView, gesture: ContextGesture?) {
@@ -7490,9 +7490,9 @@ extension PeerInfoScreenImpl {
         
         var items: [ContextMenuItem] = []
 
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         #if DEBUG
-        items.append(.action(ContextMenuActionItem(text: "Swiftgram Debug", icon: { theme in
+        items.append(.action(ContextMenuActionItem(text: "ExteraGram Debug", icon: { theme in
             return generateTintedImage(image: nil, color: theme.contextMenu.primaryColor)
         }, action: { [weak self] _, f in
             guard let self = self else {

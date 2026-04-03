@@ -1,7 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 sgsrc = [
-    "//Swiftgram/SGSwiftSignalKit:SGSwiftSignalKit"
+    "//ExteraGram/EGSwiftSignalKit:EGSwiftSignalKit"
 ]
 
 swift_library(

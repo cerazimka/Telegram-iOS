@@ -1,6 +1,6 @@
 import Foundation
 import Postbox
-import SGSimpleSettings
+import EGSimpleSettings
 
 public let anonymousSavedMessagesId: Int64 = 2666000
 
@@ -29,10 +29,10 @@ public extension Peer {
             break
         }
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         let chatId = self.id.id._internalGetInt64Value()
         if contentSettings.appConfiguration.sgWebSettings.global.forceReasons.contains(chatId) {
-            return "Unavailable in Swiftgram due to App Store Guidelines"
+            return "Unavailable in ExteraGram due to App Store Guidelines"
         } else if contentSettings.appConfiguration.sgWebSettings.global.unforceReasons.contains(chatId) {
             return nil
         }
@@ -310,7 +310,7 @@ public extension Peer {
     }
     
     var nameColor: PeerColor? {
-        if SGSimpleSettings.shared.accountColorsSaturation == 0 { // MARK: Swiftgram
+        if EGSimpleSettings.shared.accountColorsSaturation == 0 { // MARK: ExteraGram
             return nil
         }
         switch self {

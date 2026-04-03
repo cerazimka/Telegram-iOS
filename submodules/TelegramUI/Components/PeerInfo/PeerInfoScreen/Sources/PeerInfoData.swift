@@ -1,5 +1,5 @@
-import SGRegDateScheme
-import SGRegDate
+import EGRegDateScheme
+import EGRegDate
 import Foundation
 import UIKit
 import Postbox
@@ -977,7 +977,7 @@ func peerInfoScreenSettingsData(context: AccountContext, peerId: EnginePeer.Id, 
         
         var enableQRLogin = false
         let appConfiguration = accountPreferences.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self)
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if let appConfiguration, appConfiguration.sgWebSettings.global.qrLogin {
             enableQRLogin = true
         }
@@ -2160,7 +2160,7 @@ func peerInfoScreenData(
                 
                 let appConfiguration: AppConfiguration = preferencesView.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self) ?? .defaultValue
               
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 var channelCreationTimestamp = firstMessage?.timestamp
                 if groupId.namespace == Namespaces.Peer.CloudChannel, let firstMessage {
                     for media in firstMessage.media {
@@ -2491,7 +2491,7 @@ func peerInfoHeaderButtons(peer: Peer?, cachedData: CachedPeerData?, isOpenedFro
                 result.append(.message)
             }
             result.append(.mute)
-            /* /* MARK: Swiftgram */ if case let .broadcast(info) = channel.info, info.flags.contains(.hasMonoforum), !channel.hasPermission(.manageDirect) {
+            /* /* MARK: ExteraGram */ if case let .broadcast(info) = channel.info, info.flags.contains(.hasMonoforum), !channel.hasPermission(.manageDirect) {
             } else*/ if hasDiscussion {
                 result.append(.discussion)
             }
@@ -2664,7 +2664,7 @@ private func isPremiumRequiredForStoryPosting(context: AccountContext) -> Signal
 }
 
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 private func getFirstMessage(context: AccountContext, peerId: PeerId) -> Signal<Message?, NoError> {
     return context.engine.messages.getMessagesLoadIfNecessary([MessageId(peerId: peerId, namespace: Namespaces.Message.Cloud, id: 1)])
     |> `catch` { _ in

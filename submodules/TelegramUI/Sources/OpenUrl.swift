@@ -1,8 +1,8 @@
-import SGLogging
-import SGAPIWebSettings
-import SGConfig
-import SGSettingsUI
-import SGDebugUI
+import EGLogging
+import EGAPIWebSettings
+import EGConfig
+import EGSettingsUI
+import EGDebugUI
 import SFSafariViewControllerPlus
 import UndoUI
 //
@@ -312,20 +312,20 @@ private func handleInternetUrl(
                             break
                         }
                     }
-                    if settings.defaultWebBrowser == "inApp" { isExceptedDomain = false } // MARK: Swiftgram
+                    if settings.defaultWebBrowser == "inApp" { isExceptedDomain = false } // MARK: ExteraGram
 
                     if (settings.defaultWebBrowser == nil && !isExceptedDomain) || isTonSite {
                         let controller = BrowserScreen(context: context, subject: .webPage(url: parsedUrl.absoluteString))
                         navigationController?.pushViewController(controller)
                     } else {
                         if let window = navigationController?.view.window, !isExceptedDomain {
-                            let controller = SFSafariViewControllerPlusDidFinish(url: parsedUrl) // MARK: Swiftgram
+                            let controller = SFSafariViewControllerPlusDidFinish(url: parsedUrl) // MARK: ExteraGram
                             controller.preferredBarTintColor = presentationData.theme.rootController.navigationBar.opaqueBackgroundColor
                             controller.preferredControlTintColor = presentationData.theme.rootController.navigationBar.accentTextColor
-                            // MARK: Swiftgram
+                            // MARK: ExteraGram
                             if parsedUrl.host?.lowercased() == SG_API_WEBAPP_URL_PARSED.host?.lowercased() {
                                 controller.onDidFinish = {
-                                    SGLogger.shared.log("SafariController", "Closed webapp")
+                                    EGLogger.shared.log("SafariController", "Closed webapp")
                                     updateSGWebSettingsInteractivelly(context: context)
                                 }
                             }
@@ -936,7 +936,7 @@ func openExternalUrlImpl(context: AccountContext, urlContext: OpenURLContext, ur
                                         action: { _ in return false }
                                     ),
                                 nil)
-                                context.sharedContext.SGIAP?.restorePurchases {}
+                                context.sharedContext.EGIAP?.restorePurchases {}
                             default:
                                 break
                         }

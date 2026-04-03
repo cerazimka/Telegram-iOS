@@ -633,7 +633,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                     controller?.replace(with: c)
                 }
                 pushControllerImpl?(controller)
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             } else if icon.isSGPro && context.sharedContext.immediateSGStatus.status < 2 {
                 if let payWallController = context.sharedContext.makeSGPayWallController(context: context) {
                     presentControllerImpl?(payWallController, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
@@ -1108,7 +1108,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             ApplicationSpecificSharedDataKeys.chatSettings,
             ApplicationSpecificSharedDataKeys.mediaDisplaySettings,
             SharedDataKeys.chatThemes,
-            ApplicationSpecificSharedDataKeys.sgStatus // MARK: Swiftgram
+            ApplicationSpecificSharedDataKeys.sgStatus // MARK: ExteraGram
         ]),
         cloudThemes.get(),
         availableAppIcons,
@@ -1123,8 +1123,8 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
         let chatSettings = sharedData.entries[ApplicationSpecificSharedDataKeys.chatSettings]?.get(ChatSettings.self) ?? ChatSettings.defaultSettings
         let mediaSettings = sharedData.entries[ApplicationSpecificSharedDataKeys.mediaDisplaySettings]?.get(MediaDisplaySettings.self) ?? MediaDisplaySettings.defaultSettings
         
-        // MARK: Swiftgram
-        let sgStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(SGStatus.self) ?? SGStatus.default
+        // MARK: ExteraGram
+        let sgStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(EGStatus.self) ?? EGStatus.default
         let isPremium = sgStatus.status > 1
         
         let themeReference: PresentationThemeReference

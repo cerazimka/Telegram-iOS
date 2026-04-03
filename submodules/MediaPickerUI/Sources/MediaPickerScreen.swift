@@ -1,4 +1,4 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import UIKit
 import Display
@@ -665,8 +665,8 @@ public final class MediaPickerScreenImpl: ViewController, MediaPickerScreen, Att
                 useModernCamera = true
             }
             
-            if useLegacyCamera && !SGSimpleSettings.shared.disableGalleryCamera {
-                let enableAnimations = self.controller?.context.sharedContext.energyUsageSettings.fullTranslucency ?? true && !SGSimpleSettings.shared.disableGalleryCameraPreview
+            if useLegacyCamera && !EGSimpleSettings.shared.disableGalleryCamera {
+                let enableAnimations = self.controller?.context.sharedContext.energyUsageSettings.fullTranslucency ?? true && !EGSimpleSettings.shared.disableGalleryCameraPreview
   
                 let cameraView = TGAttachmentCameraView(forSelfPortrait: false, videoModeByDefault: controller.bannedSendPhotos != nil && controller.bannedSendVideos == nil)!
                 cameraView.clipsToBounds = true
@@ -689,7 +689,7 @@ public final class MediaPickerScreenImpl: ViewController, MediaPickerScreen, Att
                 
                 self.gridNode.scrollView.addSubview(cameraView)
                 self.gridNode.addSubnode(self.cameraActivateAreaNode)
-            } else if useModernCamera, !Camera.isIpad, !SGSimpleSettings.shared.disableGalleryCamera {
+            } else if useModernCamera, !Camera.isIpad, !EGSimpleSettings.shared.disableGalleryCamera {
                 #if !targetEnvironment(simulator)
                 var cameraPosition: Camera.Position = .back
                 if case .assets(nil, .createAvatar) = controller.subject {
@@ -844,7 +844,7 @@ public final class MediaPickerScreenImpl: ViewController, MediaPickerScreen, Att
             let isCameraActive = !self.isSuspended && !self.hasGallery && self.isCameraPreviewVisible
             if let cameraView = self.cameraView {
                 if isCameraActive {
-                    if !SGSimpleSettings.shared.disableGalleryCameraPreview {
+                    if !EGSimpleSettings.shared.disableGalleryCameraPreview {
                         cameraView.resumePreview()
                     }
                 } else {
@@ -852,7 +852,7 @@ public final class MediaPickerScreenImpl: ViewController, MediaPickerScreen, Att
                 }
             } else if let camera = self.modernCamera, let cameraView = self.modernCameraView {
                 if isCameraActive {
-                    if !SGSimpleSettings.shared.disableGalleryCameraPreview {
+                    if !EGSimpleSettings.shared.disableGalleryCameraPreview {
                         cameraView.isEnabled = true
                         camera.startCapture()
                     }

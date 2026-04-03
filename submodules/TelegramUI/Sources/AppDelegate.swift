@@ -1,16 +1,16 @@
-// MARK: Swiftgram
+// MARK: ExteraGram
 import StoreKit
-import SGIAP
-import SGAPI
-import SGDeviceToken
-import SGAPIToken
+import EGIAP
+import EGAPI
+import EGDeviceToken
+import EGAPIToken
 
-import SGActionRequestHandlerSanitizer
-import SGGHSettings
-import SGAPIWebSettings
-import SGLogging
-import SGStrings
-import SGSimpleSettings
+import EGActionRequestHandlerSanitizer
+import EGGHSettings
+import EGAPIWebSettings
+import EGLogging
+import EGStrings
+import EGSimpleSettings
 import UIKit
 import SwiftSignalKit
 import Display
@@ -672,7 +672,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             rootPath = rootPathForBasePath(appGroupUrl.path)
         }
         if !isUITest {
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             if UserDefaults.standard.bool(forKey: "sg_db_hard_reset") {
                 self.window?.makeKeyAndVisible()
                 sgHardReset(dataPath: rootPath, present: self.mainWindow?.presentNative)
@@ -974,28 +974,28 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 icons.append(PresentationAppIcon(name: "PremiumBlack", imageName: "PremiumBlack", isPremium: true))
                 
                 
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 icons = [
-                    PresentationAppIcon(name: "SGDefault", imageName: "SGDefault", isDefault: true),
-                    PresentationAppIcon(name: "SGBlack", imageName: "SGBlack"),
-                    PresentationAppIcon(name: "SGLegacy", imageName: "SGLegacy"),
-                    PresentationAppIcon(name: "SGInverted", imageName: "SGInverted"),
-                    PresentationAppIcon(name: "SGWhite", imageName: "SGWhite"),
-                    PresentationAppIcon(name: "SGNight", imageName: "SGNight"),
-                    PresentationAppIcon(name: "SGSky", imageName: "SGSky"),
-                    PresentationAppIcon(name: "SGTitanium", imageName: "SGTitanium"),
-                    PresentationAppIcon(isSGPro: true, name: "SGPro", imageName: "SGPro"),
-                    PresentationAppIcon(isSGPro: true, name: "SGDay", imageName: "SGDay"),
-                    PresentationAppIcon(isSGPro: true, name: "SGGold", imageName: "SGGold"),
-                    SGSimpleSettings.shared.duckyAppIconAvailable ? PresentationAppIcon(isSGPro: true, name: "SGDucky", imageName: "SGDucky") : PresentationAppIcon(name: "", imageName: ""), // Empty
-                    PresentationAppIcon(name: "SGNeon", imageName: "SGNeon"),
-                    PresentationAppIcon(name: "SGNeonBlue", imageName: "SGNeonBlue"),
-                    PresentationAppIcon(name: "SGGlass", imageName: "SGGlass"),
-                    PresentationAppIcon(name: "SGSparkling", imageName: "SGSparkling"),
+                    PresentationAppIcon(name: "EGDefault", imageName: "EGDefault", isDefault: true),
+                    PresentationAppIcon(name: "EGBlack", imageName: "EGBlack"),
+                    PresentationAppIcon(name: "EGLegacy", imageName: "EGLegacy"),
+                    PresentationAppIcon(name: "EGInverted", imageName: "EGInverted"),
+                    PresentationAppIcon(name: "EGWhite", imageName: "EGWhite"),
+                    PresentationAppIcon(name: "EGNight", imageName: "EGNight"),
+                    PresentationAppIcon(name: "EGSky", imageName: "EGSky"),
+                    PresentationAppIcon(name: "EGTitanium", imageName: "EGTitanium"),
+                    PresentationAppIcon(isSGPro: true, name: "EGPro", imageName: "EGPro"),
+                    PresentationAppIcon(isSGPro: true, name: "EGDay", imageName: "EGDay"),
+                    PresentationAppIcon(isSGPro: true, name: "EGGold", imageName: "EGGold"),
+                    EGSimpleSettings.shared.duckyAppIconAvailable ? PresentationAppIcon(isSGPro: true, name: "EGDucky", imageName: "EGDucky") : PresentationAppIcon(name: "", imageName: ""), // Empty
+                    PresentationAppIcon(name: "EGNeon", imageName: "EGNeon"),
+                    PresentationAppIcon(name: "EGNeonBlue", imageName: "EGNeonBlue"),
+                    PresentationAppIcon(name: "EGGlass", imageName: "EGGlass"),
+                    PresentationAppIcon(name: "EGSparkling", imageName: "EGSparkling"),
                 ]
 
                 if Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt" {
-                    icons.append(PresentationAppIcon(name: "SGBeta", imageName: "SGBeta"))
+                    icons.append(PresentationAppIcon(name: "EGBeta", imageName: "EGBeta"))
                 }
                 
                 return icons
@@ -1235,7 +1235,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 application.endBackgroundTask(id)
             }, backgroundTimeRemaining: { application.backgroundTimeRemaining }, acquireIdleExtension: {
                 return applicationBindings.pushIdleTimerExtension()
-            }, activeAccounts: sharedContext.activeAccountContexts |> map { ($0.0?.account, $0.1.map { ($0.0, $0.1.account) }) }, liveLocationPolling: liveLocationPolling, watchTasks: watchTasks /* MARK: Swiftgram */, inForeground: applicationBindings.applicationInForeground, hasActiveAudioSession: self.hasActiveAudioSession.get(), notificationManager: notificationManager, mediaManager: sharedContext.mediaManager, callManager: sharedContext.callManager, accountUserInterfaceInUse: { id in
+            }, activeAccounts: sharedContext.activeAccountContexts |> map { ($0.0?.account, $0.1.map { ($0.0, $0.1.account) }) }, liveLocationPolling: liveLocationPolling, watchTasks: watchTasks /* MARK: ExteraGram */, inForeground: applicationBindings.applicationInForeground, hasActiveAudioSession: self.hasActiveAudioSession.get(), notificationManager: notificationManager, mediaManager: sharedContext.mediaManager, callManager: sharedContext.callManager, accountUserInterfaceInUse: { id in
                 return sharedContext.accountUserInterfaceInUse(id)
             }, presentationData: {
                 return sharedContext.currentPresentationData.with({ $0 })
@@ -1372,7 +1372,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             var network: Network?
             if let context = context {
                 network = context.context.account.network
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 sgDBResetIfNeeded(databasePath: context.context.sharedContext.accountManager.basePath + "/db", present: self.mainWindow?.presentNative)
             }
             
@@ -1420,16 +1420,16 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     
                     self.resetIntentsIfNeeded(context: context.context)
                     
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     updateSGWebSettingsInteractivelly(context: context.context)
                     updateSGGHSettingsInteractivelly(context: context.context)
                     let _ = (context.context.sharedContext.presentationData.start(next: { presentationData in
-                        SGLocalizationManager.shared.downloadLocale(presentationData.strings.baseLanguageCode)
+                        EGLocalizationManager.shared.downloadLocale(presentationData.strings.baseLanguageCode)
                     }))
                     if #available(iOS 13.0, *) {
                         let _ = Task {
                             let primaryContext = await self.getPrimaryContext(anyContext: context.context)
-                            SGLogger.shared.log("SGIAP", "Verifying Status \(primaryContext.sharedContext.immediateSGStatus.status) for: \(primaryContext.account.peerId.id._internalGetInt64Value())")
+                            EGLogger.shared.log("EGIAP", "Verifying Status \(primaryContext.sharedContext.immediateSGStatus.status) for: \(primaryContext.account.peerId.id._internalGetInt64Value())")
                             let _ = await self.fetchSGStatus(primaryContext: primaryContext)
                         }
                     }
@@ -1505,7 +1505,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }))
         
         
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         if #available(iOS 13.0, *) {
             self.setupIAP()
         }
@@ -2090,7 +2090,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
              |> take(1)
              |> deliverOnMainQueue).start(next: { activeAccounts in
                 for (_, context, _) in activeAccounts.accounts {
-                    // MARK: Swiftgram
+                    // MARK: ExteraGram
                     if !sgTasksLaunched {
                         updateSGWebSettingsInteractivelly(context: context)
                         updateSGGHSettingsInteractivelly(context: context)
@@ -3431,20 +3431,20 @@ final class UpdateSettings: Codable, Equatable {
     }
 }
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 @available(iOS 13.0, *)
 extension AppDelegate {
 
     func setupIAP() {
-        NotificationCenter.default.addObserver(forName: .SGIAPHelperPurchaseNotification, object: nil, queue: nil) { [weak self] notification in
-            SGLogger.shared.log("SGIAP", "Got SGIAPHelperPurchaseNotification")
+        NotificationCenter.default.addObserver(forName: .EGIAPHelperPurchaseNotification, object: nil, queue: nil) { [weak self] notification in
+            EGLogger.shared.log("EGIAP", "Got EGIAPHelperPurchaseNotification")
             guard let strongSelf = self else { return }
             if let transactions = notification.object as? [SKPaymentTransaction] {
                 let _ = (strongSelf.context.get()
                 |> take(1)
                 |> deliverOnMainQueue).start(next: { [weak strongSelf] context in
                     guard let veryStrongSelf = strongSelf else {
-                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        EGLogger.shared.log("EGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
                         let defaultPaymentQueue = SKPaymentQueue.default()
                         for transaction in transactions {
                             defaultPaymentQueue.finishTransaction(transaction)
@@ -3452,21 +3452,21 @@ extension AppDelegate {
                         return
                     }
                     guard let context = context else {
-                        SGLogger.shared.log("SGIAP", "Empty app context (how?)")
+                        EGLogger.shared.log("EGIAP", "Empty app context (how?)")
                         
-                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        EGLogger.shared.log("EGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
                         let defaultPaymentQueue = SKPaymentQueue.default()
                         for transaction in transactions {
                             defaultPaymentQueue.finishTransaction(transaction)
                         }
                         return
                     }
-                    SGLogger.shared.log("SGIAP", "Got context for SGIAPHelperPurchaseNotification")
+                    EGLogger.shared.log("EGIAP", "Got context for EGIAPHelperPurchaseNotification")
                     let _ = Task {
                         await veryStrongSelf.sendReceiptForVerification(primaryContext: context.context)
                         await veryStrongSelf.fetchSGStatus(primaryContext: context.context)
                         
-                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        EGLogger.shared.log("EGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
                         let defaultPaymentQueue = SKPaymentQueue.default()
                         for transaction in transactions {
                             defaultPaymentQueue.finishTransaction(transaction)
@@ -3474,28 +3474,28 @@ extension AppDelegate {
                     }
                 })
             } else {
-                SGLogger.shared.log("SGIAP", "Wrong object in SGIAPHelperPurchaseNotification")
+                EGLogger.shared.log("EGIAP", "Wrong object in EGIAPHelperPurchaseNotification")
                 #if DEBUG
-                preconditionFailure("Wrong object in SGIAPHelperPurchaseNotification")
+                preconditionFailure("Wrong object in EGIAPHelperPurchaseNotification")
                 #endif
             }
         }
     }
     
     func getPrimaryContext(anyContext context: AccountContext, fallbackToCurrent: Bool = false) async -> AccountContext {
-        var primaryUserId: Int64 = Int64(SGSimpleSettings.shared.primaryUserId) ?? 0
+        var primaryUserId: Int64 = Int64(EGSimpleSettings.shared.primaryUserId) ?? 0
         if primaryUserId == 0 {
             primaryUserId = context.account.peerId.id._internalGetInt64Value()
         }
 
         var primaryContext = try? await getContextForUserId(context: context, userId: primaryUserId).awaitable()
         if let primaryContext = primaryContext {
-            SGLogger.shared.log("SGIAP", "Got primary context for user id: \(primaryContext.account.peerId.id._internalGetInt64Value())")
+            EGLogger.shared.log("EGIAP", "Got primary context for user id: \(primaryContext.account.peerId.id._internalGetInt64Value())")
             return primaryContext
         } else {
             primaryContext = context
             let newPrimaryUserId = context.account.peerId.id._internalGetInt64Value()
-            SGLogger.shared.log("SGIAP", "Primary context for user id \(primaryUserId) is nil! Falling back to current context with user id: \(newPrimaryUserId)")
+            EGLogger.shared.log("EGIAP", "Primary context for user id \(primaryUserId) is nil! Falling back to current context with user id: \(newPrimaryUserId)")
             return context
         }
     }
@@ -3515,7 +3515,7 @@ extension AppDelegate {
             
             (deviceToken, apiToken) = try await (deviceTokenTask, apiTokenTask)
         } catch {
-            SGLogger.shared.log("SGIAP", "Error getting device token or API token: \(error)")
+            EGLogger.shared.log("EGIAP", "Error getting device token or API token: \(error)")
             return
         }
 
@@ -3527,13 +3527,13 @@ extension AppDelegate {
             } catch let error as SignalCompleted {
                 let _ = error
             } catch {
-                SGLogger.shared.log("SGIAP", "Error: \(error)")
+                EGLogger.shared.log("EGIAP", "Error: \(error)")
             }
         }
     }
     
     func fetchSGStatus(primaryContext: AccountContext) async {
-        // TODO(swiftgram): Stuck on getting shouldKeepConnection
+        // TODO(exteragram): Stuck on getting shouldKeepConnection
         // Perhaps, we can drop on some timeout?
 //        let currentShouldKeepConnection = await (primaryContext.account.network.shouldKeepConnection.get() |> take(1) |> deliverOnMainQueue).awaitable()
         guard !primaryContext.account.testingEnvironment else {
@@ -3541,27 +3541,27 @@ extension AppDelegate {
         }
         let currentShouldKeepConnection = false
         let userId = primaryContext.account.peerId.id._internalGetInt64Value()
-//        SGLogger.shared.log("SGIAP", "User id \(userId) currently keeps connection: \(currentShouldKeepConnection)")
+//        EGLogger.shared.log("EGIAP", "User id \(userId) currently keeps connection: \(currentShouldKeepConnection)")
         if !currentShouldKeepConnection {
-            SGLogger.shared.log("SGIAP", "Asking user id \(userId) to keep connection: true")
+            EGLogger.shared.log("EGIAP", "Asking user id \(userId) to keep connection: true")
             primaryContext.account.network.shouldKeepConnection.set(.single(true))
         }
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         let sgIqtpQueryString = makeIqtpQuery("s")
         //
         let iqtpResponse = try? await sgIqtpQuery(engine: primaryContext.engine, query: sgIqtpQueryString).awaitable()
         guard let iqtpResponse = iqtpResponse else {
-            SGLogger.shared.log("SGIAP", "IQTP response is nil!")
+            EGLogger.shared.log("EGIAP", "IQTP response is nil!")
 //            if !currentShouldKeepConnection {
-//                SGLogger.shared.log("SGIAP", "Setting user id \(userId) keep connection back to false")
+//                EGLogger.shared.log("EGIAP", "Setting user id \(userId) keep connection back to false")
 //                primaryContext.account.network.shouldKeepConnection.set(.single(false))
 //            }
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
+                NotificationCenter.default.post(name: .EGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
             }
             return
         }
-        SGLogger.shared.log("SGIAP", "Got IQTP response: \(iqtpResponse)")
+        EGLogger.shared.log("EGIAP", "Got IQTP response: \(iqtpResponse)")
         let _ = try? await updateSGStatusInteractively(accountManager: primaryContext.sharedContext.accountManager, { value in
             var value = value
 
@@ -3569,31 +3569,31 @@ extension AppDelegate {
             if let status = Int64(iqtpResponse.value) {
                 newStatus = status
             } else {
-                SGLogger.shared.log("SGIAP", "Can't parse IQTP response into status!")
+                EGLogger.shared.log("EGIAP", "Can't parse IQTP response into status!")
                 newStatus = value.status // unparseable
             }
             
             let userId = primaryContext.account.peerId.id._internalGetInt64Value()
             if value.status != newStatus {
-                SGLogger.shared.log("SGIAP", "Updating \(userId) status \(value.status) -> \(newStatus)")
+                EGLogger.shared.log("EGIAP", "Updating \(userId) status \(value.status) -> \(newStatus)")
                 if newStatus > 1 {
                     let stringUserId = String(userId)
-                    if SGSimpleSettings.shared.primaryUserId != stringUserId {
-                        SGLogger.shared.log("SGIAP", "Setting new primary user id: \(userId)")
-                        SGSimpleSettings.shared.primaryUserId = stringUserId
+                    if EGSimpleSettings.shared.primaryUserId != stringUserId {
+                        EGLogger.shared.log("EGIAP", "Setting new primary user id: \(userId)")
+                        EGSimpleSettings.shared.primaryUserId = stringUserId
                     }
                 } else {
-                    SGLogger.shared.log("SGIAP", "Status expired")
+                    EGLogger.shared.log("EGIAP", "Status expired")
                     DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.Expired"])
+                        NotificationCenter.default.post(name: .EGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.Expired"])
                     }
                 }
                 value.status = newStatus
             } else {
-                SGLogger.shared.log("SGIAP", "Status \(value.status) for \(userId) hasn't changed")
+                EGLogger.shared.log("EGIAP", "Status \(value.status) for \(userId) hasn't changed")
                 if newStatus < 2 {
                     DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
+                        NotificationCenter.default.post(name: .EGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
                     }
                 }
             }
@@ -3601,7 +3601,7 @@ extension AppDelegate {
         }).awaitable()
 
 //        if !currentShouldKeepConnection {
-//            SGLogger.shared.log("SGIAP", "Setting user id \(userId) keep connection back to false")
+//            EGLogger.shared.log("EGIAP", "Setting user id \(userId) keep connection back to false")
 //            primaryContext.account.network.shouldKeepConnection.set(.single(false))
 //        }
     }

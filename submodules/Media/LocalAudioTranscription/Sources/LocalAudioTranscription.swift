@@ -1,4 +1,4 @@
-import SGLogging
+import EGLogging
 import Foundation
 import SwiftSignalKit
 import Speech
@@ -21,15 +21,15 @@ private func transcribeAudio(path: String, locale: String) -> Signal<Transcripti
                 Queue.mainQueue().async {
                     switch status {
                     case .notDetermined:
-                        SGLogger.shared.log("LocalTranscription", "Authorization status: notDetermined")
+                        EGLogger.shared.log("LocalTranscription", "Authorization status: notDetermined")
                         subscriber.putNext(nil)
                         subscriber.putCompletion()
                     case .restricted:
-                        SGLogger.shared.log("LocalTranscription", "Authorization status: restricted")
+                        EGLogger.shared.log("LocalTranscription", "Authorization status: restricted")
                         subscriber.putNext(nil)
                         subscriber.putCompletion()
                     case .denied:
-                        SGLogger.shared.log("LocalTranscription", "Authorization status: denied")
+                        EGLogger.shared.log("LocalTranscription", "Authorization status: denied")
                         subscriber.putNext(nil)
                         subscriber.putCompletion()
                     case .authorized:
@@ -38,7 +38,7 @@ private func transcribeAudio(path: String, locale: String) -> Signal<Transcripti
                             speechRecognizer = sharedRecognizer
                         } else {
                             guard let speechRecognizerValue = SFSpeechRecognizer(locale: Locale(identifier: locale)), speechRecognizerValue.isAvailable else {
-                                SGLogger.shared.log("LocalTranscription", "Recognizer not available for locale: \(locale)")
+                                EGLogger.shared.log("LocalTranscription", "Recognizer not available for locale: \(locale)")
                                 subscriber.putNext(nil)
                                 subscriber.putCompletion()
                                 
@@ -79,11 +79,11 @@ private func transcribeAudio(path: String, locale: String) -> Signal<Transcripti
                                 subscriber.putNext(TranscriptionResult(text: result.bestTranscription.formattedString, confidence: confidence, isFinal: result.isFinal, locale: locale))
                                 
                                 if result.isFinal {
-                                    SGLogger.shared.log("LocalTranscription", "Transcription finalized. locale: \(locale), segments: \(segmentsCount), confidence: \(confidence)")
+                                    EGLogger.shared.log("LocalTranscription", "Transcription finalized. locale: \(locale), segments: \(segmentsCount), confidence: \(confidence)")
                                     subscriber.putCompletion()
                                 }
                             } else {
-                                SGLogger.shared.log("LocalTranscription", "Transcription failed. locale: \(locale), error: \(String(describing: error))")
+                                EGLogger.shared.log("LocalTranscription", "Transcription failed. locale: \(locale), error: \(String(describing: error))")
                                 
                                 subscriber.putNext(nil)
                                 subscriber.putCompletion()
@@ -94,7 +94,7 @@ private func transcribeAudio(path: String, locale: String) -> Signal<Transcripti
                             task.cancel()
                         })
                     @unknown default:
-                        SGLogger.shared.log("LocalTranscription", "Unknown authorization status")
+                        EGLogger.shared.log("LocalTranscription", "Unknown authorization status")
                         subscriber.putNext(nil)
                         subscriber.putCompletion()
                     }
@@ -163,7 +163,7 @@ public func transcribeAudio(path: String, appLocale: String) -> Signal<LocallyTr
         
         // Find the locale with the highest accumulated confidence
         guard let bestLocale = accumulatedTranscription.max(by: { $0.value.confidence < $1.value.confidence }) else {
-            SGLogger.shared.log("LocalTranscription", "No valid transcription results found")
+            EGLogger.shared.log("LocalTranscription", "No valid transcription results found")
             return nil
         }
         

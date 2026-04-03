@@ -1,5 +1,5 @@
-// MARK: Swiftgram
-import SGSimpleSettings
+// MARK: ExteraGram
+import EGSimpleSettings
 
 import Foundation
 import Postbox
@@ -507,7 +507,7 @@ func initializedNetwork(accountId: AccountRecordId, arguments: NetworkInitializa
             }
             
             let useTempAuthKeys: Bool = true
-            let forceLocalDNS: Bool = SGSimpleSettings.shared.localDNSForProxyHost
+            let forceLocalDNS: Bool = EGSimpleSettings.shared.localDNSForProxyHost
             let context = MTContext(serialization: serialization, encryptionProvider: arguments.encryptionProvider, apiEnvironment: apiEnvironment, isTestingEnvironment: testingEnvironment, useTempAuthKeys: useTempAuthKeys, forceLocalDNS: forceLocalDNS)
             
             if let networkSettings = networkSettings {

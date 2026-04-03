@@ -1159,7 +1159,7 @@ public struct PresentationResourcesChat {
             return generateTintedImage(image: UIImage(bundleImageName: "Chat/Message/SideCloseIcon"), color: bubbleVariableColor(variableColor: theme.chat.message.shareButtonForegroundColor, wallpaper: wallpaper))
         })
     }
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     public static func chatTranslateShareButtonIcon(_ theme: PresentationTheme, wallpaper: TelegramWallpaper, undoTranslate: Bool = false) -> UIImage? {
         return theme.image(undoTranslate ? PresentationResourceKey.chatUndoTranslateButtonIcon.rawValue : PresentationResourceKey.chatTranslateButtonIcon.rawValue, { _ in
             return generateTintedImage(image: UIImage(bundleImageName: undoTranslate ? "Media Editor/Undo" : "Chat/Context Menu/Translate"), color: bubbleVariableColor(variableColor: theme.chat.message.shareButtonForegroundColor, wallpaper: wallpaper), customSize: CGSize(width: 18.0, height: 18.0))

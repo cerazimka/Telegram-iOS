@@ -17,7 +17,7 @@ load(
     "ios_test_runner",
 )
 
-# MARK: Swiftgram
+# MARK: ExteraGram
 load("@build_bazel_rules_apple//apple:watchos.bzl",
     "watchos_application",
     "watchos_extension",
@@ -147,14 +147,14 @@ genrule(
         "GeneratedPresentationStrings/Sources/PresentationStrings.m",
         "GeneratedPresentationStrings/Resources/PresentationStrings.data",
     ],
-    # MARK: Swiftgram
+    # MARK: ExteraGram
     visibility = [
         "//visibility:public",
     ],
 )
 
 minimum_os_version = "13.0"
-minimum_watchos_version="7.0" # MARK: Swiftgram
+minimum_watchos_version="7.0" # MARK: ExteraGram
 
 notificationServiceExtensionVersion = "v1"
 
@@ -263,20 +263,20 @@ filegroup(
     name = "AppStringResources",
     srcs = [
         "Telegram-iOS/en.lproj/Localizable.strings",
-        "//Swiftgram/SGStrings:SGLocalizableStrings",
+        "//ExteraGram/EGStrings:EGLocalizableStrings",
     ] + [
         "{}.lproj/Localizable.strings".format(language) for language in empty_languages
     ],
-    # MARK: Swiftgram
+    # MARK: ExteraGram
     visibility = ["//visibility:public",],
 )
 
-# MARK: Swiftgram
+# MARK: ExteraGram
 filegroup(
     name = "WatchAppStringResources",
     srcs = glob([
         "Telegram-iOS/*.lproj/Localizable.strings",
-    ], exclude = ["Telegram-iOS/*.lproj/**/.*"]) + ["//Swiftgram/SGStrings:SGLocalizableStrings"],
+    ], exclude = ["Telegram-iOS/*.lproj/**/.*"]) + ["//ExteraGram/EGStrings:EGLocalizableStrings"],
 )
 
 filegroup(
@@ -307,28 +307,28 @@ filegroup(
     ], exclude = ["Telegram-iOS/DefaultAppIcon.xcassets/**/.*"]),
 )
 
-# MARK: Swiftgram alternative icons
+# MARK: ExteraGram alternative icons
 alternate_icon_folders = [
-    "SGDefault",
-    "SGBlack",
-    "SGLegacy",
-    "SGInverted",
-    "SGWhite",
-    "SGNight",
-    "SGSky",
-    "SGTitanium",
-    "SGNeon",
-    "SGNeonBlue",
-    "SGGlass",
-    "SGSparkling",
-    "SGBeta",
-    "SGPro",
-    "SGGold",
-    "SGDucky",
-    "SGDay"
+    "EGDefault",
+    "EGBlack",
+    "EGLegacy",
+    "EGInverted",
+    "EGWhite",
+    "EGNight",
+    "EGSky",
+    "EGTitanium",
+    "EGNeon",
+    "EGNeonBlue",
+    "EGGlass",
+    "EGSparkling",
+    "EGBeta",
+    "EGPro",
+    "EGGold",
+    "EGDucky",
+    "EGDay"
 ]
 
-composer_icon_folders = ["Swiftgram"]
+composer_icon_folders = ["ExteraGram"]
 
 [
     filegroup(
@@ -363,7 +363,7 @@ objc_library(
     ],
 )
 
-SGRESOURCES = ["//Swiftgram/SGSettingsUI:SGUIAssets", "//Swiftgram/SGPayWall:SGPayWallAssets", "//Swiftgram/SGAppBadgeAssets:SGAppBadgeAssets", "//Swiftgram/SGNY:SGNYAssets"]
+EGRESOURCES = ["//ExteraGram/EGSettingsUI:EGUIAssets", "//ExteraGram/EGPayWall:EGPayWallAssets", "//ExteraGram/EGAppBadgeAssets:EGAppBadgeAssets", "//ExteraGram/EGNY:EGNYAssets"]
 
 swift_library(
     name = "Lib",
@@ -371,7 +371,7 @@ swift_library(
     srcs = glob([
         "Telegram-iOS/Application.swift",
     ]),
-    data = SGRESOURCES + [
+    data = EGRESOURCES + [
         ":Icons",
         ":AppResources",
         ":AppIntentVocabularyResources",
@@ -500,7 +500,7 @@ official_carplay_fragment = """
 <key>com.apple.developer.carplay-messaging</key>
 <true/>
 """
-carplay_fragment = official_carplay_fragment # MARK: Swiftgram if telegram_bundle_id in official_bundle_ids else ""
+carplay_fragment = official_carplay_fragment # MARK: ExteraGram if telegram_bundle_id in official_bundle_ids else ""
 
 icloud_fragment = "" if not telegram_enable_icloud else """
 <key>com.apple.developer.icloud-services</key>
@@ -528,8 +528,8 @@ associated_domains_fragment = "" if telegram_bundle_id not in official_bundle_id
     <string>applinks:telegram.me</string>
     <string>applinks:t.me</string>
     <string>applinks:*.t.me</string>
-    <string>applinks:swiftgram.app</string>
-    <string>webcredentials:swiftgram.app</string>
+    <string>applinks:exteragram.app</string>
+    <string>webcredentials:exteragram.app</string>
     <string>webcredentials:t.me</string>
     <string>webcredentials:telegram.org</string>
 </array>
@@ -567,7 +567,7 @@ official_notification_filtering_fragment = """
 <key>com.apple.developer.usernotifications.filtering</key>
 <true/>
 """
-notification_filtering_fragment = official_notification_filtering_fragment if telegram_bundle_id == "app.swiftgram.ios" else ""
+notification_filtering_fragment = official_notification_filtering_fragment if telegram_bundle_id == "app.exteragram.ios" else ""
 
 store_signin_fragment = """
 <key>com.apple.developer.applesignin</key>
@@ -581,7 +581,7 @@ official_background_gpu_fragment = """
 <key>com.apple.developer.background-tasks.continued-processing.gpu</key>
 <true/>
 """
-background_gpu_fragment = official_background_gpu_fragment if telegram_bundle_id == "app.swiftgram.ios" else ""
+background_gpu_fragment = official_background_gpu_fragment if telegram_bundle_id == "app.exteragram.ios" else ""
 
 plist_fragment(
     name = "TelegramEntitlements",
@@ -602,7 +602,7 @@ plist_fragment(
     ])
 )
 
-# MARK: Swiftgram
+# MARK: ExteraGram
 filegroup(
     name = "TelegramWatchExtensionResources",
     srcs = glob([
@@ -688,11 +688,11 @@ plist_fragment(
     template =
     """
     <key>CFBundleDisplayName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     """
 )
 
-# MARK: Swiftgram
+# MARK: ExteraGram
 plist_fragment(
     name = "WatchAppCompanionInfoPlist",
     extension = "plist",
@@ -715,7 +715,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.watchkitapp</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
@@ -739,7 +739,7 @@ watchos_application(
     bundle_id = "{telegram_bundle_id}.watchkitapp".format(
         telegram_bundle_id = telegram_bundle_id,
     ),
-    bundle_name = "SwiftgramWatch",
+    bundle_name = "ExteraGramWatch",
     infoplists = [
         ":WatchAppInfoPlist",
         ":VersionInfoPlist",
@@ -1003,7 +1003,7 @@ genrule(
     cmd_bash =
 """
     echo 'for f in $$1/*.framework; do binary_name=`echo $$(basename $$f) | sed -e "s/\\\\.framework//"`; strip -ST $$f/$$binary_name; done;' > $(location StripFramework.sh)
-    # MARK: Swiftgram
+    # MARK: ExteraGram
     echo 'find "$$1" -type f \\( -perm +111 -o -name "*.dylib" \\) | while read -r bin; do \
         if otool -L "$$bin" | grep -q "/usr/lib/swift/libswift_Concurrency.dylib"; then \
             echo "Patching concurrency backport in: $$bin"; \
@@ -1106,7 +1106,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.Share</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1198,7 +1198,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.NotificationContent</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1305,7 +1305,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.Widget</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1418,7 +1418,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.SiriIntents</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1539,21 +1539,21 @@ ios_extension(
     ],
 )
 
-# MARK: Swiftgram
-# TODO(swiftgram): Localize CFBundleDisplayName
+# MARK: ExteraGram
+# TODO(exteragram): Localize CFBundleDisplayName
 plist_fragment(
-    name = "SGActionRequestHandlerInfoPlist",
+    name = "EGActionRequestHandlerInfoPlist",
     extension = "plist",
     template = 
     """
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleIdentifier</key>
-    <string>{telegram_bundle_id}.SGActionRequestHandler</string>
+    <string>{telegram_bundle_id}.EGActionRequestHandler</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundleDisplayName</key>
-    <string>Open in Swiftgram</string>
+    <string>Open in ExteraGram</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
 	<key>NSExtension</key>
@@ -1589,38 +1589,38 @@ plist_fragment(
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.services</string>
 		<key>NSExtensionPrincipalClass</key>
-		<string>SGActionRequestHandler</string>
+		<string>EGActionRequestHandler</string>
 	</dict>
     """.format(
         telegram_bundle_id = telegram_bundle_id,
     )
 )
 
-# TODO(swiftgram): Proper icon
+# TODO(exteragram): Proper icon
 filegroup(
-    name = "SGActionRequestHandlerAssets",
-    srcs = glob(["SGActionRequestHandler/Media.xcassets/**"]),
+    name = "EGActionRequestHandlerAssets",
+    srcs = glob(["EGActionRequestHandler/Media.xcassets/**"]),
     visibility = ["//visibility:public"],
 )
 
 filegroup(
-    name = "SGActionRequestHandlerScript",
-    srcs = ["SGActionRequestHandler/Action.js"],
+    name = "EGActionRequestHandlerScript",
+    srcs = ["EGActionRequestHandler/Action.js"],
     visibility = ["//visibility:public"],
 )
 
 swift_library(
-    name = "SGActionRequestHandlerLib",
-    module_name = "SGActionRequestHandlerLib",
+    name = "EGActionRequestHandlerLib",
+    module_name = "EGActionRequestHandlerLib",
     srcs = glob([
-        "SGActionRequestHandler/**/*.swift",
+        "EGActionRequestHandler/**/*.swift",
     ]),
     copts = [
         "-warnings-as-errors",
     ],
     data = [
-        ":SGActionRequestHandlerAssets",
-        ":SGActionRequestHandlerScript"
+        ":EGActionRequestHandlerAssets",
+        ":EGActionRequestHandlerScript"
     ],
     deps = [
         "//submodules/UrlEscaping:UrlEscaping"
@@ -1631,7 +1631,7 @@ genrule(
     name = "SetMinOsVersionSGActionRequestHandler",
     cmd_bash =
 """
-    name=SGActionRequestHandler.appex
+    name=EGActionRequestHandler.appex
     cat $(location PatchMinOSVersion.source.sh) | sed -e "s/<<<MIN_OS_VERSION>>>/14\\.0/g" | sed -e "s/<<<NAME>>>/$$name/g" > $(location SetMinOsVersionSGActionRequestHandler.sh)
 """,
     srcs = [
@@ -1647,8 +1647,8 @@ genrule(
 )
 
 ios_extension(
-    name = "SGActionRequestHandler",
-    bundle_id = "{telegram_bundle_id}.SGActionRequestHandler".format(
+    name = "EGActionRequestHandler",
+    bundle_id = "{telegram_bundle_id}.EGActionRequestHandler".format(
         telegram_bundle_id = telegram_bundle_id,
     ),
     families = [
@@ -1656,7 +1656,7 @@ ios_extension(
         "ipad",
     ],
     infoplists = [
-        ":SGActionRequestHandlerInfoPlist",
+        ":EGActionRequestHandlerInfoPlist",
         ":VersionInfoPlist",
         ":RequiredDeviceCapabilitiesPlist",
         ":BuildNumberInfoPlist",
@@ -1667,10 +1667,10 @@ ios_extension(
     #provides_main = True,
     provisioning_profile = select({
         ":disableProvisioningProfilesSetting": None,
-        "//conditions:default": "@build_configuration//provisioning:SGActionRequestHandler.mobileprovision",
+        "//conditions:default": "@build_configuration//provisioning:EGActionRequestHandler.mobileprovision",
     }),
     deps = [
-        ":SGActionRequestHandlerLib",
+        ":EGActionRequestHandlerLib",
     ],
     frameworks = [
     ],
@@ -1690,7 +1690,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.BroadcastUpload</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1784,7 +1784,7 @@ plist_fragment(
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}.NotificationService</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundlePackageType</key>
     <string>XPC!</string>
     <key>NSExtension</key>
@@ -1853,11 +1853,11 @@ plist_fragment(
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleDisplayName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundleIdentifier</key>
     <string>{telegram_bundle_id}</string>
     <key>CFBundleName</key>
-    <string>Swiftgram</string>
+    <string>ExteraGram</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleSignature</key>
@@ -1911,17 +1911,17 @@ plist_fragment(
     <key>NSCameraUsageDescription</key>
     <string>We need this so that you can take and share photos and videos.</string>
     <key>NSContactsUsageDescription</key>
-    <string>Swiftgram stores your contacts heavily encrypted in the Telegram cloud to let you connect with your friends across all your devices.</string>
+    <string>ExteraGram stores your contacts heavily encrypted in the Telegram cloud to let you connect with your friends across all your devices.</string>
     <key>NSFaceIDUsageDescription</key>
     <string>You can use Face ID to unlock the app.</string>
     <key>NSLocationAlwaysUsageDescription</key>
-    <string>When you send your location to your friends, Swiftgram needs access to show them a map. You also need this to send locations from an Apple Watch.</string>
+    <string>When you send your location to your friends, ExteraGram needs access to show them a map. You also need this to send locations from an Apple Watch.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>When you send your location to your friends, Swiftgram needs access to show them a map.</string>
+    <string>When you send your location to your friends, ExteraGram needs access to show them a map.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>We need this so that you can record and share voice messages and videos with sound.</string>
     <key>NSMotionUsageDescription</key>
-    <string>When you send your location to your friends, Swiftgram needs access to show them a map.</string>
+    <string>When you send your location to your friends, ExteraGram needs access to show them a map.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>We need this so that you can share photos and videos from your photo library.</string>
     <key>NSPhotoLibraryUsageDescription</key>
@@ -2028,7 +2028,7 @@ xcode_provisioning_profile(
 )
 
 ios_application(
-    name = "Swiftgram",
+    name = "ExteraGram",
     bundle_id = "{telegram_bundle_id}".format(
         telegram_bundle_id = telegram_bundle_id,
     ),
@@ -2064,12 +2064,12 @@ ios_application(
     strings = [
         ":AppStringResources",
     ],
-    # MARK: Swiftgram
-    settings_bundle = "//Swiftgram/SGSettingsBundle:SGSettingsBundle",
+    # MARK: ExteraGram
+    settings_bundle = "//ExteraGram/EGSettingsBundle:EGSettingsBundle",
     extensions = select({
         ":disableExtensionsSetting": [],
         "//conditions:default": [
-            # ":SGActionRequestHandler", # UX sucks https://t.me/swiftgramchat/7335
+            # ":EGActionRequestHandler", # UX sucks https://t.me/exteragramchat/7335
             ":ShareExtension",
             ":NotificationContentExtension",
             ":NotificationServiceExtension" + notificationServiceExtensionVersion,
@@ -2078,7 +2078,7 @@ ios_application(
             ":BroadcastUploadExtension",
         ],
     }),
-    watch_application = ":TelegramWatchApp", # MARK: Swiftgram
+    watch_application = ":TelegramWatchApp", # MARK: ExteraGram
     deps = [
         ":Main",
         ":Lib",
@@ -2089,10 +2089,10 @@ ios_application(
 xcodeproj(
     name = "Telegram_xcodeproj",
     bazel_path = telegram_bazel_path,
-    project_name = "Swiftgram",
+    project_name = "ExteraGram",
     tags = ["manual"],
     top_level_targets = [
-        top_level_target(":Swiftgram", target_environments = ["device", "simulator"]),
+        top_level_target(":ExteraGram", target_environments = ["device", "simulator"]),
         ":iOSAppUITestSuite",
     ],
     xcode_configurations = {

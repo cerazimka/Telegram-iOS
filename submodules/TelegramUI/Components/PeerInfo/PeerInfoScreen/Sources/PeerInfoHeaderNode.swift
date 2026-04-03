@@ -1224,7 +1224,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             if title.replacingOccurrences(of: "\u{fe0e}", with: "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 title = "" //"\u{00A0}"
             }
-            // MARK: Swiftgram
+            // MARK: ExteraGram
             if title.isEmpty {
                 if let peer = peer as? TelegramUser, let phone = peer.phone, !self.hidePhoneInSettings {
                     title = formatPhoneNumber(context: self.context, number: phone)
@@ -1240,7 +1240,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             smallTitleAttributes = MultiScaleTextState.Attributes(font: Font.medium(28.0), color: .white, shadowColor: titleShadowColor)
             
             if self.isSettings, let user = peer as? TelegramUser {
-                // MARK: Swiftgram
+                // MARK: ExteraGram
                 var formattedPhone = formatPhoneNumber(context: self.context, number: user.phone ?? "")
                 if !formattedPhone.isEmpty && self.hidePhoneInSettings {
                     formattedPhone = ""
@@ -2356,7 +2356,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 buttonIcon = .message
             case .discussion:
                 buttonText = presentationData.strings.PeerInfo_ButtonDiscuss
-                buttonIcon = .discussion // MARK: Swiftgram
+                buttonIcon = .discussion // MARK: ExteraGram
             case .call:
                 buttonText = presentationData.strings.PeerInfo_ButtonCall
                 buttonIcon = .call

@@ -1,8 +1,8 @@
-// MARK: Swiftgram
-import SGIAP
-import SGPayWall
-import SGProUI
-import SGSimpleSettings
+// MARK: ExteraGram
+import EGIAP
+import EGPayWall
+import EGProUI
+import EGSimpleSettings
 //
 import Foundation
 import UIKit
@@ -280,13 +280,13 @@ public final class SharedAccountContextImpl: SharedAccountContext {
     }
     private var experimentalUISettingsDisposable: Disposable?
 
-    // MARK: Swiftgram
-    private var immediateSGStatusValue = Atomic<SGStatus>(value: SGStatus.default)
-    public var immediateSGStatus: SGStatus {
+    // MARK: ExteraGram
+    private var immediateSGStatusValue = Atomic<EGStatus>(value: EGStatus.default)
+    public var immediateSGStatus: EGStatus {
         return self.immediateSGStatusValue.with { $0 }
     }
     private var sgStatusDisposable: Disposable?
-    public var SGIAP: SGIAPManager?
+    public var EGIAP: EGIAPManager?
     
     public var presentGlobalController: (ViewController, Any?) -> Void = { _, _ in }
     public var presentCrossfadeController: () -> Void = {}
@@ -532,14 +532,14 @@ public final class SharedAccountContextImpl: SharedAccountContext {
                 GlassBackgroundView.useCustomGlassImpl = settings.fakeGlass
             }
         })
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         let immediateSGStatusValue = self.immediateSGStatusValue
         self.sgStatusDisposable = (self.accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.sgStatus])
         |> deliverOnMainQueue).start(next: { sharedData in
-            if let settings = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(SGStatus.self) {
+            if let settings = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(EGStatus.self) {
                 let _ = immediateSGStatusValue.swap(settings)
-                SGSimpleSettings.shared.ephemeralStatus = settings.status
-                SGSimpleSettings.shared.status = settings.status
+                EGSimpleSettings.shared.ephemeralStatus = settings.status
+                EGSimpleSettings.shared.status = settings.status
             }
         })
         self.initSGIAP(isMainApp: applicationBindings.isMainApp)
@@ -1132,10 +1132,10 @@ public final class SharedAccountContextImpl: SharedAccountContext {
         self.callPeerDisposable?.dispose()
     }
     
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     var didPerformSGUISettingsMigration = false
     //
-    // MARK: Swiftgram
+    // MARK: ExteraGram
     func sgPrimaryAccountContextForMigration() -> AccountContext? {
         return self.activeAccountsValue?.primary
     }
@@ -1143,7 +1143,7 @@ public final class SharedAccountContextImpl: SharedAccountContext {
     private var didPerformAccountSettingsImport = false
     
     private func performAccountSettingsImportIfNecessary() {
-        // MARK: Swiftgram
+        // MARK: ExteraGram
         self.performSGUISettingsMigrationIfNecessary()
         //
         if self.didPerformAccountSettingsImport {
@@ -4491,13 +4491,13 @@ private func useFlatModalCallsPresentation(context: AccountContext) -> Bool {
 
 
 
-// MARK: Swiftgram
+// MARK: ExteraGram
 extension SharedAccountContextImpl {
     func initSGIAP(isMainApp: Bool) {
         if isMainApp {
-            self.SGIAP = SGIAPManager()
+            self.EGIAP = EGIAPManager()
         } else {
-            self.SGIAP = nil
+            self.EGIAP = nil
         }
     }
     
@@ -4510,13 +4510,13 @@ extension SharedAccountContextImpl {
         guard #available(iOS 13.0, *) else {
             return nil
         }
-        guard let sgIAP = self.SGIAP else {
+        guard let sgIAP = self.EGIAP else {
             return nil
         }
 
         let statusSignal = self.accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.sgStatus])
         |> map { sharedData -> Int64 in
-            let sgStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(SGStatus.self) ?? SGStatus.default
+            let sgStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(EGStatus.self) ?? EGStatus.default
             return sgStatus.status
         }
 
@@ -4538,7 +4538,7 @@ extension SharedAccountContextImpl {
         if let supportUrlString = sgWebSettings.global.proSupportUrl, !supportUrlString.isEmpty, let data = Data(base64Encoded: supportUrlString), let decodedString = String(data: data, encoding: .utf8) {
             supportUrl = decodedString
         }
-        payWallController = sgPayWallController(statusSignal: statusSignal, replacementController: proController, presentationData: presentationData, SGIAPManager: sgIAP, openUrl: openUrl, paymentsEnabled: sgWebSettings.global.paymentsEnabled, canBuyInBeta: sgWebSettings.user.canBuyInBeta, openAppStorePage: self.applicationBindings.openAppStorePage, proSupportUrl: supportUrl)
+        payWallController = sgPayWallController(statusSignal: statusSignal, replacementController: proController, presentationData: presentationData, EGIAPManager: sgIAP, openUrl: openUrl, paymentsEnabled: sgWebSettings.global.paymentsEnabled, canBuyInBeta: sgWebSettings.user.canBuyInBeta, openAppStorePage: self.applicationBindings.openAppStorePage, proSupportUrl: supportUrl)
         return payWallController
     }
     
