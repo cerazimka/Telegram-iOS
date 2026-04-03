@@ -1,13 +1,13 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgsrc = [
+egsrc = [
     "//ExteraGram/EGSwiftSignalKit:EGSwiftSignalKit"
 ]
 
 swift_library(
     name = "SwiftSignalKit",
     module_name = "SwiftSignalKit",
-    srcs = sgsrc + glob([
+    srcs = egsrc + glob([
         "Source/**/*.swift",
     ]),
     copts = [

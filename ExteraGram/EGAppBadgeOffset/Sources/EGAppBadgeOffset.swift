@@ -40,7 +40,7 @@ let DEVICE_MODELS_WITH_APP_BADGE_SUPPORT: [DeviceModel] = [
 
 extension DeviceMetrics {
 
-    func sgAppBadgeOffset() -> CGFloat {
+    func egAppBadgeOffset() -> CGFloat {
         let currentDevice = DeviceModel.current
         var defaultOffset: CGFloat = 0.0
         // https://www.ios-resolution.com/
@@ -67,22 +67,22 @@ extension DeviceMetrics {
             default:
                 defaultOffset = 0.0 // Any device in 2025+ should be like iPhone 14 Pro or better
         }
-        let offset: CGFloat = floorToScreenPixels(defaultOffset * self.sgScaleFactor)
+        let offset: CGFloat = floorToScreenPixels(defaultOffset * self.egScaleFactor)
         #if DEBUG
-        print("deviceMetrics \(self). deviceModel: \(currentDevice). sgIsDisplayZoomed: \(self.sgIsDisplayZoomed). sgScaleFactor: \(self.sgScaleFactor) defaultOffset: \(defaultOffset), offset: \(offset)")
+        print("deviceMetrics \(self). deviceModel: \(currentDevice). egIsDisplayZoomed: \(self.egIsDisplayZoomed). egScaleFactor: \(self.egScaleFactor) defaultOffset: \(defaultOffset), offset: \(offset)")
         #endif
         return offset
     }
     
-    var sgIsDisplayZoomed: Bool {
+    var egIsDisplayZoomed: Bool {
         UIScreen.main.scale < UIScreen.main.nativeScale
     }
     
-    var sgScaleFactor: CGFloat {
+    var egScaleFactor: CGFloat {
         UIScreen.main.scale / UIScreen.main.nativeScale
     }
     
-    var sgShowAppBadge: Bool {
+    var egShowAppBadge: Bool {
         return DEVICE_MODELS_WITH_APP_BADGE_SUPPORT.contains(DeviceModel.current) // MARK: ExteraGram
     }
 

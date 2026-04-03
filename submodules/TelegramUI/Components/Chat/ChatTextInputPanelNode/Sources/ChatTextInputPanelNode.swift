@@ -5566,57 +5566,57 @@ extension ChatTextInputPanelNode {
     func initToolbarIfNeeded(context: AccountContext) {
         guard #available(iOS 13.0, *) else { return }
         guard EGSimpleSettings.shared.inputToolbar else { return }
-        guard context.sharedContext.immediateSGStatus.status > 1 else { return }
+        guard context.sharedContext.immediateEGStatus.status > 1 else { return }
         guard self.toolbarNode == nil else { return }
         let toolbarView = ChatToolbarView(
             onQuote: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesQuote(strongSelf)
             },
             onSpoiler: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesSpoiler(strongSelf)
             },
             onBold: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesBold(strongSelf)
             },
             onItalic: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesItalic(strongSelf)
             },
             onMonospace: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesMonospace(strongSelf)
             },
             onLink: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesLink(strongSelf)
             },
             onStrikethrough: { [weak self]
                 in guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesStrikethrough(strongSelf)
             },
             onUnderline: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesUnderline(strongSelf)
             },
             onCode: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSelectLastWordIfIdle()
+                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
                 strongSelf.formatAttributesCodeBlock(strongSelf)
             },
             onNewLine: { [weak self] in
                 guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.sgSetNewLine()
+                strongSelf.interfaceInteraction?.egSetNewLine()
             },
             // TODO(exteragram): Binding
             showNewLine: .constant(true), //.constant(self.sendWithReturnKey)

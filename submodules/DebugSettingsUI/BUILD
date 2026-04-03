@@ -1,6 +1,6 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGDebugUI:EGDebugUI",
     "//ExteraGram/EGLogging:EGLogging",
     "//ExteraGram/EGLoggingComposer:EGLoggingComposer",
@@ -16,7 +16,7 @@ swift_library(
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/Display:Display",
         "//submodules/Postbox:Postbox",

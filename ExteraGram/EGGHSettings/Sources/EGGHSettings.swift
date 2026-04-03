@@ -14,7 +14,7 @@ public func updateSGGHSettingsInteractivelly(context: AccountContext) {
             let _ = await (context.account.postbox.transaction { transaction in
                 updateAppConfiguration(transaction: transaction, { configuration -> AppConfiguration in
                     var configuration = configuration
-                    configuration.sgGHSettings = settings
+                    configuration.egGHSettings = settings
                     return configuration
                 })
             }).task()

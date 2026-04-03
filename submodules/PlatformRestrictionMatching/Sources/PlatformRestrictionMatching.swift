@@ -11,9 +11,9 @@ public extension Message {
         // MARK: ExteraGram
         if let author = self.author {
             let chatId = author.id.id._internalGetInt64Value()
-            if contentSettings.appConfiguration.sgWebSettings.global.forceReasons.contains(chatId) {
+            if contentSettings.appConfiguration.egWebSettings.global.forceReasons.contains(chatId) {
                 return "Unavailable in ExteraGram due to App Store Guidelines"
-            } else if contentSettings.appConfiguration.sgWebSettings.global.unforceReasons.contains(chatId) {
+            } else if contentSettings.appConfiguration.egWebSettings.global.unforceReasons.contains(chatId) {
                 return nil
             }
         }
@@ -30,9 +30,9 @@ public extension RestrictedContentMessageAttribute {
     func platformText(platform: String, contentSettings: ContentSettings, chatId: Int64? = nil) -> String? {
         // MARK: ExteraGram
         if let chatId = chatId {
-            if contentSettings.appConfiguration.sgWebSettings.global.forceReasons.contains(chatId) {
+            if contentSettings.appConfiguration.egWebSettings.global.forceReasons.contains(chatId) {
                 return "Unavailable in ExteraGram due to App Store Guidelines"
-            } else if contentSettings.appConfiguration.sgWebSettings.global.unforceReasons.contains(chatId) {
+            } else if contentSettings.appConfiguration.egWebSettings.global.unforceReasons.contains(chatId) {
                 return nil
             }
         }
@@ -53,7 +53,7 @@ public extension RestrictedContentMessageAttribute {
 // MARK: ExteraGram
 public extension Message {
     func canRevealContent(contentSettings: ContentSettings) -> Bool {
-        if contentSettings.appConfiguration.sgWebSettings.global.canViewMessages && self.flags.contains(.CopyProtected) {
+        if contentSettings.appConfiguration.egWebSettings.global.canViewMessages && self.flags.contains(.CopyProtected) {
             let messageContentWasUnblocked = self.restrictedContentAttribute != nil && self.isRestricted(platform: "ios", contentSettings: ContentSettings.default) && !self.isRestricted(platform: "ios", contentSettings: contentSettings)
             var authorWasUnblocked: Bool = false
             if let author = self.author {

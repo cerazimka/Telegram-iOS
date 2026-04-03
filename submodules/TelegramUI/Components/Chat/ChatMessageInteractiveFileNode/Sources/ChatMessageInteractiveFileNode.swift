@@ -455,7 +455,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                             return .single(nil)
                         }
                         
-                        return transcribeAudio(path: result, appLocale: arguments.controllerInteraction.sgGetChatPredictedLang() ?? appLocale)
+                        return transcribeAudio(path: result, appLocale: arguments.controllerInteraction.egGetChatPredictedLang() ?? appLocale)
                     }
                     
                     self.transcribeDisposable = (signal

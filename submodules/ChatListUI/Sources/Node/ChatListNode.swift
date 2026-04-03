@@ -1361,7 +1361,7 @@ public final class ChatListNode: ListView {
         }, openSGAnnouncement: { [weak self] announcementId, url, needAuth, permanent in
             if let strongSelf = self {
                 if needAuth {
-                    let _ = (getSGSettingsURL(context: strongSelf.context, url: url)
+                    let _ = (getEGSettingsURL(context: strongSelf.context, url: url)
                              |> deliverOnMainQueue).start(next: { [weak self] url in
                         guard let strongSelf = self else {
                             return

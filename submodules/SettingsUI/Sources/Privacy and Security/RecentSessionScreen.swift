@@ -290,11 +290,11 @@ private final class RecentSessionSheetContent: CombinedComponent {
             }
 
             // MARK: ExteraGram
-            let sgApiIdString: String?
+            let egApiIdString: String?
             if case let .session(session) = component.subject {
-                sgApiIdString = EGRecentSessionApiId.string(for: session)
+                egApiIdString = EGRecentSessionApiId.string(for: session)
             } else {
-                sgApiIdString = nil
+                egApiIdString = nil
             }
             //
             
@@ -366,8 +366,8 @@ private final class RecentSessionSheetContent: CombinedComponent {
             )
 
             // MARK: ExteraGram
-            if let sgApiIdString {
-                clientSectionItems.append(sgRecentSessionApiIdItem(apiIdString: sgApiIdString, theme: theme, presentationData: presentationData, strings: strings, controller: state.controller))
+            if let egApiIdString {
+                clientSectionItems.append(egRecentSessionApiIdItem(apiIdString: egApiIdString, theme: theme, presentationData: presentationData, strings: strings, controller: state.controller))
             }
             //
             

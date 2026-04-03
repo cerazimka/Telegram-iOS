@@ -53,7 +53,7 @@ public protocol ChatSendMessageContextScreenMediaPreview: AnyObject {
 final class ChatSendMessageContextScreenComponent: Component {
     typealias EnvironmentType = ViewControllerComponentContainer.Environment
     
-    let sgTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?)
+    let egTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?)
     let initialData: ChatSendMessageContextScreen.InitialData
     let context: AccountContext
     let updatedPresentationData: (initial: PresentationData, signal: Signal<PresentationData, NoError>)?
@@ -75,7 +75,7 @@ final class ChatSendMessageContextScreenComponent: Component {
     let isPremium: Bool
     // MARK: ExteraGram
     init(
-        sgTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?) = (outgoingMessageTranslateToLang: nil, translate: nil, changeTranslationLanguage: nil),
+        egTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?) = (outgoingMessageTranslateToLang: nil, translate: nil, changeTranslationLanguage: nil),
         initialData: ChatSendMessageContextScreen.InitialData,
         context: AccountContext,
         updatedPresentationData: (initial: PresentationData, signal: Signal<PresentationData, NoError>)?,
@@ -96,7 +96,7 @@ final class ChatSendMessageContextScreenComponent: Component {
         availableMessageEffects: AvailableMessageEffects?,
         isPremium: Bool
     ) {
-        self.sgTranslationContext = sgTranslationContext
+        self.egTranslationContext = egTranslationContext
         self.initialData = initialData
         self.context = context
         self.updatedPresentationData = updatedPresentationData
@@ -647,7 +647,7 @@ final class ChatSendMessageContextScreenComponent: Component {
             
             // MARK: ExteraGram
             if !isSecret {
-                if let outgoingMessageTranslateToLang = component.sgTranslationContext.outgoingMessageTranslateToLang {
+                if let outgoingMessageTranslateToLang = component.egTranslationContext.outgoingMessageTranslateToLang {
                     var languageCode = presentationData.strings.baseLanguageCode
                     let rawSuffix = "-raw"
                     if languageCode.hasSuffix(rawSuffix) {
@@ -667,7 +667,7 @@ final class ChatSendMessageContextScreenComponent: Component {
                     }
                     
                     items.append(.action(ContextMenuActionItem(
-                        id: AnyHashable("sgTranslate"),
+                        id: AnyHashable("egTranslate"),
                         text: translateTitle,
                         icon: { theme in
                             return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Translate"), color: theme.contextMenu.primaryColor)
@@ -677,13 +677,13 @@ final class ChatSendMessageContextScreenComponent: Component {
                             }
                             self.animateOutToEmpty = true
                             
-                            component.sgTranslationContext.translate?()
+                            component.egTranslationContext.translate?()
                             self.environment?.controller()?.dismiss()
                         }
                     )))
                    
                     items.append(.action(ContextMenuActionItem(
-                        id: AnyHashable("sgChangeTranslateLang"),
+                        id: AnyHashable("egChangeTranslateLang"),
                         text: presentationData.strings.Translate_ChangeLanguage,
                         icon: { theme in
                             return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Caption"), color: theme.contextMenu.primaryColor)
@@ -694,13 +694,13 @@ final class ChatSendMessageContextScreenComponent: Component {
                             self.animateOutToEmpty = true
                             
                             self.environment?.controller()?.dismiss()
-                            component.sgTranslationContext.changeTranslationLanguage?()
+                            component.egTranslationContext.changeTranslationLanguage?()
                         }
                     )))
                    
                 } else {
                     items.append(.action(ContextMenuActionItem(
-                        id: AnyHashable("sgChangeTranslateLang"),
+                        id: AnyHashable("egChangeTranslateLang"),
                         text: presentationData.strings.Conversation_Translation_TranslateToOther("...").string,
                         icon: { theme in
                             return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Caption"), color: theme.contextMenu.primaryColor)
@@ -711,7 +711,7 @@ final class ChatSendMessageContextScreenComponent: Component {
                             self.animateOutToEmpty = true
                             
                             self.environment?.controller()?.dismiss()
-                            component.sgTranslationContext.changeTranslationLanguage?()
+                            component.egTranslationContext.changeTranslationLanguage?()
                         }
                     )))
                 }
@@ -1500,7 +1500,7 @@ public class ChatSendMessageContextScreen: ViewControllerComponentContainer, Cha
     }
     
     public init(
-        sgTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?) = (outgoingMessageTranslateToLang: nil, translate: nil, changeTranslationLanguage: nil),
+        egTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?) = (outgoingMessageTranslateToLang: nil, translate: nil, changeTranslationLanguage: nil),
         initialData: InitialData,
         context: AccountContext,
         updatedPresentationData: (initial: PresentationData, signal: Signal<PresentationData, NoError>)?,
@@ -1526,7 +1526,7 @@ public class ChatSendMessageContextScreen: ViewControllerComponentContainer, Cha
         super.init(
             context: context,
             component: ChatSendMessageContextScreenComponent(
-                sgTranslationContext: sgTranslationContext,
+                egTranslationContext: egTranslationContext,
                 initialData: initialData,
                 context: context,
                 updatedPresentationData: updatedPresentationData,

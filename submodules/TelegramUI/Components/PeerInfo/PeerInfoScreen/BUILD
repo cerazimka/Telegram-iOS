@@ -1,6 +1,6 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGSettingsUI:EGSettingsUI",
     "//ExteraGram/EGStrings:EGStrings",
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
@@ -20,7 +20,7 @@ swift_library(
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/AccountContext",
         "//submodules/AccountUtils",
         "//submodules/ActionSheetPeerItem",

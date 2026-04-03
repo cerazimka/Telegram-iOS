@@ -920,7 +920,7 @@ public final class ChatListFilterTabContainerNode: ASDisplayNode {
                 itemNodeTransition = .immediate
             }
             
-            let useShortTitle = itemId == .all && sgUseShortAllChatsTitle(useShortTitles)
+            let useShortTitle = itemId == .all && egUseShortAllChatsTitle(useShortTitles)
             let paneNodeSize = useShortTitle ? paneNodeShortSize : paneNodeLongSize
             
             let paneFrame = CGRect(origin: CGPoint(x: leftOffset, y: floor((backgroundSize.height - paneNodeSize.height) / 2.0)), size: paneNodeSize)

@@ -1780,11 +1780,11 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         let isFailed = item.content.firstMessage.effectivelyFailed(timestamp: item.context.account.network.getApproximateRemoteTimestamp())
         
         // MARK: ExteraGram
-        var sgLocalNeedsQuickTranslateButton = false /* EGSimpleSettings.defaultValues[EGSimpleSettings.Keys.quickTranslateButton.rawValue] as! Bool*/
+        var egLocalNeedsQuickTranslateButton = false /* EGSimpleSettings.defaultValues[EGSimpleSettings.Keys.quickTranslateButton.rawValue] as! Bool*/
         if let strongSelf = selfReference.value {
             if strongSelf.needsQuickTranslateButton {
                 if incoming && !item.message.text.isEmpty && item.message.adAttribute == nil {
-                    sgLocalNeedsQuickTranslateButton = true
+                    egLocalNeedsQuickTranslateButton = true
                 }
             }
         }
@@ -1805,7 +1805,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
             }
         } else if case let .replyThread(replyThreadMessage) = item.chatLocation, replyThreadMessage.effectiveTopId == item.message.id {
             needsShareButton = false
-            if !sgLocalNeedsQuickTranslateButton {
+            if !egLocalNeedsQuickTranslateButton {
                 allowFullWidth = true
             }
         } else if isFailed || Namespaces.Message.allNonRegular.contains(item.message.id.namespace) {
@@ -1903,14 +1903,14 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         var tmpWidth: CGFloat
         if allowFullWidth {
             tmpWidth = baseWidth
-            if (needsShareButton && !isSidePanelOpen) || isAd || sgLocalNeedsQuickTranslateButton {
+            if (needsShareButton && !isSidePanelOpen) || isAd || egLocalNeedsQuickTranslateButton {
                 tmpWidth -= 45.0
             } else {
                 tmpWidth -= 4.0
             }
         } else {
             tmpWidth = layoutConstants.bubble.maximumWidthFill.widthFor(baseWidth)
-            if ((needsShareButton && !isSidePanelOpen) || isAd || sgLocalNeedsQuickTranslateButton) && tmpWidth + 32.0 > baseWidth {
+            if ((needsShareButton && !isSidePanelOpen) || isAd || egLocalNeedsQuickTranslateButton) && tmpWidth + 32.0 > baseWidth {
                 tmpWidth = baseWidth - 32.0
             }
         }
@@ -1928,7 +1928,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
             
             tmpWidth = baseWidth
             needsShareButton = false
-            sgLocalNeedsQuickTranslateButton = false
+            egLocalNeedsQuickTranslateButton = false
         } else {
             renderWideChannelPosts = false
         }
@@ -1936,7 +1936,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         let (contentNodeMessagesAndClasses, needSeparateContainers, needReactions) = contentNodeMessagesAndClassesForItem(item)
         
         var maximumContentWidth = floor(tmpWidth - layoutConstants.bubble.edgeInset * 3.0 - layoutConstants.bubble.contentInsets.left - layoutConstants.bubble.contentInsets.right - avatarInset)
-        if (needsShareButton && !isSidePanelOpen) || sgLocalNeedsQuickTranslateButton {
+        if (needsShareButton && !isSidePanelOpen) || egLocalNeedsQuickTranslateButton {
             maximumContentWidth -= 10.0
         }
         
@@ -5564,11 +5564,11 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     case let .optionalAction(f):
                         f()
                     case let .openContextMenu(openContextMenu):
-                        switch (sgDoubleTapMessageAction(incoming: openContextMenu.tapMessage.effectivelyIncoming(item.context.account.peerId), message: openContextMenu.tapMessage)) {
+                        switch (egDoubleTapMessageAction(incoming: openContextMenu.tapMessage.effectivelyIncoming(item.context.account.peerId), message: openContextMenu.tapMessage)) {
                         case EGSimpleSettings.MessageDoubleTapAction.none.rawValue:
                             break
                         case EGSimpleSettings.MessageDoubleTapAction.edit.rawValue:
-                            item.controllerInteraction.sgStartMessageEdit(openContextMenu.tapMessage)
+                            item.controllerInteraction.egStartMessageEdit(openContextMenu.tapMessage)
                         default:
                         if canAddMessageReactions(message: openContextMenu.tapMessage) {
                             item.controllerInteraction.updateMessageReaction(openContextMenu.tapMessage, .default, false, nil)
@@ -5580,11 +5580,11 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 } else if case .tap = gesture {
                     item.controllerInteraction.clickThroughMessage(self.view, location)
                 } else if case .doubleTap = gesture {
-                    switch (sgDoubleTapMessageAction(incoming:                    item.message.effectivelyIncoming(item.context.account.peerId), message: item.message)) {
+                    switch (egDoubleTapMessageAction(incoming:                    item.message.effectivelyIncoming(item.context.account.peerId), message: item.message)) {
                     case EGSimpleSettings.MessageDoubleTapAction.none.rawValue:
                         break
                     case EGSimpleSettings.MessageDoubleTapAction.edit.rawValue:
-                        item.controllerInteraction.sgStartMessageEdit(item.message)
+                        item.controllerInteraction.egStartMessageEdit(item.message)
                     default:
                     if canAddMessageReactions(message: item.message) {
                         item.controllerInteraction.updateMessageReaction(item.message, .default, false, nil)

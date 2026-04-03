@@ -608,11 +608,11 @@ public extension TelegramEngine {
         }
         
         public func translate(text: String, toLang: String, entities: [MessageTextEntity] = []) -> Signal<(String, [MessageTextEntity])?, TranslationError> {
-            return sgWrappedTranslateSingle(text: text, toLang: toLang, default: _internal_translate(network: self.account.network, text: text, toLang: toLang, entities: entities))
+            return egWrappedTranslateSingle(text: text, toLang: toLang, default: _internal_translate(network: self.account.network, text: text, toLang: toLang, entities: entities))
         }
         
         public func translate(texts: [(String, [MessageTextEntity])], toLang: String) -> Signal<[(String, [MessageTextEntity])], TranslationError> {
-            return sgWrappedTranslateMultiple(texts: texts,toLang: toLang, default: _internal_translateTexts(network: self.account.network, texts: texts, toLang: toLang))
+            return egWrappedTranslateMultiple(texts: texts,toLang: toLang, default: _internal_translateTexts(network: self.account.network, texts: texts, toLang: toLang))
         }
 
         // MARK: ExteraGram
@@ -1769,7 +1769,7 @@ func _internal_monoforumPerformSuggestedPostAction(account: Account, id: EngineM
 
 
 // MARK: ExteraGram
-private func sgWrappedTranslateSingle(
+private func egWrappedTranslateSingle(
     text: String,
     toLang: String,
     `default`: Signal<(String, [MessageTextEntity])?, TranslationError>
@@ -1788,7 +1788,7 @@ private func sgWrappedTranslateSingle(
         }
 }
 
-private func sgWrappedTranslateMultiple(
+private func egWrappedTranslateMultiple(
     texts: [(String, [MessageTextEntity])],
     toLang: String,
     `default`: Signal<[(String, [MessageTextEntity])], TranslationError>

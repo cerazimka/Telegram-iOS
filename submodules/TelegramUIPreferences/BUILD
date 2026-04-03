@@ -1,13 +1,13 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgsrcs = [
+egsrcs = [
     "//ExteraGram/EGStatus:EGStatus"
 ]
 
 swift_library(
     name = "TelegramUIPreferences",
     module_name = "TelegramUIPreferences",
-    srcs = sgsrcs + glob([
+    srcs = egsrcs + glob([
         "Sources/**/*.swift",
     ]),
     copts = [

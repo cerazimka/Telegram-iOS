@@ -155,7 +155,7 @@ struct MessageFilterView: View {
 }
 
 @available(iOS 13.0, *)
-public func sgMessageFilterController(presentationData: PresentationData? = nil) -> ViewController {
+public func egMessageFilterController(presentationData: PresentationData? = nil) -> ViewController {
     let theme = presentationData?.theme ?? (UITraitCollection.current.userInterfaceStyle == .dark ? defaultDarkColorPresentationTheme : defaultPresentationTheme)
     let strings = presentationData?.strings ?? defaultPresentationStrings
 

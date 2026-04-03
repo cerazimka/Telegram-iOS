@@ -952,7 +952,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         let isPremium = accountPeer?.isPremium ?? false
         
         var actions: [ContextMenuItem] = []
-        var sgActions: [ContextMenuItem] = []
+        var egActions: [ContextMenuItem] = []
         
         var isPinnedMessages = false
         if case .pinnedMessages = chatPresentationInterfaceState.subject {
@@ -1187,7 +1187,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     })
                 })
             })))
-            if !EGSimpleSettings.shared.contextShowReply { sgActions.append(actions.removeLast()) }
+            if !EGSimpleSettings.shared.contextShowReply { egActions.append(actions.removeLast()) }
         }
         
         if data.messageActions.options.contains(.sendScheduledNow) {
@@ -1428,7 +1428,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     })
                     f(.default)
                 })))
-                if !EGSimpleSettings.shared.contextShowSaveMedia { sgActions.append(actions.removeLast()) }
+                if !EGSimpleSettings.shared.contextShowSaveMedia { egActions.append(actions.removeLast()) }
             }
         }
         
@@ -1483,7 +1483,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         if EGSimpleSettings.shared.contextShowJson {
             actions.append(showJsonAction)
         } else {
-            sgActions.append(showJsonAction)
+            egActions.append(showJsonAction)
         }
         
         var threadId: Int64?
@@ -1524,7 +1524,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     controllerInteraction.openMessageReplies(messages[0].id, true, true)
                 })
             })))
-            if !EGSimpleSettings.shared.contextShowMessageReplies { sgActions.append(actions.removeLast()) }
+            if !EGSimpleSettings.shared.contextShowMessageReplies { egActions.append(actions.removeLast()) }
         }
         
         let isMigrated: Bool
@@ -1675,7 +1675,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     interfaceInteraction.pinMessage(messages[0].id, c)
                 })))
             }
-            if !EGSimpleSettings.shared.contextShowPin { sgActions.append(actions.removeLast()) }
+            if !EGSimpleSettings.shared.contextShowPin { egActions.append(actions.removeLast()) }
         }
         
         if let activePoll = activePoll, messages[0].forwardInfo == nil {
@@ -1877,7 +1877,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     if EGSimpleSettings.shared.contextShowSaveToCloud {
                         actions.append(action)
                     } else {
-                        sgActions.append(action)
+                        egActions.append(action)
                     }
                 }
                 let action: ContextMenuItem = .action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.NotificationSettings_Stories_CompactHideName, icon: { theme in
@@ -1889,7 +1889,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                 if EGSimpleSettings.shared.contextShowHideForwardName {
                     actions.append(action)
                 } else {
-                    sgActions.append(action)
+                    egActions.append(action)
                 }
             }
         }
@@ -1909,7 +1909,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             }, action: { controller, f in
                 interfaceInteraction.reportMessages(messages, controller)
             })))
-            if !EGSimpleSettings.shared.contextShowReport { sgActions.append(actions.removeLast()) }
+            if !EGSimpleSettings.shared.contextShowReport { egActions.append(actions.removeLast()) }
         } else if message.id.peerId.isReplies {
             actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Conversation_ContextMenuBlock, textColor: .destructive, icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Restrict"), color: theme.actionSheet.destructiveActionTextColor)
@@ -1959,7 +1959,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     if EGSimpleSettings.shared.contextShowRestrict {
                         actions.append(action)
                     } else {
-                        sgActions.append(action)
+                        egActions.append(action)
                     }
                 }
             }
@@ -2089,9 +2089,9 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                 })))
             }
         }
-        var sgActionsIndex: Int? = nil
+        var egActionsIndex: Int? = nil
         if !isPinnedMessages, !isReplyThreadHead, data.canSelect {
-            sgActionsIndex = actions.count
+            egActionsIndex = actions.count
             var didAddSeparator = false
             // MARK: ExteraGram
             if let authorId = message.author?.id {
@@ -2165,7 +2165,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     }
                     actions.append(action)
                 } else {
-                    sgActions.append(action)
+                    egActions.append(action)
                 }
             }
             
@@ -2216,22 +2216,22 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         }
 
         // MARK: ExteraGram
-        if !sgActions.isEmpty {
+        if !egActions.isEmpty {
             if !actions.isEmpty {
-                if let sgActionsIndex = sgActionsIndex {
-                    actions.insert(.separator, at: sgActionsIndex)
+                if let egActionsIndex = egActionsIndex {
+                    actions.insert(.separator, at: egActionsIndex)
                 } else {
                     actions.append(.separator)
                 }
             }
             
             var popSGItems: (() -> Void)? = nil
-            sgActions.insert(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Common_Back, icon: { theme in
+            egActions.insert(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Common_Back, icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Back"), color: theme.actionSheet.primaryTextColor)
             }, iconPosition: .left, action: { _, _ in
                 popSGItems?()
             })), at: 0)
-            sgActions.insert(.separator, at: 1)
+            egActions.insert(.separator, at: 1)
             
             let exteragramSubMenu: ContextMenuItem = .action(ContextMenuActionItem(text: "ExteraGram", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "ExteraGramContextMenu"), color: theme.actionSheet.primaryTextColor)
@@ -2239,11 +2239,11 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                 popSGItems = { [weak c] in
                     c?.popItems()
                 }
-                c?.pushItems(items: .single(ContextController.Items(content: .list(sgActions))))
+                c?.pushItems(items: .single(ContextController.Items(content: .list(egActions))))
             }))
             
-            if let sgActionsIndex = sgActionsIndex {
-                actions.insert(exteragramSubMenu, at: sgActionsIndex + 1)
+            if let egActionsIndex = egActionsIndex {
+                actions.insert(exteragramSubMenu, at: egActionsIndex + 1)
             } else {
                 actions.append(exteragramSubMenu)
             }

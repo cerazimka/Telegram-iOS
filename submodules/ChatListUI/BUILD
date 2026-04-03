@@ -1,11 +1,11 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
     "//ExteraGram/EGAPIWebSettings:EGAPIWebSettings",
     "//ExteraGram/EGAPIToken:EGAPIToken"
 ]
-sgsrcs = [
+egsrcs = [
     "//ExteraGram/EGChatListSimpleSettingsSignal:EGChatListSimpleSettingsSignal",
 ]
 
@@ -14,11 +14,11 @@ swift_library(
     module_name = "ChatListUI",
     srcs = glob([
         "Sources/**/*.swift",
-    ]) + sgsrcs,
+    ]) + egsrcs,
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/Display:Display",

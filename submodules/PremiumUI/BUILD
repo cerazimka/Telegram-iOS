@@ -48,7 +48,7 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGStrings:EGStrings"
 ]
 
@@ -64,7 +64,7 @@ swift_library(
     data = [
         ":PremiumUIBundle",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/Display:Display",

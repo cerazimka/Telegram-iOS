@@ -12,11 +12,11 @@ import EGRegDateScheme
 private let API_VERSION: String = "0"
 
 private func buildApiUrl(_ endpoint: String) -> String {
-    return "\(SG_CONFIG.apiUrl)/v\(API_VERSION)/\(endpoint)"
+    return "\(EG_CONFIG.apiUrl)/v\(API_VERSION)/\(endpoint)"
 }
 
-public let SG_API_AUTHORIZATION_HEADER = "Authorization"
-public let SG_API_DEVICE_TOKEN_HEADER = "Device-Token"
+public let EG_API_AUTHORIZATION_HEADER = "Authorization"
+public let EG_API_DEVICE_TOKEN_HEADER = "Device-Token"
 
 private enum HTTPRequestError {
     case network
@@ -26,11 +26,11 @@ public enum EGAPIError {
     case generic(String? = nil)
 }
 
-public func getSGSettings(token: String) -> Signal<EGWebSettings, EGAPIError> {
+public func getEGSettings(token: String) -> Signal<EGWebSettings, EGAPIError> {
     return Signal { subscriber in
 
         let url = URL(string: buildApiUrl("settings"))!
-        let headers = [SG_API_AUTHORIZATION_HEADER: "Token \(token)"]
+        let headers = [EG_API_AUTHORIZATION_HEADER: "Token \(token)"]
         let completed = Atomic<Bool>(value: false)
         
         var request = URLRequest(url: url)
@@ -67,7 +67,7 @@ public func postSGSettings(token: String, data: [String:Any]) -> Signal<Void, EG
     return Signal { subscriber in
 
         let url = URL(string: buildApiUrl("settings"))!
-        let headers = [SG_API_AUTHORIZATION_HEADER: "Token \(token)"]
+        let headers = [EG_API_AUTHORIZATION_HEADER: "Token \(token)"]
         let completed = Atomic<Bool>(value: false)
         
         var request = URLRequest(url: url)
@@ -105,13 +105,13 @@ public func postSGSettings(token: String, data: [String:Any]) -> Signal<Void, EG
     }
 }
 
-public func getSGAPIRegDate(token: String, deviceToken: String, userId: Int64) -> Signal<RegDate, EGAPIError> {
+public func getEGAPIRegDate(token: String, deviceToken: String, userId: Int64) -> Signal<RegDate, EGAPIError> {
     return Signal { subscriber in
 
         let url = URL(string: buildApiUrl("regdate/\(userId)"))!
         let headers = [
-            SG_API_AUTHORIZATION_HEADER: "Token \(token)",
-            SG_API_DEVICE_TOKEN_HEADER: deviceToken
+            EG_API_AUTHORIZATION_HEADER: "Token \(token)",
+            EG_API_DEVICE_TOKEN_HEADER: deviceToken
         ]
         let completed = Atomic<Bool>(value: false)
         
@@ -150,8 +150,8 @@ public func postSGReceipt(token: String, deviceToken: String, encodedReceiptData
 
         let url = URL(string: buildApiUrl("validate"))!
         let headers = [
-            SG_API_AUTHORIZATION_HEADER: "Token \(token)",
-            SG_API_DEVICE_TOKEN_HEADER: deviceToken
+            EG_API_AUTHORIZATION_HEADER: "Token \(token)",
+            EG_API_DEVICE_TOKEN_HEADER: deviceToken
         ]
         let completed = Atomic<Bool>(value: false)
         

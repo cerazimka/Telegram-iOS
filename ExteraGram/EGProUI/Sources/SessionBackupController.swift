@@ -493,7 +493,7 @@ func backupSessionsFromView(_ view: AccountRecordsView<TelegramAccountManagerTyp
 
 
 @available(iOS 13.0, *)
-public func sgSessionBackupManagerController(context: AccountContext, presentationData: PresentationData? = nil) -> ViewController {
+public func egSessionBackupManagerController(context: AccountContext, presentationData: PresentationData? = nil) -> ViewController {
     let theme = presentationData?.theme ?? (UITraitCollection.current.userInterfaceStyle == .dark ? defaultDarkColorPresentationTheme : defaultPresentationTheme)
     let strings = presentationData?.strings ?? defaultPresentationStrings
 

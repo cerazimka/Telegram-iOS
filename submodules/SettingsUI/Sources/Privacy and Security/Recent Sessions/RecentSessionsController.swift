@@ -817,7 +817,7 @@ public func recentSessionsController(context: AccountContext, activeSessionsCont
             return false
         }
         // MARK: ExteraGram
-        if appConfiguration.sgWebSettings.global.qrLogin {
+        if appConfiguration.egWebSettings.global.qrLogin {
             return true
         }
         guard let data = appConfiguration.data, let enableQR = data["qr_login_camera"] as? Bool, enableQR else {

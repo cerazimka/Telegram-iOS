@@ -634,7 +634,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                 }
                 pushControllerImpl?(controller)
             // MARK: ExteraGram
-            } else if icon.isSGPro && context.sharedContext.immediateSGStatus.status < 2 {
+            } else if icon.isEGPro && context.sharedContext.immediateEGStatus.status < 2 {
                 if let payWallController = context.sharedContext.makeSGPayWallController(context: context) {
                     presentControllerImpl?(payWallController, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
                 } else {
@@ -1108,7 +1108,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             ApplicationSpecificSharedDataKeys.chatSettings,
             ApplicationSpecificSharedDataKeys.mediaDisplaySettings,
             SharedDataKeys.chatThemes,
-            ApplicationSpecificSharedDataKeys.sgStatus // MARK: ExteraGram
+            ApplicationSpecificSharedDataKeys.egStatus // MARK: ExteraGram
         ]),
         cloudThemes.get(),
         availableAppIcons,
@@ -1124,8 +1124,8 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
         let mediaSettings = sharedData.entries[ApplicationSpecificSharedDataKeys.mediaDisplaySettings]?.get(MediaDisplaySettings.self) ?? MediaDisplaySettings.defaultSettings
         
         // MARK: ExteraGram
-        let sgStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(EGStatus.self) ?? EGStatus.default
-        let isPremium = sgStatus.status > 1
+        let egStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.egStatus]?.get(EGStatus.self) ?? EGStatus.default
+        let isPremium = egStatus.status > 1
         
         let themeReference: PresentationThemeReference
         if presentationData.autoNightModeTriggered {

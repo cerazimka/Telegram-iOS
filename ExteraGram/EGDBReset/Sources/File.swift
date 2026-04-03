@@ -5,7 +5,7 @@ import EGLogging
 private let dbResetKey = "sg_db_reset"
 private let dbHardResetKey = "sg_db_hard_reset"
 
-public func sgDBResetIfNeeded(databasePath: String, present: ((UIViewController) -> ())?) {
+public func egDBResetIfNeeded(databasePath: String, present: ((UIViewController) -> ())?) {
     guard UserDefaults.standard.bool(forKey: dbResetKey) else {
         return
     }
@@ -47,7 +47,7 @@ public func sgDBResetIfNeeded(databasePath: String, present: ((UIViewController)
 //    semaphore.wait()
 }
 
-public func sgHardReset(dataPath: String, present: ((UIViewController) -> ())?) {
+public func egHardReset(dataPath: String, present: ((UIViewController) -> ())?) {
     let startAlert = UIAlertController(
         title: "ATTENTION",
         message: "Confirm RESET ALL?",

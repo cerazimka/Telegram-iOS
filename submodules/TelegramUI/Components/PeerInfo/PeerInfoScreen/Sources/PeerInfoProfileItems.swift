@@ -49,7 +49,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
     var currentPeerInfoSection: InfoSection = .peerInfo
 
     // MARK: ExteraGram
-    var sgItemId = 0
+    var egItemId = 0
     var idText = ""
     var isMutualContact = false
     //    var isUser = false
@@ -894,12 +894,12 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
     
     // MARK: ExteraGram
     if showProfileId {
-        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: "id: \(idText)", text: "", textColor: .primary, action: nil, longTapAction: { sourceNode in
+        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: egItemId, label: "id: \(idText)", text: "", textColor: .primary, action: nil, longTapAction: { sourceNode in
             interaction.openPeerInfoContextMenu(.copy(idText), sourceNode, nil)
         }, requestLayout: { _ in
             interaction.requestLayout(false)
         }))
-        sgItemId += 1
+        egItemId += 1
     }
     
     if EGSimpleSettings.shared.showDC {
@@ -956,35 +956,35 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         }
 
         if !dcText.isEmpty || !dcLabel.isEmpty {
-            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: dcLabel, text: dcText, textColor: .primary, action: nil, longTapAction: { sourceNode in
+            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: egItemId, label: dcLabel, text: dcText, textColor: .primary, action: nil, longTapAction: { sourceNode in
                 interaction.openPeerInfoContextMenu(.aboutDC, sourceNode, nil)
             }, requestLayout: { _ in
                 interaction.requestLayout(false)
             }))
-            sgItemId += 1
+            egItemId += 1
         }
     }
     
     if EGSimpleSettings.shared.showCreationDate {
         if let channelCreationTimestamp = data.channelCreationTimestamp {
             let creationDateString = stringForDate(timestamp: channelCreationTimestamp, strings: presentationData.strings)
-            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.Created", presentationData.strings.baseLanguageCode, creationDateString), text: "", action: nil, longTapAction: { sourceNode in
+            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: egItemId, label: i18n("Chat.Created", presentationData.strings.baseLanguageCode, creationDateString), text: "", action: nil, longTapAction: { sourceNode in
                 interaction.openPeerInfoContextMenu(.copy(creationDateString), sourceNode, nil)
             }, requestLayout: { _ in
                 interaction.requestLayout(false)
             }))
-            sgItemId += 1
+            egItemId += 1
         }
     }
     
     if let invitedAt = nearestChatParticipant.1 {
         let joinedDateString = stringForDate(timestamp: invitedAt, strings: presentationData.strings)
-        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.JoinedDateTitle", presentationData.strings.baseLanguageCode, nearestChatParticipant.0 ?? "chat") , text: joinedDateString, action: nil, longTapAction: { sourceNode in
+        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: egItemId, label: i18n("Chat.JoinedDateTitle", presentationData.strings.baseLanguageCode, nearestChatParticipant.0 ?? "chat") , text: joinedDateString, action: nil, longTapAction: { sourceNode in
             interaction.openPeerInfoContextMenu(.copy(joinedDateString), sourceNode, nil)
         }, requestLayout: { _ in
             interaction.requestLayout(false)
         }))
-        sgItemId += 1
+        egItemId += 1
     }
     
     if EGSimpleSettings.shared.showRegDate {
@@ -999,7 +999,7 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
         }
         if let regDate = data.regDate, regDateString.isEmpty {
             let regTimestamp = Int32((regDate.from + regDate.to) / 2)
-            switch (context.currentAppConfiguration.with { $0 }.sgWebSettings.global.regdateFormat) {
+            switch (context.currentAppConfiguration.with { $0 }.egWebSettings.global.regdateFormat) {
                 case "year":
                     regDateString = stringForDateWithoutDayAndMonth(date: Date(timeIntervalSince1970: Double(regTimestamp)), strings: presentationData.strings)
                 case "month":
@@ -1009,19 +1009,19 @@ func infoItems(nearestChatParticipant: (String?, Int32?), showProfileId: Bool, d
             }
         }
         if !regDateString.isEmpty {
-            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("Chat.RegDate", presentationData.strings.baseLanguageCode), text: regDateString, action: nil, longTapAction: { sourceNode in
+            items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: egItemId, label: i18n("Chat.RegDate", presentationData.strings.baseLanguageCode), text: regDateString, action: nil, longTapAction: { sourceNode in
                 interaction.openPeerInfoContextMenu(.copy(regDateString), sourceNode, nil)
             }, requestLayout: { _ in
                 interaction.requestLayout(false)
             }))
-            sgItemId += 1
+            egItemId += 1
         }
     }
     if isMutualContact {
-        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: sgItemId, label: i18n("MutualContact.Label", presentationData.strings.baseLanguageCode), text: "", action: nil, longTapAction: { _ in }, requestLayout: { _ in
+        items[.exteragram]!.append(PeerInfoScreenLabeledValueItem(id: egItemId, label: i18n("MutualContact.Label", presentationData.strings.baseLanguageCode), text: "", action: nil, longTapAction: { _ in }, requestLayout: { _ in
             interaction.requestLayout(false)
         }))
-        sgItemId += 1
+        egItemId += 1
     }
     
     

@@ -1,25 +1,25 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGStrings:EGStrings",
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
     "//submodules/TranslateUI:TranslateUI"
 ]
 
-sgsrc = [
+egsrc = [
     "//ExteraGram/EGDoubleTapMessageAction:EGDoubleTapMessageAction"
 ]
 
 swift_library(
     name = "ChatMessageBubbleItemNode",
     module_name = "ChatMessageBubbleItemNode",
-    srcs = sgsrc + glob([
+    srcs = egsrc + glob([
         "Sources/**/*.swift",
     ]),
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/AsyncDisplayKit",
         "//submodules/Display",
         "//submodules/SSignalKit/SwiftSignalKit",

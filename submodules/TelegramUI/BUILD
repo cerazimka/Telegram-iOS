@@ -5,7 +5,7 @@ load(
     "telegram_bundle_id",
 )
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGSettingsUI:EGSettingsUI",
     "//ExteraGram/EGConfig:EGConfig",
     "//ExteraGram/EGAPIWebSettings:EGAPIWebSettings",
@@ -27,7 +27,7 @@ sgdeps = [
     # "//ExteraGram/EGContentAnalysis:EGContentAnalysis"
 ]
 
-sgsrcs = [
+egsrcs = [
     "//ExteraGram/EGDBReset:EGDBReset",
     "//ExteraGram/EGShowMessageJson:EGShowMessageJson",
     "//ExteraGram/ChatControllerImplExtension:ChatControllerImplExtension",
@@ -72,11 +72,11 @@ swift_library(
     module_name = "TelegramUI",
     srcs = glob([
         "Sources/**/*.swift",
-    ]) + sgsrcs,
+    ]) + egsrcs,
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//third-party/recaptcha:RecaptchaEnterprise",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/SSignalKit/SSignalKit:SSignalKit",

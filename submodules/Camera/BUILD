@@ -8,7 +8,7 @@ load("//build-system/bazel-utils:plist_fragment.bzl",
     "plist_fragment",
 )
 
-sgDeps = [
+egDeps = [
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings"
 ]
 
@@ -56,7 +56,7 @@ swift_library(
     data = [
         ":CameraBundle",
     ],
-    deps = sgDeps + [
+    deps = egDeps + [
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/Display:Display",

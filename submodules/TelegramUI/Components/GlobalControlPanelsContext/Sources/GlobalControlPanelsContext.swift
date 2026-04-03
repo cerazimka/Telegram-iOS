@@ -68,7 +68,7 @@ public final class GlobalControlPanelsContext {
     
     public enum ChatListNotice: Equatable {
         case clearStorage(sizeFraction: Double)
-        case sgUrl(id: String, title: String, text: String?, url: String, needAuth: Bool, permanent: Bool)
+        case egUrl(id: String, title: String, text: String?, url: String, needAuth: Bool, permanent: Bool)
         case setupPassword
         case premiumUpgrade(discount: Int32)
         case premiumAnnualDiscount(discount: Int32)
@@ -330,7 +330,7 @@ public final class GlobalControlPanelsContext {
                 let starsSubscriptionsContextPromise = Promise<StarsSubscriptionsContext?>(nil)
                 
                 let suggestedChatListNoticeSignal: Signal<ChatListNotice?, NoError> = combineLatest(
-                    getSGProvidedSuggestions(account: context.account),
+                    getEGProvidedSuggestions(account: context.account),
                     context.engine.notices.getServerProvidedSuggestions(),
                     context.engine.notices.getServerDismissedSuggestions(),
                     twoStepData,
@@ -343,14 +343,14 @@ public final class GlobalControlPanelsContext {
                     starsSubscriptionsContextPromise.get(),
                     accountFreezeConfiguration
                 )
-                |> mapToSignal { sgSuggestionsData, suggestions, dismissedSuggestions, configuration, newSessionReviews, data, birthdays, starsSubscriptionsContext, accountFreezeConfiguration -> Signal<ChatListNotice?, NoError> in
+                |> mapToSignal { egSuggestionsData, suggestions, dismissedSuggestions, configuration, newSessionReviews, data, birthdays, starsSubscriptionsContext, accountFreezeConfiguration -> Signal<ChatListNotice?, NoError> in
                     let (accountPeer, birthday) = data
                     
 
                     // MARK: ExteraGram
-                    if let sgSuggestionsData = sgSuggestionsData, let dictionary = try? JSONSerialization.jsonObject(with: sgSuggestionsData, options: []), let sgSuggestions = dictionary as? [[String: Any]], let sgSuggestion = sgSuggestions.first, let sgSuggestionId = sgSuggestion["id"] as? String {
-                        if let sgSuggestionType = sgSuggestion["type"] as? String, sgSuggestionType == "SG_URL", let sgSuggestionTitle = sgSuggestion["title"] as? String, let sgSuggestionUrl = sgSuggestion["url"] as? String {
-                            return .single(.sgUrl(id: sgSuggestionId, title: sgSuggestionTitle, text: sgSuggestion["text"] as? String, url: sgSuggestionUrl, needAuth: sgSuggestion["need_auth"] as? Bool ?? false, permanent: sgSuggestion["permanent"] as? Bool ?? false))
+                    if let egSuggestionsData = egSuggestionsData, let dictionary = try? JSONSerialization.jsonObject(with: egSuggestionsData, options: []), let egSuggestions = dictionary as? [[String: Any]], let egSuggestion = egSuggestions.first, let egSuggestionId = egSuggestion["id"] as? String {
+                        if let egSuggestionType = egSuggestion["type"] as? String, egSuggestionType == "EG_URL", let egSuggestionTitle = egSuggestion["title"] as? String, let egSuggestionUrl = egSuggestion["url"] as? String {
+                            return .single(.egUrl(id: egSuggestionId, title: egSuggestionTitle, text: egSuggestion["text"] as? String, url: egSuggestionUrl, needAuth: egSuggestion["need_auth"] as? Bool ?? false, permanent: egSuggestion["permanent"] as? Bool ?? false))
                             
                         }
                     }

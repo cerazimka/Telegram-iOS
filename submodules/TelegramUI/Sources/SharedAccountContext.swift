@@ -281,11 +281,11 @@ public final class SharedAccountContextImpl: SharedAccountContext {
     private var experimentalUISettingsDisposable: Disposable?
 
     // MARK: ExteraGram
-    private var immediateSGStatusValue = Atomic<EGStatus>(value: EGStatus.default)
-    public var immediateSGStatus: EGStatus {
-        return self.immediateSGStatusValue.with { $0 }
+    private var immediateEGStatusValue = Atomic<EGStatus>(value: EGStatus.default)
+    public var immediateEGStatus: EGStatus {
+        return self.immediateEGStatusValue.with { $0 }
     }
-    private var sgStatusDisposable: Disposable?
+    private var egStatusDisposable: Disposable?
     public var EGIAP: EGIAPManager?
     
     public var presentGlobalController: (ViewController, Any?) -> Void = { _, _ in }
@@ -533,11 +533,11 @@ public final class SharedAccountContextImpl: SharedAccountContext {
             }
         })
         // MARK: ExteraGram
-        let immediateSGStatusValue = self.immediateSGStatusValue
-        self.sgStatusDisposable = (self.accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.sgStatus])
+        let immediateEGStatusValue = self.immediateEGStatusValue
+        self.egStatusDisposable = (self.accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.egStatus])
         |> deliverOnMainQueue).start(next: { sharedData in
-            if let settings = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(EGStatus.self) {
-                let _ = immediateSGStatusValue.swap(settings)
+            if let settings = sharedData.entries[ApplicationSpecificSharedDataKeys.egStatus]?.get(EGStatus.self) {
+                let _ = immediateEGStatusValue.swap(settings)
                 EGSimpleSettings.shared.ephemeralStatus = settings.status
                 EGSimpleSettings.shared.status = settings.status
             }
@@ -1136,7 +1136,7 @@ public final class SharedAccountContextImpl: SharedAccountContext {
     var didPerformSGUISettingsMigration = false
     //
     // MARK: ExteraGram
-    func sgPrimaryAccountContextForMigration() -> AccountContext? {
+    func egPrimaryAccountContextForMigration() -> AccountContext? {
         return self.activeAccountsValue?.primary
     }
     //
@@ -4502,7 +4502,7 @@ extension SharedAccountContextImpl {
     }
     
     public func makeSGProController(context: AccountContext) -> ViewController {
-        let controller = sgProController(context: context)
+        let controller = egProController(context: context)
         return controller
     }
 
@@ -4510,18 +4510,18 @@ extension SharedAccountContextImpl {
         guard #available(iOS 13.0, *) else {
             return nil
         }
-        guard let sgIAP = self.EGIAP else {
+        guard let egIAP = self.EGIAP else {
             return nil
         }
 
-        let statusSignal = self.accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.sgStatus])
+        let statusSignal = self.accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.egStatus])
         |> map { sharedData -> Int64 in
-            let sgStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.sgStatus]?.get(EGStatus.self) ?? EGStatus.default
-            return sgStatus.status
+            let egStatus = sharedData.entries[ApplicationSpecificSharedDataKeys.egStatus]?.get(EGStatus.self) ?? EGStatus.default
+            return egStatus.status
         }
 
         let proController = self.makeSGProController(context: context)
-        let sgWebSettings = context.currentAppConfiguration.with { $0 }.sgWebSettings
+        let egWebSettings = context.currentAppConfiguration.with { $0 }.egWebSettings
         let presentationData = self.currentPresentationData.with { $0 }
         var payWallController: ViewController? = nil
         let openUrl: ((String, Bool) -> Void) = { [weak self, weak context] url, forceExternal in
@@ -4535,10 +4535,10 @@ extension SharedAccountContextImpl {
         }
         
         var supportUrl: String? = nil
-        if let supportUrlString = sgWebSettings.global.proSupportUrl, !supportUrlString.isEmpty, let data = Data(base64Encoded: supportUrlString), let decodedString = String(data: data, encoding: .utf8) {
+        if let supportUrlString = egWebSettings.global.proSupportUrl, !supportUrlString.isEmpty, let data = Data(base64Encoded: supportUrlString), let decodedString = String(data: data, encoding: .utf8) {
             supportUrl = decodedString
         }
-        payWallController = sgPayWallController(statusSignal: statusSignal, replacementController: proController, presentationData: presentationData, EGIAPManager: sgIAP, openUrl: openUrl, paymentsEnabled: sgWebSettings.global.paymentsEnabled, canBuyInBeta: sgWebSettings.user.canBuyInBeta, openAppStorePage: self.applicationBindings.openAppStorePage, proSupportUrl: supportUrl)
+        payWallController = egPayWallController(statusSignal: statusSignal, replacementController: proController, presentationData: presentationData, EGIAPManager: egIAP, openUrl: openUrl, paymentsEnabled: egWebSettings.global.paymentsEnabled, canBuyInBeta: egWebSettings.user.canBuyInBeta, openAppStorePage: self.applicationBindings.openAppStorePage, proSupportUrl: supportUrl)
         return payWallController
     }
     

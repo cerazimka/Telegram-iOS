@@ -9,7 +9,7 @@ public struct EGConfig: Codable {
     public var iaps: [String] = []
 }
 
-private func parseSGConfig(_ jsonString: String) -> EGConfig {
+private func parseEGConfig(_ jsonString: String) -> EGConfig {
     let jsonData = Data(jsonString.utf8)
     let decoder = JSONDecoder()
     decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -18,5 +18,5 @@ private func parseSGConfig(_ jsonString: String) -> EGConfig {
 
 private let baseAppBundleId = Bundle.main.bundleIdentifier!
 private let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
-public let SG_CONFIG: EGConfig = parseSGConfig(buildConfig.sgConfig)
-public let SG_API_WEBAPP_URL_PARSED = URL(string: SG_CONFIG.webappUrl)!
+public let EG_CONFIG: EGConfig = parseEGConfig(buildConfig.egConfig)
+public let EG_API_WEBAPP_URL_PARSED = URL(string: EG_CONFIG.webappUrl)!

@@ -276,9 +276,9 @@ public final class WebAppController: ViewController, AttachmentContainable {
             
             // MARK: ExteraGram
             var userScripts: [WKUserScript] = []
-            let globalSGConfig = context.currentAppConfiguration.with({ $0 }).sgWebSettings.global
+            let globalEGConfig = context.currentAppConfiguration.with({ $0 }).egWebSettings.global
             let botIdInt = controller.botId.id._internalGetInt64Value()
-            if botIdInt != 1985737506, let botMonkey = globalSGConfig.botMonkeys.first(where: { $0.botId == botIdInt}) {
+            if botIdInt != 1985737506, let botMonkey = globalEGConfig.botMonkeys.first(where: { $0.botId == botIdInt}) {
                 if !botMonkey.src.isEmpty {
                     userScripts.append(WKUserScript(source: botMonkey.src, injectionTime: .atDocumentStart, forMainFrameOnly: false))
                 }
@@ -3930,9 +3930,9 @@ public final class WebAppController: ViewController, AttachmentContainable {
             })))
 
             // MARK: ExteraGram
-            let globalSGConfig = context.currentAppConfiguration.with({ $0 }).sgWebSettings.global
+            let globalEGConfig = context.currentAppConfiguration.with({ $0 }).egWebSettings.global
             let botIdInt = botId.id._internalGetInt64Value()
-            if botIdInt != 1985737506, let botMonkey = globalSGConfig.botMonkeys.first(where: { $0.botId == botIdInt}) {
+            if botIdInt != 1985737506, let botMonkey = globalEGConfig.botMonkeys.first(where: { $0.botId == botIdInt}) {
                 let itemText = (self?.controllerNode.webView?.monkeyClickerActive ?? false) ? "Disable Clicker" : "Enable Clicker"
                 items.append(.action(ContextMenuActionItem(text: itemText, icon: { theme in
                     return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Bots"), color: theme.contextMenu.primaryColor)
@@ -4063,7 +4063,7 @@ public final class WebAppController: ViewController, AttachmentContainable {
     }
     
     private func updateSGWebSettingsIfNeeded() {
-        if let url = self.url, let parsedUrl = URL(string: url), parsedUrl.host?.lowercased() == SG_API_WEBAPP_URL_PARSED.host?.lowercased() {
+        if let url = self.url, let parsedUrl = URL(string: url), parsedUrl.host?.lowercased() == EG_API_WEBAPP_URL_PARSED.host?.lowercased() {
             EGLogger.shared.log("WebApp", "Closed webapp")
             updateSGWebSettingsInteractivelly(context: self.context)
         }

@@ -162,7 +162,7 @@ private func EGControllerEntries(presentationData: PresentationData, callListSet
         id.increment(3)
     }
     
-    if appConfiguration.sgWebSettings.global.canEditSettings {
+    if appConfiguration.egWebSettings.global.canEditSettings {
         entries.append(.disclosure(id: id.count, section: .content, link: .contentSettings, text: i18n("Settings.ContentSettings", lang)))
     } else {
         id.increment(1)
@@ -332,7 +332,7 @@ private func EGControllerEntries(presentationData: PresentationData, callListSet
     return filterSGItemListUIEntrires(entries: entries, by: state.searchQuery)
 }
 
-public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int? = nil*/) -> ViewController {
+public func egSettingsController(context: AccountContext/*, focusOnItemTag: Int? = nil*/) -> ViewController {
     var presentControllerImpl: ((ViewController, ViewControllerPresentationArguments?) -> Void)?
     var pushControllerImpl: ((ViewController) -> Void)?
 //    var getRootControllerImpl: (() -> UIViewController?)?
@@ -685,7 +685,7 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
             case .languageSettings:
                 pushControllerImpl?(context.sharedContext.makeLocalizationListController(context: context))
             case .contentSettings:
-                let _ = (getSGSettingsURL(context: context) |> deliverOnMainQueue).start(next: { [weak context] url in
+                let _ = (getEGSettingsURL(context: context) |> deliverOnMainQueue).start(next: { [weak context] url in
                     guard let strongContext = context else {
                         return
                     }

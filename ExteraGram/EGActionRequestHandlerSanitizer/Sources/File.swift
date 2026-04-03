@@ -1,6 +1,6 @@
 import Foundation
 
-public func sgActionRequestHandlerSanitizer(_ url: URL) -> URL {
+public func egActionRequestHandlerSanitizer(_ url: URL) -> URL {
     var url = url
     if let scheme = url.scheme {
         let openInPrefix = "\(scheme)://parseurl?url="

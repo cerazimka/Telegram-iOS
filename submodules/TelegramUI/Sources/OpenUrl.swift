@@ -323,7 +323,7 @@ private func handleInternetUrl(
                             controller.preferredBarTintColor = presentationData.theme.rootController.navigationBar.opaqueBackgroundColor
                             controller.preferredControlTintColor = presentationData.theme.rootController.navigationBar.accentTextColor
                             // MARK: ExteraGram
-                            if parsedUrl.host?.lowercased() == SG_API_WEBAPP_URL_PARSED.host?.lowercased() {
+                            if parsedUrl.host?.lowercased() == EG_API_WEBAPP_URL_PARSED.host?.lowercased() {
                                 controller.onDidFinish = {
                                     EGLogger.shared.log("SafariController", "Closed webapp")
                                     updateSGWebSettingsInteractivelly(context: context)
@@ -885,10 +885,10 @@ func openExternalUrlImpl(context: AccountContext, urlContext: OpenURLContext, ur
                                     return
                                 }
                             case "sgdebug", "sg_debug":
-                                navigationController?.pushViewController(sgDebugController(context: context))
+                                navigationController?.pushViewController(egDebugController(context: context))
                                 return
                             case "settings":
-                                navigationController?.pushViewController(sgSettingsController(context: context))
+                                navigationController?.pushViewController(egSettingsController(context: context))
                                 return
                             case "ios_settings":
                                 context.sharedContext.applicationBindings.openSettings()
@@ -899,7 +899,7 @@ func openExternalUrlImpl(context: AccountContext, urlContext: OpenURLContext, ur
                                 }
                                 return
                             case "pro", "premium", "buy":
-                                if context.sharedContext.immediateSGStatus.status > 1 {
+                                if context.sharedContext.immediateEGStatus.status > 1 {
                                     navigationController?.pushViewController(context.sharedContext.makeSGProController(context: context))
                                 } else {
                                     if let lastViewController = navigationController?.viewControllers.last as? ViewController {

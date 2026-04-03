@@ -978,7 +978,7 @@ func peerInfoScreenSettingsData(context: AccountContext, peerId: EnginePeer.Id, 
         var enableQRLogin = false
         let appConfiguration = accountPreferences.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self)
         // MARK: ExteraGram
-        if let appConfiguration, appConfiguration.sgWebSettings.global.qrLogin {
+        if let appConfiguration, appConfiguration.egWebSettings.global.qrLogin {
             enableQRLogin = true
         }
         if let appConfiguration, let data = appConfiguration.data, let enableQR = data["qr_login_camera"] as? Bool, enableQR {

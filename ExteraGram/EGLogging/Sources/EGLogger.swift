@@ -23,7 +23,7 @@ public class EGLogger {
     private var file: (ManagedFile, Int)?
     private var shortFile: (ManagedFile, Int)?
     
-    public static let sgLogsPath = "/logs/app-logs-sg"
+    public static let egLogsPath = "/logs/app-logs-sg"
     
     public var logToFile: Bool = true
     public var logToConsole: Bool = true
@@ -49,7 +49,7 @@ public class EGLogger {
                 return EGLogger(rootPath: "", basePath: "")
             }
             let newRootPath = rootPathForBasePath(appGroupUrl.path)
-            let newLogsPath = newRootPath + sgLogsPath
+            let newLogsPath = newRootPath + egLogsPath
             let _ = try? FileManager.default.createDirectory(atPath: newLogsPath, withIntermediateDirectories: true, attributes: nil)
             self.setSharedLogger(EGLogger(rootPath: newRootPath, basePath: newLogsPath))
             if let sharedLogger = sharedLogger {

@@ -91,7 +91,7 @@ func chatMessageDisplaySendMessageOptions(selfController: ChatControllerImpl, no
         // MARK: ExteraGram
         let outgoingMessageTranslateToLang = EGSimpleSettings.shared.outgoingLanguageTranslation[EGSimpleSettings.makeOutgoingLanguageTranslationKey(accountId: selfController.context.account.peerId.id._internalGetInt64Value(), peerId: peer.id.id._internalGetInt64Value())] ?? selfController.contentData?.state.predictedChatLanguage
                 
-        let sgTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?) = (outgoingMessageTranslateToLang: outgoingMessageTranslateToLang, translate: { [weak selfController] in
+        let egTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?) = (outgoingMessageTranslateToLang: outgoingMessageTranslateToLang, translate: { [weak selfController] in
             guard let selfController else { return }
             let textToTranslate = selfController.presentationInterfaceState.interfaceState.effectiveInputState.inputText.string
             let textEntities = selfController.presentationInterfaceState.interfaceState.synchronizeableInputState?.entities ?? []
@@ -167,7 +167,7 @@ func chatMessageDisplaySendMessageOptions(selfController: ChatControllerImpl, no
             }
             
             let controller = makeChatSendMessageActionSheetController(
-                sgTranslationContext: sgTranslationContext,
+                egTranslationContext: egTranslationContext,
                 initialData: initialData,
                 context: selfController.context,
                 updatedPresentationData: selfController.updatedPresentationData,
@@ -259,7 +259,7 @@ func chatMessageDisplaySendMessageOptions(selfController: ChatControllerImpl, no
             }
             
             let controller = makeChatSendMessageActionSheetController(
-                sgTranslationContext: sgTranslationContext,
+                egTranslationContext: egTranslationContext,
                 initialData: initialData,
                 context: selfController.context,
                 updatedPresentationData: selfController.updatedPresentationData,

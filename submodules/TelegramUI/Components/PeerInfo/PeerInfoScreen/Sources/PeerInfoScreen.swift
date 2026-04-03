@@ -7084,7 +7084,7 @@ public final class PeerInfoScreenImpl: ViewController, PeerInfoScreen, KeyShortc
             guard let self = self else {
                 return
             }
-            self.push(sgDebugController(context: self.context))
+            self.push(egDebugController(context: self.context))
 
             f(.dismissWithoutContent)
         })))
@@ -7498,7 +7498,7 @@ extension PeerInfoScreenImpl {
             guard let self = self else {
                 return
             }
-            self.push(sgDebugController(context: self.context))
+            self.push(egDebugController(context: self.context))
             
             f(.dismissWithoutContent)
         })))

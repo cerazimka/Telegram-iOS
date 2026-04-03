@@ -539,7 +539,7 @@ public struct GalleryConfiguration {
     
     static func with(appConfiguration: AppConfiguration) -> GalleryConfiguration {
         // MARK: ExteraGram
-        if appConfiguration.sgWebSettings.global.ytPip {
+        if appConfiguration.egWebSettings.global.ytPip {
             return GalleryConfiguration(youtubePictureInPictureEnabled: true)
         }
         if let data = appConfiguration.data, let value = data["youtube_pip"] as? String {

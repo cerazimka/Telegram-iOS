@@ -394,9 +394,9 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     strongSelf.chatListDisplayNode.effectiveContainerNode.currentItemNode.scrollToPosition(.top(adjustForTempInset: false))
                 case let .known(offset):
                     // MARK: ExteraGram
-                    let sgAllChatsHiddden = EGSimpleSettings.shared.allChatsHidden
+                    let egAllChatsHiddden = EGSimpleSettings.shared.allChatsHidden
                     var mainContainerNode_availableFilters = strongSelf.chatListDisplayNode.mainContainerNode.availableFilters
-                    if sgAllChatsHiddden {
+                    if egAllChatsHiddden {
                         mainContainerNode_availableFilters.removeAll { $0 == .all }
                     }
                     let isFirstFilter = strongSelf.chatListDisplayNode.effectiveContainerNode.currentItemNode.chatListFilter == mainContainerNode_availableFilters.first?.filter
@@ -406,7 +406,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     } else if offset <= ChatListNavigationBar.searchScrollHeight + 1.0 && !isFirstFilter {
                         // MARK: ExteraGram
                         var effectiveContainerNode_availableFilters = strongSelf.chatListDisplayNode.mainContainerNode.availableFilters
-                        if sgAllChatsHiddden {
+                        if egAllChatsHiddden {
                             effectiveContainerNode_availableFilters.removeAll { $0 == .all }
                         }
                         let firstFilter = effectiveContainerNode_availableFilters.first ?? .all
@@ -2145,7 +2145,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 self.storiesReady.set(.single(true))
             } else {
                 // MARK: ExteraGram
-                let hideStoriesSignal = sgSimpleSettingsBoolSignal(.hideStories, defaultValue: false)
+                let hideStoriesSignal = egSimpleSettingsBoolSignal(.hideStories, defaultValue: false)
                 
                 self.storySubscriptionsDisposable = (combineLatest(self.context.engine.messages.storySubscriptions(isHidden: self.location == .chatList(groupId: .archive)), hideStoriesSignal)
                 |> deliverOnMainQueue).startStrict(next: { [weak self] rawStorySubscriptions, hideStories in
@@ -6773,7 +6773,7 @@ private final class ChatListLocationContext {
         })
         
         // MARK: ExteraGram
-        let hideStoriesSignal = sgSimpleSettingsBoolSignal(.hideStories, defaultValue: false)
+        let hideStoriesSignal = egSimpleSettingsBoolSignal(.hideStories, defaultValue: false)
         
         let passcode = context.sharedContext.accountManager.accessChallengeData()
         |> map { view -> (Bool, Bool) in

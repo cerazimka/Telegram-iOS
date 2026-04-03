@@ -1,6 +1,6 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/SwiftSoup:SwiftSoup",
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
     "//ExteraGram/EGTranslationLangFix:EGTranslationLangFix",
@@ -10,20 +10,20 @@ sgdeps = [
     "//ExteraGram/EGLogging:EGLogging",
 ]
 
-sgsrc = [
+egsrc = [
     "//ExteraGram/EGIQTP:EGIQTP",
 ]
 
 swift_library(
     name = "TelegramCore",
     module_name = "TelegramCore",
-    srcs = sgsrc + glob([
+    srcs = egsrc + glob([
         "Sources/**/*.swift",
     ]),
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/TelegramApi:TelegramApi",
         "//submodules/MtProtoKit:MtProtoKit",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",

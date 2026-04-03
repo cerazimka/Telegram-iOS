@@ -1,23 +1,23 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings"
 ]
 
-sgsrc = [
+egsrc = [
     "//ExteraGram/EGEmojiKeyboardDefaultFirst:EGEmojiKeyboardDefaultFirst"
 ]
 
 swift_library(
     name = "EntityKeyboard",
     module_name = "EntityKeyboard",
-    srcs = sgsrc + glob([
+    srcs = egsrc + glob([
         "Sources/**/*.swift",
     ]),
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/Display:Display",
         "//submodules/ComponentFlow:ComponentFlow",

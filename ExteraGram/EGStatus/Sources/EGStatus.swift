@@ -28,7 +28,7 @@ public struct EGStatus: Equatable, Codable {
 
 public func updateSGStatusInteractively(accountManager: AccountManager<TelegramAccountManagerTypes>, _ f: @escaping (EGStatus) -> EGStatus) -> Signal<Void, NoError> {
     return accountManager.transaction { transaction -> Void in
-        transaction.updateSharedData(ApplicationSpecificSharedDataKeys.sgStatus, { entry in
+        transaction.updateSharedData(ApplicationSpecificSharedDataKeys.egStatus, { entry in
             let currentSettings: EGStatus
             if let entry = entry?.get(EGStatus.self) {
                 currentSettings = entry

@@ -1,10 +1,10 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgsrc = [
+egsrc = [
     "//ExteraGram/EGAppBadgeOffset:EGAppBadgeOffset"
 ]
 
-sgdeps = [
+egdeps = [
     "//submodules/Utils/DeviceModel",
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
 ]
@@ -12,13 +12,13 @@ sgdeps = [
 swift_library(
     name = "Display",
     module_name = "Display",
-    srcs = sgsrc + glob([
+    srcs = egsrc + glob([
         "Source/**/*.swift",
     ]),
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
     	"//submodules/ObjCRuntimeUtils:ObjCRuntimeUtils",
     	"//submodules/UIKitRuntimeUtils:UIKitRuntimeUtils",
         "//submodules/AppBundle:AppBundle",

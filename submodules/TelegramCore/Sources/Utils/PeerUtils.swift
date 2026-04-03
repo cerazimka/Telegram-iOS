@@ -31,9 +31,9 @@ public extension Peer {
         
         // MARK: ExteraGram
         let chatId = self.id.id._internalGetInt64Value()
-        if contentSettings.appConfiguration.sgWebSettings.global.forceReasons.contains(chatId) {
+        if contentSettings.appConfiguration.egWebSettings.global.forceReasons.contains(chatId) {
             return "Unavailable in ExteraGram due to App Store Guidelines"
-        } else if contentSettings.appConfiguration.sgWebSettings.global.unforceReasons.contains(chatId) {
+        } else if contentSettings.appConfiguration.egWebSettings.global.unforceReasons.contains(chatId) {
             return nil
         }
         if let restrictionInfo = restrictionInfo {

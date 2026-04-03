@@ -14,41 +14,41 @@ extension SharedAccountContextImpl {
         if self.didPerformSGUISettingsMigration {
             return
         }
-        let sgMigrationKey = "sg_migrated_sgui_settings_v1"
-        if UserDefaults.standard.bool(forKey: sgMigrationKey) {
+        let egMigrationKey = "sg_migrated_sgui_settings_v1"
+        if UserDefaults.standard.bool(forKey: egMigrationKey) {
             self.didPerformSGUISettingsMigration = true
             return
         }
-        guard let sgPrimary = self.sgPrimaryAccountContextForMigration() else {
+        guard let egPrimary = self.egPrimaryAccountContextForMigration() else {
             return
         }
         self.didPerformSGUISettingsMigration = true
         
-        let sgPreferences: Signal<PreferencesView, NoError> = sgPrimary.account.postbox.preferencesView(keys: [ApplicationSpecificPreferencesKeys.EGUISettings])
-        let _ = (sgPreferences
+        let egPreferences: Signal<PreferencesView, NoError> = egPrimary.account.postbox.preferencesView(keys: [ApplicationSpecificPreferencesKeys.EGUISettings])
+        let _ = (egPreferences
         |> take(1)
         |> deliverOnMainQueue).start(next: { view in
-            let sgSettings: EGUISettings = view.values[ApplicationSpecificPreferencesKeys.EGUISettings]?.get(EGUISettings.self) ?? .default
-            let sgDefaults = UserDefaults.standard
-            let sgDomainName = sgBaseBundleIdentifier()
-            let sgDomain = sgDefaults.persistentDomain(forName: sgDomainName) ?? [:]
-            if sgDomain[EGSimpleSettings.Keys.hideStories.rawValue] == nil {
-                EGSimpleSettings.shared.hideStories = sgSettings.hideStories
-                EGLogger.shared.log("EGSimpleSettings", "Migrated hideStories: \(sgSettings.hideStories)")
+            let egSettings: EGUISettings = view.values[ApplicationSpecificPreferencesKeys.EGUISettings]?.get(EGUISettings.self) ?? .default
+            let egDefaults = UserDefaults.standard
+            let egDomainName = egBaseBundleIdentifier()
+            let egDomain = egDefaults.persistentDomain(forName: egDomainName) ?? [:]
+            if egDomain[EGSimpleSettings.Keys.hideStories.rawValue] == nil {
+                EGSimpleSettings.shared.hideStories = egSettings.hideStories
+                EGLogger.shared.log("EGSimpleSettings", "Migrated hideStories: \(egSettings.hideStories)")
             }
-            if sgDomain[EGSimpleSettings.Keys.warnOnStoriesOpen.rawValue] == nil {
-                EGSimpleSettings.shared.warnOnStoriesOpen = sgSettings.warnOnStoriesOpen
-                EGLogger.shared.log("EGSimpleSettings", "Migrated warnOnStoriesOpen: \(sgSettings.warnOnStoriesOpen)")
+            if egDomain[EGSimpleSettings.Keys.warnOnStoriesOpen.rawValue] == nil {
+                EGSimpleSettings.shared.warnOnStoriesOpen = egSettings.warnOnStoriesOpen
+                EGLogger.shared.log("EGSimpleSettings", "Migrated warnOnStoriesOpen: \(egSettings.warnOnStoriesOpen)")
             }
-            if sgDomain[EGSimpleSettings.Keys.showProfileId.rawValue] == nil {
-                EGSimpleSettings.shared.showProfileId = sgSettings.showProfileId
-                EGLogger.shared.log("EGSimpleSettings", "Migrated showProfileId: \(sgSettings.showProfileId)")
+            if egDomain[EGSimpleSettings.Keys.showProfileId.rawValue] == nil {
+                EGSimpleSettings.shared.showProfileId = egSettings.showProfileId
+                EGLogger.shared.log("EGSimpleSettings", "Migrated showProfileId: \(egSettings.showProfileId)")
             }
-            if sgDomain[EGSimpleSettings.Keys.sendWithReturnKey.rawValue] == nil {
-                EGSimpleSettings.shared.sendWithReturnKey = sgSettings.sendWithReturnKey
-                EGLogger.shared.log("EGSimpleSettings", "Migrated sendWithReturnKey: \(sgSettings.sendWithReturnKey)")
+            if egDomain[EGSimpleSettings.Keys.sendWithReturnKey.rawValue] == nil {
+                EGSimpleSettings.shared.sendWithReturnKey = egSettings.sendWithReturnKey
+                EGLogger.shared.log("EGSimpleSettings", "Migrated sendWithReturnKey: \(egSettings.sendWithReturnKey)")
             }
-            sgDefaults.set(true, forKey: sgMigrationKey)
+            egDefaults.set(true, forKey: egMigrationKey)
         })
     }
 }

@@ -1,6 +1,6 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = ["//ExteraGram/EGSimpleSettings:EGSimpleSettings"]
+egdeps = ["//ExteraGram/EGSimpleSettings:EGSimpleSettings"]
 
 swift_library(
     name = "TelegramStringFormatting",
@@ -11,7 +11,7 @@ swift_library(
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/TelegramCore:TelegramCore",
         "//submodules/Display:Display",
         "//submodules/PlatformRestrictionMatching:PlatformRestrictionMatching",

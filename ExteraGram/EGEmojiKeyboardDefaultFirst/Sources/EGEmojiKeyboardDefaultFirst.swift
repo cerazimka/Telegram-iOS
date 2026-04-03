@@ -1,7 +1,7 @@
 import Foundation
 
 
-func sgPatchEmojiKeyboardItems(_ items: [EmojiPagerContentComponent.ItemGroup]) -> [EmojiPagerContentComponent.ItemGroup] {
+func egPatchEmojiKeyboardItems(_ items: [EmojiPagerContentComponent.ItemGroup]) -> [EmojiPagerContentComponent.ItemGroup] {
     var items = items
     let staticEmojisIndex = items.firstIndex { item in
         if let groupId = item.groupId.base as? String, groupId == "static" {

@@ -4,7 +4,7 @@ import Postbox
 import TelegramCore
 
 
-func sgDoubleTapMessageAction(incoming: Bool, message: Message) -> String {
+func egDoubleTapMessageAction(incoming: Bool, message: Message) -> String {
     if incoming {
         return EGSimpleSettings.MessageDoubleTapAction.default.rawValue
     } else {

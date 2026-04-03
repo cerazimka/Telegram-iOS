@@ -335,7 +335,7 @@ public final class TextFieldComponent: Component {
         }
         
         // MARK: ExteraGram
-        var sgToolbarActionObserver: NSObjectProtocol? = nil
+        var egToolbarActionObserver: NSObjectProtocol? = nil
         
         private var component: TextFieldComponent?
         private weak var state: EmptyComponentState?
@@ -417,18 +417,18 @@ public final class TextFieldComponent: Component {
             }
             
             // MARK: ExteraGram
-            self.sgToolbarActionObserver = NotificationCenter.default.addObserver(forName: Notification.Name("sgToolbarAction"), object: nil, queue: .main, using: { [weak self] notification in
+            self.egToolbarActionObserver = NotificationCenter.default.addObserver(forName: Notification.Name("egToolbarAction"), object: nil, queue: .main, using: { [weak self] notification in
                     guard let self = self else { return }
                     if let action = notification.userInfo?["action"] as? String {
-                        self.sgToolbarAction(action)
+                        self.egToolbarAction(action)
                     }
             })
         }
         
         // MARK: ExteraGram
         deinit {
-            if let sgToolbarActionObserver = self.sgToolbarActionObserver {
-                NotificationCenter.default.removeObserver(sgToolbarActionObserver)
+            if let egToolbarActionObserver = self.egToolbarActionObserver {
+                NotificationCenter.default.removeObserver(egToolbarActionObserver)
             }
         }
         
@@ -1815,37 +1815,37 @@ extension TextFieldComponent.InputState {
 
 extension TextFieldComponent.View {
     
-    func sgToolbarAction(_ action: String) {
+    func egToolbarAction(_ action: String) {
         switch action {
             case "quote":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.toggleAttribute(key: ChatTextInputAttributes.block, value: ChatTextInputTextQuoteAttribute(kind: .quote, isCollapsed: false))
             case "spoiler":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.toggleAttribute(key: ChatTextInputAttributes.spoiler)
             case "bold":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.toggleAttribute(key: ChatTextInputAttributes.bold)
             case "italic":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.toggleAttribute(key: ChatTextInputAttributes.italic)
             case "monospace":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.toggleAttribute(key: ChatTextInputAttributes.monospace)
             case "link":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.openLinkEditing()
             case "strikethrough":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.toggleAttribute(key: ChatTextInputAttributes.strikethrough)
             case "underline":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.toggleAttribute(key: ChatTextInputAttributes.underline)
             case "code":
-                self.sgSelectLastWordIfIdle()
+                self.egSelectLastWordIfIdle()
                 self.toggleAttribute(key: ChatTextInputAttributes.block, value: ChatTextInputTextQuoteAttribute(kind: .code(language: nil), isCollapsed: false))
             case "newline":
-                self.sgSetNewLine()
+                self.egSetNewLine()
             case "clearFormatting":
                 self.updateInputState { current in
                     return current.clearFormattingAttributes()
@@ -1855,7 +1855,7 @@ extension TextFieldComponent.View {
         }
     }
     
-    func sgSelectLastWordIfIdle() {
+    func egSelectLastWordIfIdle() {
         self.updateInputState { current in
             // No changes to current selection
             if !current.selectionRange.isEmpty {
@@ -1911,7 +1911,7 @@ extension TextFieldComponent.View {
         }
     }
     
-    func sgSetNewLine() {
+    func egSetNewLine() {
         self.updateInputState { current in
             let inputText = (current.inputText.mutableCopy() as? NSMutableAttributedString) ?? NSMutableAttributedString()
             

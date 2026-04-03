@@ -13,7 +13,7 @@ import TelegramUIPreferences
 
 
 
-public func sgPayWallController(statusSignal: Signal<Int64, NoError>, replacementController: ViewController, presentationData: PresentationData? = nil, EGIAPManager: EGIAPManager, openUrl: @escaping (String, Bool) -> Void /* url, forceExternal */, paymentsEnabled: Bool, canBuyInBeta: Bool, openAppStorePage: @escaping () -> Void, proSupportUrl: String?) -> ViewController {
+public func egPayWallController(statusSignal: Signal<Int64, NoError>, replacementController: ViewController, presentationData: PresentationData? = nil, EGIAPManager: EGIAPManager, openUrl: @escaping (String, Bool) -> Void /* url, forceExternal */, paymentsEnabled: Bool, canBuyInBeta: Bool, openAppStorePage: @escaping () -> Void, proSupportUrl: String?) -> ViewController {
     //    let theme = presentationData?.theme ?? (UITraitCollection.current.userInterfaceStyle == .dark ? defaultDarkColorPresentationTheme : defaultPresentationTheme)
     let theme = defaultDarkColorPresentationTheme
     let strings = presentationData?.strings ?? defaultPresentationStrings
@@ -418,8 +418,8 @@ struct EGPayWallView: View {
                     }
                     .padding(.vertical, (purchaseSectionSize.height / 2.0))
                 }
-                .padding(.leading, max(innerShadowWidth + 8.0, sgLeftSafeAreaInset(containerViewLayout)))
-                .padding(.trailing, max(innerShadowWidth + 8.0, sgRightSafeAreaInset(containerViewLayout)))
+                .padding(.leading, max(innerShadowWidth + 8.0, egLeftSafeAreaInset(containerViewLayout)))
+                .padding(.trailing, max(innerShadowWidth + 8.0, egRightSafeAreaInset(containerViewLayout)))
                 
                 if showDetails {
                     EGPayWallFeatureDetails(
@@ -549,7 +549,7 @@ struct EGPayWallView: View {
                 }
             }
             .padding([.horizontal, .top])
-            .padding(.bottom, sgBottomSafeAreaInset(containerViewLayout) + 2.0)
+            .padding(.bottom, egBottomSafeAreaInset(containerViewLayout) + 2.0)
         }
         .foregroundColor(Color.black)
         .backgroundIfAvailable(material: .ultraThinMaterial)
@@ -681,7 +681,7 @@ struct EGPayWallView: View {
     }
     
     private func updateSelectedProduct() {
-        product = EGIAP.availableProducts.first { $0.id == SG_CONFIG.iaps.first ?? "" }
+        product = EGIAP.availableProducts.first { $0.id == EG_CONFIG.iaps.first ?? "" }
     }
     
     private func handlePurchase() {

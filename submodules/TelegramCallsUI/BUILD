@@ -40,7 +40,7 @@ apple_resource_bundle(
     ],
 )
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier"
 ]
 
@@ -56,7 +56,7 @@ swift_library(
     data = [
         ":TelegramCallsUIBundle",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/SSignalKit/SSignalKit",
     	"//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/Display:Display",

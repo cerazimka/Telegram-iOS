@@ -1,25 +1,25 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = [
+egdeps = [
     "//submodules/BuildConfig:BuildConfig",
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
     "//ExteraGram/EGStrings:EGStrings"
 ]
 
-sgsrc = [
+egsrc = [
     "//ExteraGram/EGRecentSessionApiId:EGRecentSessionApiId",
 ]
 
 swift_library(
     name = "SettingsUI",
     module_name = "SettingsUI",
-    srcs = sgsrc + glob([
+    srcs = egsrc + glob([
 		"Sources/**/*.swift",
     ]),
     copts = [
         "-warnings-as-errors",
     ],
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/AsyncDisplayKit:AsyncDisplayKit",
         "//submodules/Display:Display",

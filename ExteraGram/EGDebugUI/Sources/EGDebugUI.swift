@@ -84,7 +84,7 @@ private func okUndoController(_ text: String, _ presentationData: PresentationDa
 }
 
 
-public func sgDebugController(context: AccountContext) -> ViewController {
+public func egDebugController(context: AccountContext) -> ViewController {
     var presentControllerImpl: ((ViewController, ViewControllerPresentationArguments?) -> Void)?
     var pushControllerImpl: ((ViewController) -> Void)?
 

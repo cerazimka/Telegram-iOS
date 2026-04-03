@@ -1,6 +1,6 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-sgdeps = [
+egdeps = [
     "//ExteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier"
 ]
 
@@ -10,7 +10,7 @@ swift_library(
     srcs = glob([
         "Sources/*.swift",
     ]),
-    deps = sgdeps + [
+    deps = egdeps + [
         "//submodules/Postbox:Postbox",
         "//submodules/TelegramCore:TelegramCore",
         "//submodules/BuildConfig:BuildConfig",

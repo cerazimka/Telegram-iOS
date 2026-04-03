@@ -222,8 +222,8 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
     }
     
     
-    let sgWebSettings = context.currentAppConfiguration.with({ $0 }).sgWebSettings
-    if sgWebSettings.global.paymentsEnabled || context.sharedContext.immediateSGStatus.status > 1 {
+    let egWebSettings = context.currentAppConfiguration.with({ $0 }).egWebSettings
+    if egWebSettings.global.paymentsEnabled || context.sharedContext.immediateEGStatus.status > 1 {
         items[.exteragram]!.append(PeerInfoScreenDisclosureItem(id: 0, label: exteragramProLabel, text: "ExteraGram Pro", icon: PresentationResourcesSettings.exteragramPro, action: {
             interaction.openSettings(.exteragramPro)
         }))
@@ -356,7 +356,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
         }))
     }
     if let starsState = data.starsState {
-        if (!isPremiumDisabled || starsState.balance > StarsAmount.zero) && sgWebSettings.global.canGrant {
+        if (!isPremiumDisabled || starsState.balance > StarsAmount.zero) && egWebSettings.global.canGrant {
             items[.payment]!.append(PeerInfoScreenDisclosureItem(id: 105, label: .text(""), text: "Telegram Gifts", icon: PresentationResourcesSettings.premiumGift, action: {
                 interaction.openSettings(.premiumGift)
             }))

@@ -573,7 +573,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
     var premiumGiftSuggestionDisposable: Disposable?
     
     // MARK: ExteraGram
-    private var sgShowHiddenPinnedMessagesObserver: NSObjectProtocol?
+    private var egShowHiddenPinnedMessagesObserver: NSObjectProtocol?
     public var overlayTitle: String? {
          var title: String?
         if let threadInfo = self.contentData?.state.threadInfo {
@@ -1646,7 +1646,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
             self.controllerInteraction?.isOpeningMediaSignal = openChatMessageParams.blockInteraction.get()
             
             return context.sharedContext.openChatMessage(openChatMessageParams)
-        }, sgGetChatPredictedLang: { [weak self] in
+        }, egGetChatPredictedLang: { [weak self] in
             if let strongSelf = self {
                 var result: String?
                 if let chatPeerId = strongSelf.chatLocation.peerId {
@@ -1655,7 +1655,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
                 return result ?? strongSelf.contentData?.state.predictedChatLanguage
             }
             return nil
-        }, sgStartMessageEdit: { [weak self] message in
+        }, egStartMessageEdit: { [weak self] message in
             if let strongSelf = self {
                 strongSelf.interfaceInteraction?.setupEditMessage(message.id, { _ in })
             }
@@ -6378,7 +6378,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         }
 
         // MARK: ExteraGram
-        self.sgShowHiddenPinnedMessagesObserver = NotificationCenter.default.addObserver(
+        self.egShowHiddenPinnedMessagesObserver = NotificationCenter.default.addObserver(
             forName: NSNotification.Name("EGShowHiddenPinnedMessages"),
             object: nil,
             queue: nil,
@@ -6411,7 +6411,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
     
     deinit {
         // MARK: ExteraGram
-        if let observer = sgShowHiddenPinnedMessagesObserver { NotificationCenter.default.removeObserver(observer) }
+        if let observer = egShowHiddenPinnedMessagesObserver { NotificationCenter.default.removeObserver(observer) }
         let _ = ChatControllerCount.modify { value in
             return value - 1
         }

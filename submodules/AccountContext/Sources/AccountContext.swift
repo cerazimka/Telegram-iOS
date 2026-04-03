@@ -1322,7 +1322,7 @@ public protocol SharedAccountContext: AnyObject {
     var currentAutodownloadSettings: Atomic<AutodownloadSettings> { get }
     var immediateExperimentalUISettings: ExperimentalUISettings { get }
     // MARK: ExteraGram
-    var immediateSGStatus: EGStatus { get }
+    var immediateEGStatus: EGStatus { get }
     var EGIAP: EGIAPManager? { get }
     func makeSGProController(context: AccountContext) -> ViewController
     func makeSGPayWallController(context: AccountContext) -> ViewController?

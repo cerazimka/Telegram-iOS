@@ -142,22 +142,22 @@ public struct CustomSafeArea: ViewModifier {
 
 @available(iOS 13.0, *)
 public extension View {
-    func sgTopSafeAreaInset(_ containerViewLayout: ContainerViewLayout?, _ navigationBarHeight: CGFloat) -> CGFloat {
+    func egTopSafeAreaInset(_ containerViewLayout: ContainerViewLayout?, _ navigationBarHeight: CGFloat) -> CGFloat {
         return max(
             (containerViewLayout?.safeInsets.top ?? 0) + (containerViewLayout?.intrinsicInsets.top ?? 0),
             navigationBarHeight
         )
     }
     
-    func sgBottomSafeAreaInset(_ containerViewLayout: ContainerViewLayout?) -> CGFloat {
+    func egBottomSafeAreaInset(_ containerViewLayout: ContainerViewLayout?) -> CGFloat {
         return (containerViewLayout?.safeInsets.bottom ?? 0) + (containerViewLayout?.intrinsicInsets.bottom ?? 0)
     }
     
-    func sgLeftSafeAreaInset(_ containerViewLayout: ContainerViewLayout?) -> CGFloat {
+    func egLeftSafeAreaInset(_ containerViewLayout: ContainerViewLayout?) -> CGFloat {
         return containerViewLayout?.safeInsets.left ?? 0
     }
 
-    func sgRightSafeAreaInset(_ containerViewLayout: ContainerViewLayout?) -> CGFloat {
+    func egRightSafeAreaInset(_ containerViewLayout: ContainerViewLayout?) -> CGFloat {
         return containerViewLayout?.safeInsets.right ?? 0
     }
 

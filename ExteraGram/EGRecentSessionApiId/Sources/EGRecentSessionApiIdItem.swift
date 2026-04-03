@@ -6,20 +6,20 @@ import MultilineTextComponent
 import ListActionItemComponent
 import UndoUI
 
-func sgRecentSessionApiIdItem(
+func egRecentSessionApiIdItem(
     apiIdString: String,
     theme: PresentationTheme,
     presentationData: PresentationData,
     strings: PresentationStrings,
     controller: RecentSessionScreen?
 ) -> AnyComponentWithIdentity<Empty> {
-    let sgApiIdTextAttribute = NSAttributedString.Key(rawValue: "EGRecentSessionApiIdAttribute")
-    let sgApiIdText = NSMutableAttributedString(
+    let egApiIdTextAttribute = NSAttributedString.Key(rawValue: "EGRecentSessionApiIdAttribute")
+    let egApiIdText = NSMutableAttributedString(
         string: apiIdString,
         font: Font.regular(presentationData.listsFontSize.itemListBaseFontSize),
         textColor: theme.list.itemSecondaryTextColor
     )
-    sgApiIdText.addAttribute(sgApiIdTextAttribute, value: true, range: NSRange(location: 0, length: sgApiIdText.length))
+    egApiIdText.addAttribute(egApiIdTextAttribute, value: true, range: NSRange(location: 0, length: egApiIdText.length))
 
     return AnyComponentWithIdentity(id: "api_id", component: AnyComponent(
         ListActionItemComponent(
@@ -37,17 +37,17 @@ func sgRecentSessionApiIdItem(
                 component: AnyComponentWithIdentity(
                     id: "info",
                     component: AnyComponent(MultilineTextComponent(
-                        text: .plain(sgApiIdText),
+                        text: .plain(egApiIdText),
                         maximumNumberOfLines: 1,
                         highlightColor: theme.list.itemAccentColor.withMultipliedAlpha(0.15),
                         highlightAction: { attributes in
-                            if let _ = attributes[sgApiIdTextAttribute] {
-                                return sgApiIdTextAttribute
+                            if let _ = attributes[egApiIdTextAttribute] {
+                                return egApiIdTextAttribute
                             }
                             return nil
                         },
                         longTapAction: { [weak controller] attributes, _ in
-                            guard let _ = attributes[sgApiIdTextAttribute] else {
+                            guard let _ = attributes[egApiIdTextAttribute] else {
                                 return
                             }
                             UIPasteboard.general.string = apiIdString

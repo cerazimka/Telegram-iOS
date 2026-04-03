@@ -77,7 +77,7 @@ private func loadCountryCodes() -> [Country] {
 private var countryCodes: [Country] = loadCountryCodes()
 private var countryCodesByPrefix: [String: (Country, Country.CountryCode)] = [:]
 // MARK: ExteraGram
-private var sgCountryCodesByPrefix: [String: (Country, Country.CountryCode)] = ["999": (Country(id: "XX", name: "Demo", localizedName: nil, countryCodes: [Country.CountryCode(code: "999", prefixes: [], patterns: ["XX X XXXX"])], hidden: false), Country.CountryCode(code: "999", prefixes: [], patterns: ["XX X XXXX"]))]
+private var egCountryCodesByPrefix: [String: (Country, Country.CountryCode)] = ["999": (Country(id: "XX", name: "Demo", localizedName: nil, countryCodes: [Country.CountryCode(code: "999", prefixes: [], patterns: ["XX X XXXX"])], hidden: false), Country.CountryCode(code: "999", prefixes: [], patterns: ["XX X XXXX"]))]
 
 public func loadServerCountryCodes(accountManager: AccountManager<TelegramAccountManagerTypes>, engine: TelegramEngineUnauthorized, completion: @escaping () -> Void) {
     let _ = (engine.localization.getCountriesList(accountManager: accountManager, langCode: nil)
@@ -237,7 +237,7 @@ public final class AuthorizationSequenceCountrySelectionController: ViewControll
         
         for i in 0..<number.count {
             let prefix = String(number.prefix(number.count - i))
-            if let country = countryCodesByPrefix[prefix] ?? sgCountryCodesByPrefix[prefix] {
+            if let country = countryCodesByPrefix[prefix] ?? egCountryCodesByPrefix[prefix] {
                 if var currentResults = results {
                     if let result = currentResults.first, result.1.code.count > country.1.code.count {
                         break

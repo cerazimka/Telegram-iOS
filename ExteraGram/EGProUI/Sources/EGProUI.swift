@@ -76,7 +76,7 @@ public func okUndoController(_ text: String, _ presentationData: PresentationDat
     return UndoOverlayController(presentationData: presentationData, content: .succeed(text: text, timeout: nil, customUndoText: nil), elevatedLayout: false, action: { _ in return false })
 }
 
-public func sgProController(context: AccountContext) -> ViewController {
+public func egProController(context: AccountContext) -> ViewController {
     var presentControllerImpl: ((ViewController, ViewControllerPresentationArguments?) -> Void)?
     var pushControllerImpl: ((ViewController) -> Void)?
 
@@ -132,14 +132,14 @@ public func sgProController(context: AccountContext) -> ViewController {
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
         switch (link) {
             case .sessionBackupManager:
-                pushControllerImpl?(sgSessionBackupManagerController(context: context, presentationData: presentationData))
+                pushControllerImpl?(egSessionBackupManagerController(context: context, presentationData: presentationData))
             case .messageFilter:
-                pushControllerImpl?(sgMessageFilterController(presentationData: presentationData))
+                pushControllerImpl?(egMessageFilterController(presentationData: presentationData))
             case .appIcons:
                 pushControllerImpl?(themeSettingsController(context: context, focusOnItemTag: .icon))
             case .appBages:
                 if #available(iOS 14.0, *) {
-                    pushControllerImpl?(sgAppBadgeSettingsController(context: context, presentationData: presentationData))
+                    pushControllerImpl?(egAppBadgeSettingsController(context: context, presentationData: presentationData))
                 } else {
                     presentControllerImpl?(context.sharedContext.makeSGUpdateIOSController(), nil)
                 }

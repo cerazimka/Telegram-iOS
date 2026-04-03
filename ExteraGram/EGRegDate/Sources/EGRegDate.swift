@@ -23,8 +23,8 @@ public func getRegDate(context: AccountContext, peerId: Int64) -> Signal<RegDate
             subscriber.putNext(regDate)
             subscriber.putCompletion()
         } else if EGSimpleSettings.shared.showRegDate {
-            tokensRequestSignal = combineLatest(getDeviceToken() |> mapError { error -> Void in EGLogger.shared.log("EGDeviceToken", "Error generating token: \(error)"); return Void() } , getSGApiToken(context: context) |> mapError { _ -> Void in return Void() }).start(next: { deviceToken, apiToken in
-                apiRequestSignal = getSGAPIRegDate(token: apiToken, deviceToken: deviceToken, userId: peerId).start(next: { regDate in
+            tokensRequestSignal = combineLatest(getDeviceToken() |> mapError { error -> Void in EGLogger.shared.log("EGDeviceToken", "Error generating token: \(error)"); return Void() } , getEGApiToken(context: context) |> mapError { _ -> Void in return Void() }).start(next: { deviceToken, apiToken in
+                apiRequestSignal = getEGAPIRegDate(token: apiToken, deviceToken: deviceToken, userId: peerId).start(next: { regDate in
                     if let data = try? JSONEncoder().encode(regDate) {
                         EGSimpleSettings.shared.regDateCache[String(peerId)] = data
                     }

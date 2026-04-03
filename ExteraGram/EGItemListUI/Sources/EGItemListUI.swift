@@ -212,7 +212,7 @@ public enum EGItemListUIEntry<Section: EGItemListSection, BoolSetting: Hashable,
             })
         
         case let .oneFromManySelector(_, _, settingName, text, value, enabled):
-            return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, title: text, enabled: enabled, label: value, sgLabelMaximumNumberOfLines: 2, sectionId: self.section, style: .blocks, action: {
+            return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, title: text, enabled: enabled, label: value, egLabelMaximumNumberOfLines: 2, sectionId: self.section, style: .blocks, action: {
                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) // Closing search keyboard if active
                 arguments.setOneFromManyValue(settingName)
             })

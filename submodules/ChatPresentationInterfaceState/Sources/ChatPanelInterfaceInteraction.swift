@@ -72,8 +72,8 @@ public final class ChatPanelInterfaceInteraction {
     }
     
     public let setupReplyMessage: (MessageId?, Int32?, @escaping (ContainedViewLayoutTransition, @escaping () -> Void) -> Void) -> Void
-    public let sgSelectLastWordIfIdle: () -> Void
-    public let sgSetNewLine: () -> Void
+    public let egSelectLastWordIfIdle: () -> Void
+    public let egSetNewLine: () -> Void
     public let setupEditMessage: (MessageId?, @escaping (ContainedViewLayoutTransition) -> Void) -> Void
     public let beginMessageSelection: ([MessageId], @escaping (ContainedViewLayoutTransition) -> Void) -> Void
     public let cancelMessageSelection: (ContainedViewLayoutTransition) -> Void
@@ -463,7 +463,7 @@ public final class ChatPanelInterfaceInteraction {
         self.statuses = statuses
         
         // MARK: ExteraGram
-        self.sgSelectLastWordIfIdle = {
+        self.egSelectLastWordIfIdle = {
             updateTextInputStateAndMode { current, inputMode in
                 // No changes to current selection
                 if !current.selectionRange.isEmpty {
@@ -518,7 +518,7 @@ public final class ChatPanelInterfaceInteraction {
                 return (ChatTextInputState(inputText: inputText, selectionRange: newSelectionRange), inputMode)
             }
         }
-        self.sgSetNewLine = {
+        self.egSetNewLine = {
             updateTextInputStateAndMode { current, inputMode in
                 let inputText = (current.inputText.mutableCopy() as? NSMutableAttributedString) ?? NSMutableAttributedString()
                 

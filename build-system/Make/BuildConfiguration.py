@@ -10,7 +10,7 @@ from DecryptMatch import decrypt_match_data
 
 class BuildConfiguration:
     def __init__(self,
-        sg_config,
+        eg_config,
         bundle_id,
         api_id,
         api_hash,
@@ -24,7 +24,7 @@ class BuildConfiguration:
         enable_siri,
         enable_icloud
     ):
-        self.sg_config = sg_config
+        self.eg_config = eg_config
         self.bundle_id = bundle_id
         self.api_id = api_id
         self.api_hash = api_hash
@@ -42,7 +42,7 @@ class BuildConfiguration:
         string = ''
         string += 'telegram_bazel_path = "{}"\n'.format(bazel_path)
         string += 'telegram_use_xcode_managed_codesigning = {}\n'.format('True' if use_xcode_managed_codesigning else 'False')
-        string += 'sg_config = """{}"""\n'.format(self.sg_config)
+        string += 'eg_config = """{}"""\n'.format(self.eg_config)
         string += 'telegram_bundle_id = "{}"\n'.format(self.bundle_id)
         string += 'telegram_api_id = "{}"\n'.format(self.api_id)
         string += 'telegram_api_hash = "{}"\n'.format(self.api_hash)
@@ -71,7 +71,7 @@ def build_configuration_from_json(path):
     with open(path) as file:
         configuration_dict = json.load(file)
         required_keys = [
-            'sg_config',
+            'eg_config',
             'bundle_id',
             'api_id',
             'api_hash',
@@ -89,7 +89,7 @@ def build_configuration_from_json(path):
             if key not in configuration_dict:
                 print('Configuration at {} does not contain {}'.format(path, key))
         return BuildConfiguration(
-            sg_config=configuration_dict['sg_config'],
+            eg_config=configuration_dict['eg_config'],
             bundle_id=configuration_dict['bundle_id'],
             api_id=configuration_dict['api_id'],
             api_hash=configuration_dict['api_hash'],

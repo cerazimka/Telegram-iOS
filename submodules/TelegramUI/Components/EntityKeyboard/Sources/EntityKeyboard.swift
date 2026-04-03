@@ -561,8 +561,8 @@ public final class EntityKeyboardComponent: Component {
             if let emojiContent = component.emojiContent {
                 // MARK: ExteraGram
                 if EGSimpleSettings.shared.defaultEmojisFirst {
-                    emojiContent.panelItemGroups = sgPatchEmojiKeyboardItems(emojiContent.panelItemGroups)
-                    emojiContent.contentItemGroups = sgPatchEmojiKeyboardItems(emojiContent.contentItemGroups)
+                    emojiContent.panelItemGroups = egPatchEmojiKeyboardItems(emojiContent.panelItemGroups)
+                    emojiContent.contentItemGroups = egPatchEmojiKeyboardItems(emojiContent.contentItemGroups)
                 }
                 contents.append(AnyComponentWithIdentity(id: "emoji", component: AnyComponent(emojiContent)))
                 var topEmojiItems: [EntityKeyboardTopPanelComponent.Item] = []

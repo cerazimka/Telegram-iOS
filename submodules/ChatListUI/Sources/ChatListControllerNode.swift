@@ -1138,7 +1138,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
     private var tapRecognizer: UITapGestureRecognizer?
     var navigationBar: NavigationBar?
     let navigationBarView = ComponentView<Empty>()
-    let sgFoldersView = ComponentView<Empty>()
+    let egFoldersView = ComponentView<Empty>()
     weak var controller: ChatListControllerImpl?
     
     var toolbar: Toolbar?
@@ -1427,7 +1427,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
                             return
                         }
                         switch notice {
-                        case let .sgUrl(id, _, _, url, needAuth, permanent):
+                        case let .egUrl(id, _, _, url, needAuth, permanent):
                             self.effectiveContainerNode.currentItemNode.interaction?.openSGAnnouncement(id, url, needAuth, permanent)
                         case .clearStorage:
                             self.effectiveContainerNode.currentItemNode.interaction?.openStorageManagement()
@@ -1531,7 +1531,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
                         switch entry {
                         case .all:
                             id = Int32.min
-                            title = HorizontalTabsComponent.Tab.Title(text: sgUseShortAllChatsTitle(true) ? self.presentationData.strings.ChatList_Tabs_All : self.presentationData.strings.ChatList_Tabs_AllChats, entities: [], enableAnimations: false)
+                            title = HorizontalTabsComponent.Tab.Title(text: egUseShortAllChatsTitle(true) ? self.presentationData.strings.ChatList_Tabs_All : self.presentationData.strings.ChatList_Tabs_AllChats, entities: [], enableAnimations: false)
                             isMainTab = true
                         case let .filter(idValue, text, unread):
                             id = AnyHashable(idValue)
@@ -1824,11 +1824,11 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
         self.containerLayout = (layout, navigationBarHeight, visualNavigationHeight, cleanNavigationBarHeight, storiesInset)
 
         // MARK: ExteraGram
-        let sgComponentTransition = ComponentTransition(transition)
-        let sgDisplayTabsAtBottom = self.controller?.tabContainerData?.1 ?? false
-        let sgShouldDisplayBottomFolders = sgDisplayTabsAtBottom && self.isSearchDisplayControllerActive == nil
-        let sgFoldersSize = self.sgFoldersView.update(
-            transition: sgComponentTransition,
+        let egComponentTransition = ComponentTransition(transition)
+        let egDisplayTabsAtBottom = self.controller?.tabContainerData?.1 ?? false
+        let egShouldDisplayBottomFolders = egDisplayTabsAtBottom && self.isSearchDisplayControllerActive == nil
+        let egFoldersSize = self.egFoldersView.update(
+            transition: egComponentTransition,
             component: AnyComponent(HeaderPanelContainerComponent(
                 theme: self.presentationData.theme,
                 tabs: navigationBarLayout.tabs,
@@ -1893,8 +1893,8 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
         }
 
         // MARK: ExteraGram
-        if sgShouldDisplayBottomFolders && sgFoldersSize.height > 0.0 {
-            insets.bottom += sgFoldersSize.height + 16.0 + 8.0
+        if egShouldDisplayBottomFolders && egFoldersSize.height > 0.0 {
+            insets.bottom += egFoldersSize.height + 16.0 + 8.0
         }
         
         var childrenLayout = layout
@@ -1962,14 +1962,14 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
         }
         
         // MARK: ExteraGram
-        if let sgFoldersView = self.sgFoldersView.view as? HeaderPanelContainerComponent.View {
-            if sgShouldDisplayBottomFolders && sgFoldersSize.height > 0.0 {
-                if sgFoldersView.superview == nil {
-                    self.view.addSubview(sgFoldersView)
+        if let egFoldersView = self.egFoldersView.view as? HeaderPanelContainerComponent.View {
+            if egShouldDisplayBottomFolders && egFoldersSize.height > 0.0 {
+                if egFoldersView.superview == nil {
+                    self.view.addSubview(egFoldersView)
                     if transition.isAnimated {
-                        sgFoldersView.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.23)
+                        egFoldersView.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.23)
                     } else {
-                        sgFoldersView.alpha = 1.0
+                        egFoldersView.alpha = 1.0
                     }
                 }
                 
@@ -1987,10 +1987,10 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
 //                }
                 //
                 // TODO(exteragram):
-                sgComponentTransition.setFrame(view: sgFoldersView, frame: CGRect(origin: CGPoint(x: 0.0, y: layout.size.height - bottomInset - sgFoldersSize.height - 16.0), size: sgFoldersSize))
+                egComponentTransition.setFrame(view: egFoldersView, frame: CGRect(origin: CGPoint(x: 0.0, y: layout.size.height - bottomInset - egFoldersSize.height - 16.0), size: egFoldersSize))
             } else {
-                sgFoldersView.layer.animateAlpha(from: 1.0, to: 0.0, duration: 0.2, removeOnCompletion: false, completion: { [weak sgFoldersView] _ in
-                    sgFoldersView?.removeFromSuperview()
+                egFoldersView.layer.animateAlpha(from: 1.0, to: 0.0, duration: 0.2, removeOnCompletion: false, completion: { [weak egFoldersView] _ in
+                    egFoldersView?.removeFromSuperview()
                 })
             }
         }

@@ -2,7 +2,7 @@ import Foundation
 import EGAppGroupIdentifier
 import EGLogging
 
-let APP_GROUP_IDENTIFIER = sgAppGroupIdentifier()
+let APP_GROUP_IDENTIFIER = egAppGroupIdentifier()
 
 public class EGSimpleSettings {
     
@@ -620,7 +620,7 @@ extension EGSimpleSettings {
     }
 }
 
-public func getSGDownloadPartSize(_ default: Int64, fileSize: Int64?) -> Int64 {
+public func getEGDownloadPartSize(_ default: Int64, fileSize: Int64?) -> Int64 {
     let currentDownloadSetting = EGSimpleSettings.shared.downloadSpeedBoost
     // Increasing chunk size for small files make it worse in terms of overall download performance
     let smallFileSizeThreshold = 1 * 1024 * 1024 // 1 MB
@@ -640,7 +640,7 @@ public func getSGDownloadPartSize(_ default: Int64, fileSize: Int64?) -> Int64 {
     }
 }
 
-public func getSGMaxPendingParts(_ default: Int) -> Int {
+public func getEGMaxPendingParts(_ default: Int) -> Int {
     let currentDownloadSetting = EGSimpleSettings.shared.downloadSpeedBoost
     switch (currentDownloadSetting) {
         case EGSimpleSettings.DownloadSpeedBoostValues.medium.rawValue:
@@ -652,7 +652,7 @@ public func getSGMaxPendingParts(_ default: Int) -> Int {
     }
 }
 
-public func sgUseShortAllChatsTitle(_ default: Bool) -> Bool {
+public func egUseShortAllChatsTitle(_ default: Bool) -> Bool {
     let currentOverride = EGSimpleSettings.shared.allChatsTitleLengthOverride
     switch (currentOverride) {
         case EGSimpleSettings.AllChatsTitleLengthOverride.short.rawValue:

@@ -675,7 +675,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             // MARK: ExteraGram
             if UserDefaults.standard.bool(forKey: "sg_db_hard_reset") {
                 self.window?.makeKeyAndVisible()
-                sgHardReset(dataPath: rootPath, present: self.mainWindow?.presentNative)
+                egHardReset(dataPath: rootPath, present: self.mainWindow?.presentNative)
                 return true
             }
             //
@@ -984,10 +984,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     PresentationAppIcon(name: "EGNight", imageName: "EGNight"),
                     PresentationAppIcon(name: "EGSky", imageName: "EGSky"),
                     PresentationAppIcon(name: "EGTitanium", imageName: "EGTitanium"),
-                    PresentationAppIcon(isSGPro: true, name: "EGPro", imageName: "EGPro"),
-                    PresentationAppIcon(isSGPro: true, name: "EGDay", imageName: "EGDay"),
-                    PresentationAppIcon(isSGPro: true, name: "EGGold", imageName: "EGGold"),
-                    EGSimpleSettings.shared.duckyAppIconAvailable ? PresentationAppIcon(isSGPro: true, name: "EGDucky", imageName: "EGDucky") : PresentationAppIcon(name: "", imageName: ""), // Empty
+                    PresentationAppIcon(isEGPro: true, name: "EGPro", imageName: "EGPro"),
+                    PresentationAppIcon(isEGPro: true, name: "EGDay", imageName: "EGDay"),
+                    PresentationAppIcon(isEGPro: true, name: "EGGold", imageName: "EGGold"),
+                    EGSimpleSettings.shared.duckyAppIconAvailable ? PresentationAppIcon(isEGPro: true, name: "EGDucky", imageName: "EGDucky") : PresentationAppIcon(name: "", imageName: ""), // Empty
                     PresentationAppIcon(name: "EGNeon", imageName: "EGNeon"),
                     PresentationAppIcon(name: "EGNeonBlue", imageName: "EGNeonBlue"),
                     PresentationAppIcon(name: "EGGlass", imageName: "EGGlass"),
@@ -1373,7 +1373,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             if let context = context {
                 network = context.context.account.network
                 // MARK: ExteraGram
-                sgDBResetIfNeeded(databasePath: context.context.sharedContext.accountManager.basePath + "/db", present: self.mainWindow?.presentNative)
+                egDBResetIfNeeded(databasePath: context.context.sharedContext.accountManager.basePath + "/db", present: self.mainWindow?.presentNative)
             }
             
             Logger.shared.log("App \(self.episodeId)", "received context \(String(describing: context)) account \(String(describing: context?.context.account.id)) network \(String(describing: network))")
@@ -1429,7 +1429,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     if #available(iOS 13.0, *) {
                         let _ = Task {
                             let primaryContext = await self.getPrimaryContext(anyContext: context.context)
-                            EGLogger.shared.log("EGIAP", "Verifying Status \(primaryContext.sharedContext.immediateSGStatus.status) for: \(primaryContext.account.peerId.id._internalGetInt64Value())")
+                            EGLogger.shared.log("EGIAP", "Verifying Status \(primaryContext.sharedContext.immediateEGStatus.status) for: \(primaryContext.account.peerId.id._internalGetInt64Value())")
                             let _ = await self.fetchSGStatus(primaryContext: primaryContext)
                         }
                     }
@@ -1604,7 +1604,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         
         if let url = launchOptions?[.url] {
             if let url = url as? URL, url.scheme == "tg" || url.scheme == buildConfig.appSpecificUrlScheme {
-                self.openUrlWhenReady(url: sgActionRequestHandlerSanitizer(url), external: true)
+                self.openUrlWhenReady(url: egActionRequestHandlerSanitizer(url), external: true)
             } else if let urlString = url as? String, urlString.lowercased().hasPrefix("tg:") || urlString.lowercased().hasPrefix("\(buildConfig.appSpecificUrlScheme):"), let url = URL(string: urlString) {
                 self.openUrlWhenReady(url: url, external: true)
             }
@@ -2081,7 +2081,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     func runForegroundTasks() {
         
         
-        var sgTasksLaunched: Bool = false
+        var egTasksLaunched: Bool = false
         
         let _ = (self.sharedContextPromise.get()
         |> take(1)
@@ -2091,10 +2091,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
              |> deliverOnMainQueue).start(next: { activeAccounts in
                 for (_, context, _) in activeAccounts.accounts {
                     // MARK: ExteraGram
-                    if !sgTasksLaunched {
+                    if !egTasksLaunched {
                         updateSGWebSettingsInteractivelly(context: context)
                         updateSGGHSettingsInteractivelly(context: context)
-                        sgTasksLaunched = true
+                        egTasksLaunched = true
                     }
                     (context.downloadedMediaStoreManager as? DownloadedMediaStoreManagerImpl)?.runTasks()
                 }
@@ -2611,7 +2611,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
         }
         |> deliverOnMainQueue).start(next: { sharedContext, context, authContext in
-            let url = sgActionRequestHandlerSanitizer(url)
+            let url = egActionRequestHandlerSanitizer(url)
             if let authContext = authContext, let confirmationCode = parseConfirmationCodeUrl(sharedContext: sharedContext, url: url) {
                 authContext.rootController.applyConfirmationCode(confirmationCode)
             } else if let context = context {
@@ -3511,7 +3511,7 @@ extension AppDelegate {
         var apiToken: String?
         do {
             async let deviceTokenTask = getDeviceToken().awaitable()
-            async let apiTokenTask = getSGApiToken(context: primaryContext).awaitable()
+            async let apiTokenTask = getEGApiToken(context: primaryContext).awaitable()
             
             (deviceToken, apiToken) = try await (deviceTokenTask, apiTokenTask)
         } catch {
@@ -3547,9 +3547,9 @@ extension AppDelegate {
             primaryContext.account.network.shouldKeepConnection.set(.single(true))
         }
         // MARK: ExteraGram
-        let sgIqtpQueryString = makeIqtpQuery("s")
+        let egIqtpQueryString = makeIqtpQuery("s")
         //
-        let iqtpResponse = try? await sgIqtpQuery(engine: primaryContext.engine, query: sgIqtpQueryString).awaitable()
+        let iqtpResponse = try? await egIqtpQuery(engine: primaryContext.engine, query: egIqtpQueryString).awaitable()
         guard let iqtpResponse = iqtpResponse else {
             EGLogger.shared.log("EGIAP", "IQTP response is nil!")
 //            if !currentShouldKeepConnection {

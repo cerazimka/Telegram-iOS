@@ -74,7 +74,7 @@ struct AppBadgeSettingsView: View {
     private func onSelectBadge(_ badge: AppBadge) {
         self.selectedBadge = badge
         let image = UIImage(bundleImageName: selectedBadge.assetName) ?? UIImage(bundleImageName: "Components/AppBadge")
-        if self.context.sharedContext.immediateSGStatus.status > 1 {
+        if self.context.sharedContext.immediateEGStatus.status > 1 {
             DispatchQueue.main.async {
                 EGSimpleSettings.shared.customAppBadge = selectedBadge.assetName
                 self.context.sharedContext.mainWindow?.badgeView.image = image
@@ -121,7 +121,7 @@ struct AppBadgeSettingsView: View {
 }
 
 @available(iOS 14.0, *)
-public func sgAppBadgeSettingsController(context: AccountContext, presentationData: PresentationData? = nil) -> ViewController {
+public func egAppBadgeSettingsController(context: AccountContext, presentationData: PresentationData? = nil) -> ViewController {
     let theme = presentationData?.theme ?? (UITraitCollection.current.userInterfaceStyle == .dark ? defaultDarkColorPresentationTheme : defaultPresentationTheme)
     let strings = presentationData?.strings ?? defaultPresentationStrings
 

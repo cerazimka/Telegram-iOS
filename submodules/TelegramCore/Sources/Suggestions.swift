@@ -242,7 +242,7 @@ public func dismissSGProvidedSuggestion(suggestionId: String) {
     EGSimpleSettings.shared.dismissedSGSuggestions.append(suggestionId)
 }
 
-public func getSGProvidedSuggestions(account: Account) -> Signal<Data?, NoError> {
+public func getEGProvidedSuggestions(account: Account) -> Signal<Data?, NoError> {
     let key: PostboxViewKey = .preferences(keys: Set([PreferencesKeys.appConfiguration]))
 
     return combineLatest(account.postbox.combinedView(keys: [key]), dismissedSGSuggestionsPromise.get())
@@ -262,8 +262,8 @@ public func getSGProvidedSuggestions(account: Account) -> Signal<Data?, NoError>
             return array
         }
 
-        let ghSuggestions = parseAnnouncements(from: appConfiguration.sgGHSettings.announcementsData)
-        let webSuggestions = parseAnnouncements(from: appConfiguration.sgWebSettings.global.announcementsData)
+        let ghSuggestions = parseAnnouncements(from: appConfiguration.egGHSettings.announcementsData)
+        let webSuggestions = parseAnnouncements(from: appConfiguration.egWebSettings.global.announcementsData)
 
         let combinedSuggestions = ghSuggestions + webSuggestions
 
