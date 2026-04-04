@@ -28,6 +28,14 @@ jobs:
           sudo xcode-select -s "$XCODE_PATH/Contents/Developer"
           xcodebuild -version
 
+      - name: Cache Bazel
+        uses: actions/cache@v4
+        with:
+          path: ~/telegram-bazel-cache
+          key: bazel-${{ runner.os }}-${{ hashFiles('MODULE.bazel', 'WORKSPACE', 'versions.json') }}
+          restore-keys: |
+            bazel-${{ runner.os }}-
+
       - name: Create canonical source directory
         run: |
           set -x
@@ -54,6 +62,7 @@ jobs:
 
           python3 -u build-system/Make/Make.py \
             --bazelUserRoot="$BAZEL_USER_ROOT" \
+            --cacheDir="$HOME/telegram-bazel-cache" \
             --overrideXcodeVersion \
             build \
             --configurationPath="build-system/appstore-configuration.json" \
