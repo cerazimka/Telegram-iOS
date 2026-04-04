@@ -1,41 +1,39 @@
 import Foundation
 import UIKit
 
-private let crashReportKey = "eg_crash_report"
 private let crashReportFile = "eg_last_crash.txt"
 
 private func crashFilePath() -> String {
-    let tmp = NSTemporaryDirectory()
-    return tmp + crashReportFile
+    return NSTemporaryDirectory() + crashReportFile
 }
 
-// MARK: - Signal handler (async-signal-safe)
+// MARK: - Signal handler
 
 private var crashSignals: [Int32] = [SIGSEGV, SIGABRT, SIGBUS, SIGILL, SIGFPE, SIGTRAP]
-private var previousHandlers: [Int32: sig_t] = [:]
+// Store previous handlers as raw pointers to avoid Swift sig_t comparison issues
+private var previousHandlerPtrs: [Int32: UInt] = [:]
 
-private func signalHandler(_ signal: Int32) {
-    var info = ""
+private func signalName(_ signal: Int32) -> String {
     switch signal {
-    case SIGSEGV:  info = "SIGSEGV (Segmentation fault)"
-    case SIGABRT:  info = "SIGABRT (Abort)"
-    case SIGBUS:   info = "SIGBUS (Bus error)"
-    case SIGILL:   info = "SIGILL (Illegal instruction)"
-    case SIGFPE:   info = "SIGFPE (Floating point exception)"
-    case SIGTRAP:  info = "SIGTRAP (Trap)"
-    default:       info = "Signal \(signal)"
+    case SIGSEGV:  return "SIGSEGV (Segmentation fault)"
+    case SIGABRT:  return "SIGABRT (Abort)"
+    case SIGBUS:   return "SIGBUS (Bus error)"
+    case SIGILL:   return "SIGILL (Illegal instruction)"
+    case SIGFPE:   return "SIGFPE (Floating point exception)"
+    case SIGTRAP:  return "SIGTRAP (Trap)"
+    default:       return "Signal \(signal)"
     }
+}
 
+private func signalHandler(_ sig: Int32) {
     var frames = [UnsafeMutableRawPointer?](repeating: nil, count: 64)
     let count = backtrace(&frames, 64)
-    let symbols = backtrace_symbols(&frames, count)
 
     var report = "=== ExteraGram Crash Report ===\n"
-    report += "Signal: \(info)\n"
-    report += "Date: \(Date())\n\n"
+    report += "Signal: \(signalName(sig))\n\n"
     report += "Backtrace:\n"
 
-    if let symbols = symbols {
+    if let symbols = backtrace_symbols(&frames, count) {
         for i in 0..<Int(count) {
             if let sym = symbols[i] {
                 report += String(cString: sym) + "\n"
@@ -44,24 +42,28 @@ private func signalHandler(_ signal: Int32) {
         free(symbols)
     }
 
-    // Write to file (sync, no malloc after this point in real signal handler)
     let path = crashFilePath()
     report.withCString { ptr in
         let fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0o644)
         if fd >= 0 {
-            write(fd, ptr, strlen(ptr))
+            _ = write(fd, ptr, strlen(ptr))
             close(fd)
         }
     }
 
-    // Re-raise to get default behavior
-    if let prev = previousHandlers[signal], prev != SIG_DFL && prev != SIG_IGN {
-        prev(signal)
+    // Re-raise with default handler
+    let sdfPtr = unsafeBitCast(SIG_DFL, to: UInt.self)
+    let sigIgnPtr = unsafeBitCast(SIG_IGN, to: UInt.self)
+    let prevPtr = previousHandlerPtrs[sig] ?? sdfPtr
+
+    if prevPtr != sdfPtr && prevPtr != sigIgnPtr {
+        let prevHandler = unsafeBitCast(prevPtr, to: sig_t.self)
+        prevHandler(sig)
     } else {
         var sa = sigaction()
         sa.__sigaction_u = unsafeBitCast(SIG_DFL, to: __sigaction_u.self)
-        sigaction(signal, &sa, nil)
-        raise(signal)
+        sigaction(sig, &sa, nil)
+        raise(sig)
     }
 }
 
@@ -70,13 +72,11 @@ private func signalHandler(_ signal: Int32) {
 private func uncaughtExceptionHandler(_ exception: NSException) {
     var report = "=== ExteraGram Crash Report ===\n"
     report += "Exception: \(exception.name.rawValue)\n"
-    report += "Reason: \(exception.reason ?? "nil")\n"
-    report += "Date: \(Date())\n\n"
+    report += "Reason: \(exception.reason ?? "nil")\n\n"
     report += "Call Stack:\n"
     report += exception.callStackSymbols.joined(separator: "\n")
 
-    let path = crashFilePath()
-    try? report.write(toFile: path, atomically: true, encoding: .utf8)
+    try? report.write(toFile: crashFilePath(), atomically: true, encoding: .utf8)
 }
 
 // MARK: - Public API
@@ -84,10 +84,8 @@ private func uncaughtExceptionHandler(_ exception: NSException) {
 public class EGCrashCatcher {
 
     public static func install() {
-        // Register ObjC exception handler
         NSSetUncaughtExceptionHandler(uncaughtExceptionHandler)
 
-        // Register signal handlers
         for sig in crashSignals {
             var sa = sigaction()
             let handler: @convention(c) (Int32) -> Void = signalHandler
@@ -95,28 +93,23 @@ public class EGCrashCatcher {
             sa.sa_flags = Int32(SA_NODEFER)
             var old = sigaction()
             sigaction(sig, &sa, &old)
-            previousHandlers[sig] = old.__sigaction_u.__sa_handler
+            previousHandlerPtrs[sig] = unsafeBitCast(old.__sigaction_u.__sa_handler, to: UInt.self)
         }
     }
 
-    /// Call on every launch — if a crash report exists, copies it to clipboard and shows alert
     public static func checkAndReport(in window: UIWindow?) {
         let path = crashFilePath()
         guard FileManager.default.fileExists(atPath: path),
               let report = try? String(contentsOfFile: path, encoding: .utf8),
               !report.isEmpty else { return }
 
-        // Remove file so we don't show it again
         try? FileManager.default.removeItem(atPath: path)
-
-        // Copy to clipboard
         UIPasteboard.general.string = report
 
-        // Show alert
         DispatchQueue.main.async {
             let alert = UIAlertController(
                 title: "ExteraGram Crash Detected",
-                message: "Crash report copied to clipboard.\n\nFirst lines:\n" + report.prefix(300),
+                message: "Crash report copied to clipboard.\n\n" + String(report.prefix(400)),
                 preferredStyle: .alert
             )
             alert.addAction(UIAlertAction(title: "OK", style: .default))
