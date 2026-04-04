@@ -164,7 +164,6 @@ enum PeerInfoContextSubject {
 
 enum PeerInfoSettingsSection {
     case exteragram
-    case exteragramPro
     case avatar
     case edit
     case proxy

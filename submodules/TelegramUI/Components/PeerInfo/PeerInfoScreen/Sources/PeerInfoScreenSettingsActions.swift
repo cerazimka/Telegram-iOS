@@ -49,16 +49,6 @@ extension PeerInfoScreenNode {
         switch section {
         case .exteragram:
             self.controller?.push(egSettingsController(context: self.context))
-        case .exteragramPro:
-            if self.context.sharedContext.immediateEGStatus.status > 1 {
-                self.controller?.push(self.context.sharedContext.makeSGProController(context: self.context))
-            } else {
-                if let payWallController = self.context.sharedContext.makeSGPayWallController(context: self.context) {
-                    self.controller?.present(payWallController, in: .window(.root), with: ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
-                } else {
-                    self.controller?.present(self.context.sharedContext.makeSGUpdateIOSController(), animated: true)
-                }
-            }
         case .avatar:
             self.controller?.openAvatarForEditing()
         case .edit:

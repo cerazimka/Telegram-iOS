@@ -21,7 +21,6 @@ enum SettingsSection: Int, CaseIterable {
     case myProfile
     case proxy
     case exteragram
-    case exteragramPro
     case apps
     case shortcuts
     case advanced
@@ -211,23 +210,6 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
         exteragramLabel = .none
     }
 
-    let hasNewSGProFeatures = {
-        return false
-    }
-    let exteragramProLabel: PeerInfoScreenDisclosureItem.Label
-    if hasNewSGProFeatures() {
-        exteragramProLabel = .titleBadge(presentationData.strings.Settings_New, presentationData.theme.list.itemAccentColor)
-    } else {
-        exteragramProLabel = .none
-    }
-    
-    
-    let egWebSettings = context.currentAppConfiguration.with({ $0 }).egWebSettings
-    if egWebSettings.global.paymentsEnabled || context.sharedContext.immediateEGStatus.status > 1 {
-        items[.exteragram]!.append(PeerInfoScreenDisclosureItem(id: 0, label: exteragramProLabel, text: "ExteraGram Pro", icon: PresentationResourcesSettings.exteragramPro, action: {
-            interaction.openSettings(.exteragramPro)
-        }))
-    }
     items[.exteragram]!.append(PeerInfoScreenDisclosureItem(id: 1, label: exteragramLabel, text: "ExteraGram", icon: PresentationResourcesSettings.exteragram, action: {
         interaction.openSettings(.exteragram)
     }))
