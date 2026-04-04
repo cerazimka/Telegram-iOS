@@ -6,7 +6,6 @@ public struct EGConfig: Codable {
     public var webappUrl: String = "https://my.swiftgram.app"
     public var botUsername: String = "ExteraGramBot"
     public var publicKey: String?
-    public var iaps: [String] = []
 }
 
 private func parseEGConfig(_ jsonString: String) -> EGConfig {

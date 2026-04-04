@@ -5566,7 +5566,6 @@ extension ChatTextInputPanelNode {
     func initToolbarIfNeeded(context: AccountContext) {
         guard #available(iOS 13.0, *) else { return }
         guard EGSimpleSettings.shared.inputToolbar else { return }
-        guard context.sharedContext.immediateEGStatus.status > 1 else { return }
         guard self.toolbarNode == nil else { return }
         let toolbarView = ChatToolbarView(
             onQuote: { [weak self] in

@@ -38,9 +38,6 @@ private enum EGDebugActions: String {
     case fileManager
     case clearRegDateCache
     case clearOutgoingTranslationLanguageCache
-    case restorePurchases
-    case setIAP
-    case resetIAP
 }
 
 private enum EGDebugToggles: String {
@@ -70,12 +67,6 @@ private func EGDebugControllerEntries(presentationData: PresentationData) -> [EG
     entries.append(.action(id: id.count, section: .base, actionType: .clearOutgoingTranslationLanguageCache, text: "Clear Outgoing Translation cache", kind: .generic))
     entries.append(.toggle(id: id.count, section: .base, settingName: .forceImmediateShareSheet, value: EGSimpleSettings.shared.forceSystemSharing, text: "Force System Share Sheet", enabled: true))
     
-    entries.append(.action(id: id.count, section: .base, actionType: .restorePurchases, text: "PayWall.RestorePurchases".i18n(presentationData.strings.baseLanguageCode), kind: .generic))
-    #if DEBUG
-    entries.append(.action(id: id.count, section: .base, actionType: .setIAP, text: "Set Pro", kind: .generic))
-    #endif
-    entries.append(.action(id: id.count, section: .base, actionType: .resetIAP, text: "Reset Pro", kind: .destructive))
-
     entries.append(.toggle(id: id.count, section: .notifications, settingName: .legacyNotificationsFix, value: EGSimpleSettings.shared.legacyNotificationsFix, text: "[OLD] Fix empty notifications", enabled: true))
     return entries
 }
@@ -165,34 +156,6 @@ public func egDebugController(context: AccountContext) -> ViewController {
                 nil)
             }
             #endif
-        case .restorePurchases:
-            presentControllerImpl?(UndoOverlayController(
-                presentationData: presentationData,
-                content: .info(title: nil, text: "PayWall.Button.Restoring".i18n(args: context.sharedContext.currentPresentationData.with { $0 }.strings.baseLanguageCode), timeout: nil, customUndoText: nil),
-                elevatedLayout: false,
-                action: { _ in return false }
-            ),
-            nil)
-            context.sharedContext.EGIAP?.restorePurchases {}
-        case .setIAP:
-            #if DEBUG
-            #endif
-        case .resetIAP:
-            let updateSettingsSignal = updateSGStatusInteractively(accountManager: context.sharedContext.accountManager, { status in
-                var status = status
-                status.status = EGStatus.default.status
-                EGSimpleSettings.shared.primaryUserId = ""
-                return status
-            })
-            let _ = (updateSettingsSignal |> deliverOnMainQueue).start(next: {
-                presentControllerImpl?(UndoOverlayController(
-                    presentationData: presentationData,
-                    content: .info(title: nil, text: "Status reset completed. You can now restore purchases.", timeout: nil, customUndoText: nil),
-                    elevatedLayout: false,
-                    action: { _ in return false }
-                ),
-                nil)
-            })
         }
     })
     

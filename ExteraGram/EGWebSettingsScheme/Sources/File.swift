@@ -5,7 +5,7 @@ public struct EGWebSettings: Codable, Equatable {
     public let user: EGUserSettings
     
     public static var defaultValue: EGWebSettings {
-        return EGWebSettings(global: EGGlobalSettings(ytPip: true, qrLogin: true, storiesAvailable: false, canViewMessages: true, canEditSettings: false, canShowTelescope: false, announcementsData: nil, regdateFormat: "month", botMonkeys: [], forceReasons: [], unforceReasons: [], paymentsEnabled: true, duckyAppIconAvailable: true, canGrant: false, proSupportUrl: nil, nyAvailable: false), user: EGUserSettings(contentReasons: [], canSendTelescope: false, canBuyInBeta: true))
+        return EGWebSettings(global: EGGlobalSettings(ytPip: true, qrLogin: true, storiesAvailable: false, canViewMessages: true, canEditSettings: false, canShowTelescope: false, announcementsData: nil, regdateFormat: "month", botMonkeys: [], forceReasons: [], unforceReasons: [], duckyAppIconAvailable: true, nyAvailable: false), user: EGUserSettings(contentReasons: [], canSendTelescope: false))
     }
 }
 
@@ -21,10 +21,7 @@ public struct EGGlobalSettings: Codable, Equatable {
     public let botMonkeys: [EGBotMonkeys]
     public let forceReasons: [Int64]
     public let unforceReasons: [Int64]
-    public let paymentsEnabled: Bool
     public let duckyAppIconAvailable: Bool
-    public let canGrant: Bool
-    public let proSupportUrl: String?
     public let nyAvailable: Bool
 }
 
@@ -39,7 +36,6 @@ public struct EGBotMonkeys: Codable, Equatable {
 public struct EGUserSettings: Codable, Equatable {
     public let contentReasons: [String]
     public let canSendTelescope: Bool
-    public let canBuyInBeta: Bool
 }
 
 
