@@ -338,7 +338,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         precondition(!testIsLaunched)
         testIsLaunched = true
-        
+
+        // MARK: ExteraGram - crash catcher
+        EGCrashCatcher.install()
+
         let _ = voipTokenPromise.get().start(next: { token in
             self.voipDeviceToken.set(.single(token))
         })
@@ -785,7 +788,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         GlobalExperimentalSettings.enableFeed = false
         
         self.window?.makeKeyAndVisible()
-        
+
+        // MARK: ExteraGram - show crash report from previous session
+        EGCrashCatcher.checkAndReport(in: self.window)
+
         var hasActiveCalls: Signal<Bool, NoError> = .single(false)
         if CallKitIntegration.isAvailable, let callKitIntegration = CallKitIntegration.shared {
             hasActiveCalls = callKitIntegration.hasActiveCalls
