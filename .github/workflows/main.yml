@@ -74,12 +74,11 @@ jobs:
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
 
-          # Try new path first (renamed target), then fallback to old path
-          IPA_SRC=$(find bazel-out bazel-bin -name "ExteraGram.ipa" -o -name "Telegram.ipa" 2>/dev/null | head -1)
-          cp "$IPA_SRC" "$OUTPUT_PATH/ExteraGram.ipa"
+          # IPA is at bazel-bin/Telegram/ExteraGram.ipa
+          cp bazel-bin/Telegram/ExteraGram.ipa "$OUTPUT_PATH/ExteraGram.ipa"
 
           mkdir -p build/DSYMs
-          find bazel-out bazel-bin -name "*.dSYM" -exec cp -R {} build/DSYMs/ \; 2>/dev/null || true
+          find bazel-out bazel-bin \( -name "*.dSYM" \) -exec cp -R {} build/DSYMs/ \; 2>/dev/null || true
           zip -r "$OUTPUT_PATH/ExteraGram.DSYMs.zip" build/DSYMs 1>/dev/null
 
       - name: Upload build artifacts
