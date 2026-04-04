@@ -63,7 +63,7 @@ private func renderIcon(name: String, scaleFactor: CGFloat = 1.0, backgroundColo
 }
 
 public struct PresentationResourcesSettings {
-    public static let exteragram = renderIcon(name: "ExteraGramSettings", scaleFactor: 30.0 / 512.0)
+    public static let exteragram = renderIcon(name: "ExteraGramSettings")
     public static let exteragramPro = renderIcon(name: "ExteraGramPro", scaleFactor: 30.0 / 256.0)
     public static let editProfile = renderIcon(name: "Settings/Menu/EditProfile")
     public static let proxy = renderIcon(name: "Settings/Menu/Proxy")
