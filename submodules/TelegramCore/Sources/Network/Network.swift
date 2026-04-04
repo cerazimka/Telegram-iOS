@@ -1317,10 +1317,7 @@ class Keychain: NSObject, MTKeychain {
 }
 #if os(iOS)
 func makeCloudDataContext(encryptionProvider: EncryptionProvider) -> CloudDataContext? {
-    if #available(iOS 10.0, *) {
-        return CloudDataContextImpl(encryptionProvider: encryptionProvider)
-    } else {
-        return nil
-    }
+    // CloudKit requires iCloud entitlements which are unavailable in sideloaded builds.
+    return nil
 }
 #endif
