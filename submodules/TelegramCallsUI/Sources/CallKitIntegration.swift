@@ -160,7 +160,7 @@ class CallKitProviderDelegate: NSObject, CXProviderDelegate {
     
     private static func providerConfiguration() -> CXProviderConfiguration {
         // MARK: ExteraGram
-        let providerConfiguration = CXProviderConfiguration(localizedName: "ExteraGram")
+        let providerConfiguration = CXProviderConfiguration(localizedName: "exteraGram")
         
         providerConfiguration.supportsVideo = true
         providerConfiguration.maximumCallsPerCallGroup = 1

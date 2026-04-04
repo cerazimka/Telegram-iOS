@@ -309,7 +309,7 @@ private enum DebugControllerEntry: ItemListNodeEntry {
         let arguments = arguments as! DebugControllerArguments
         switch self {
         case .EGDebug:
-            return ItemListDisclosureItem(presentationData: presentationData, title: "ExteraGram Debug", label: "", sectionId: self.section, style: .blocks, action: {
+            return ItemListDisclosureItem(presentationData: presentationData, title: "exteraGram Debug", label: "", sectionId: self.section, style: .blocks, action: {
                 guard let context = arguments.context else {
                     return
                 }
@@ -424,7 +424,7 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                 title = "Send ExteraGram Logs"
                 logCollectionSignal = EGLogger.shared.collectLogs()
                 fileName = "Log-iOS-ExteraGram.txt"
-                appName = "ExteraGram"
+                appName = "exteraGram"
             }
             return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, title: title, label: "", sectionId: self.section, style: .blocks, action: {
                 let _ = (logCollectionSignal

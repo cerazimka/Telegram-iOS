@@ -383,7 +383,7 @@ struct EGPayWallView: View {
                         
                         // Title and Subtitle
                         VStack(spacing: 8) {
-                            Text("ExteraGram Pro")
+                            Text("exteraGram Pro")
                                 .font(.largeTitle)
                                 .fontWeight(.bold)
                             

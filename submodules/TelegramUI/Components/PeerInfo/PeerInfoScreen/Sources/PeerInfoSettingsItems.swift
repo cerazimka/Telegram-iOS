@@ -210,7 +210,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
         exteragramLabel = .none
     }
 
-    items[.exteragram]!.append(PeerInfoScreenDisclosureItem(id: 1, label: exteragramLabel, text: "ExteraGram", icon: PresentationResourcesSettings.exteragram, action: {
+    items[.exteragram]!.append(PeerInfoScreenDisclosureItem(id: 1, label: exteragramLabel, text: "Настройки exteraGram", icon: PresentationResourcesSettings.exteragram, action: {
         interaction.openSettings(.exteragram)
     }))
 

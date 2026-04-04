@@ -2233,7 +2233,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             })), at: 0)
             egActions.insert(.separator, at: 1)
             
-            let exteragramSubMenu: ContextMenuItem = .action(ContextMenuActionItem(text: "ExteraGram", icon: { theme in
+            let exteragramSubMenu: ContextMenuItem = .action(ContextMenuActionItem(text: "exteraGram", icon: { theme in
                 return generateTintedImage(image: UIImage(bundleImageName: "ExteraGramContextMenu"), color: theme.actionSheet.primaryTextColor)
             }, action: { c, f in
                 popSGItems = { [weak c] in

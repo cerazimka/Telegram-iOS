@@ -108,7 +108,7 @@ public class EGCrashCatcher {
 
         DispatchQueue.main.async {
             let alert = UIAlertController(
-                title: "ExteraGram Crash Detected",
+                title: "exteraGram Crash Detected",
                 message: "Crash report copied to clipboard.\n\n" + String(report.prefix(400)),
                 preferredStyle: .alert
             )
