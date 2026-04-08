@@ -681,7 +681,7 @@ struct EGPayWallView: View {
     }
     
     private func updateSelectedProduct() {
-        product = EGIAP.availableProducts.first { $0.id == EG_CONFIG.iaps.first ?? "" }
+        product = EGIAP.availableProducts.first
     }
     
     private func handlePurchase() {
