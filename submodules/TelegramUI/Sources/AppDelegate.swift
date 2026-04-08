@@ -54,6 +54,7 @@ import RecaptchaEnterprise
 import NavigationBarImpl
 import ContextUI
 import ContextControllerImpl
+import StoreKit
 
 #if canImport(AppCenter)
 import AppCenter
@@ -3394,5 +3395,3 @@ final class UpdateSettings: Codable, Equatable {
         return lhs.url == rhs.url
     }
 }
-
-@available(iOS 13.0, *)

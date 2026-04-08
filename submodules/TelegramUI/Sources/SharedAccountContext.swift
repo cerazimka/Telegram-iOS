@@ -4466,7 +4466,3 @@ private func useFlatModalCallsPresentation(context: AccountContext) -> Bool {
     }
     return true
 }
-
-
-
-}
