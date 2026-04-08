@@ -214,6 +214,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
         interaction.openSettings(.exteragram)
     }))
 
+    var appIndex = 1000
     if let settings = data.globalSettings {
         for bot in settings.bots {
             let iconSignal: Signal<UIImage?, NoError>
