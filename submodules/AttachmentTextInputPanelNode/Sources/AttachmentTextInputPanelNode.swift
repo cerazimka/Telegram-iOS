@@ -657,7 +657,6 @@ public class AttachmentTextInputPanelNode: ASDisplayNode, TGCaptionPanelView, AS
         textInputNode.view.addGestureRecognizer(recognizer)
         
         textInputNode.textView.accessibilityHint = self.textPlaceholderNode.attributedText?.string
-        self.initToolbarIfNeeded(context: self.context)
     }
     
     private func textFieldMaxHeight(_ maxHeight: CGFloat, metrics: LayoutMetrics) -> CGFloat {
