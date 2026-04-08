@@ -2,7 +2,6 @@
 import TelegramUIPreferences
 import EGSimpleSettings
 import SwiftUI
-import EGInputToolbar
 
 import Foundation
 import UniformTypeIdentifiers
@@ -342,8 +341,6 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
     // MARK: ExteraGram
     private var sendWithReturnKey: Bool
     private var sendWithReturnKeyDisposable: Disposable?
-//    private var toolbarHostingController: UIViewController? //Any? //  UIHostingController<ChatToolbarView>?
-    private var toolbarNode: ASDisplayNode?
     
     public var inputTextState: ChatTextInputState {
         if let textInputNode = self.textInputNode {
@@ -775,9 +772,6 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         }*/
 
                 // MARK: ExteraGram
-        self.initToolbarIfNeeded(context: context)
-        //
-
         self.sendAsAvatarContainerNode.activated = { [weak self] gesture, _ in
             guard let strongSelf = self else {
                 return
@@ -3557,11 +3551,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         transition.updateFrame(view: self.glassBackgroundContainer, frame: containerFrame)
         self.glassBackgroundContainer.update(size: containerFrame.size, isDark: interfaceState.theme.overallDarkAppearance, transition: ComponentTransition(transition))
         
-        // MARK: ExteraGram
-        var toolbarOffset: CGFloat = 0.0
-        toolbarOffset = layoutToolbar(transition: transition, panelHeight: contentHeight, width: width, leftInset: originalLeftInset, rightInset: rightInset, displayBotStartButton: displayBotStartButton)
-        
-        return contentHeight + toolbarOffset
+        return contentHeight
     }
     
     @objc private func slowModeButtonPressed() {
@@ -5559,112 +5549,3 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
     }
 }
 
-
-// MARK: ExteraGram
-extension ChatTextInputPanelNode {
-    
-    func initToolbarIfNeeded(context: AccountContext) {
-        guard #available(iOS 13.0, *) else { return }
-        guard EGSimpleSettings.shared.inputToolbar else { return }
-        guard self.toolbarNode == nil else { return }
-        let toolbarView = ChatToolbarView(
-            onQuote: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesQuote(strongSelf)
-            },
-            onSpoiler: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesSpoiler(strongSelf)
-            },
-            onBold: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesBold(strongSelf)
-            },
-            onItalic: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesItalic(strongSelf)
-            },
-            onMonospace: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesMonospace(strongSelf)
-            },
-            onLink: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesLink(strongSelf)
-            },
-            onStrikethrough: { [weak self]
-                in guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesStrikethrough(strongSelf)
-            },
-            onUnderline: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesUnderline(strongSelf)
-            },
-            onCode: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSelectLastWordIfIdle()
-                strongSelf.formatAttributesCodeBlock(strongSelf)
-            },
-            onNewLine: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.egSetNewLine()
-            },
-            // TODO(exteragram): Binding
-            showNewLine: .constant(true), //.constant(self.sendWithReturnKey)
-            onClearFormatting: { [weak self] in
-                guard let strongSelf = self else { return }
-                strongSelf.interfaceInteraction?.updateTextInputStateAndMode { current, inputMode in
-                    return (chatTextInputAddFormattingAttribute(forceRemoveAll: true, current, attribute: ChatTextInputAttributes.allAttributes[0], value: nil), inputMode)
-                }
-            }
-        )
-        let toolbarHostingController = UIHostingController(rootView: toolbarView)
-        toolbarHostingController.view.backgroundColor = .clear
-        let toolbarNode = ASDisplayNode { toolbarHostingController.view }
-        self.toolbarNode = toolbarNode
-        // assigning toolbarHostingController bugs responsivness and overrides layout
-        // self.toolbarHostingController = toolbarHostingController
-        
-        // Disable "Swipe to go back" gesture when touching scrollview
-        self.view.interactiveTransitionGestureRecognizerTest = { [weak self] point in
-            if let self, let _ = self.toolbarNode?.view.hitTest(point, with: nil) {
-                return false
-            }
-            return true
-        }
-        self.addSubnode(toolbarNode)
-    }
-    
-    func layoutToolbar(transition: ContainedViewLayoutTransition, panelHeight: CGFloat, width: CGFloat, leftInset: CGFloat, rightInset: CGFloat, displayBotStartButton: Bool) -> CGFloat {
-        var toolbarHeight: CGFloat = 0.0
-        var toolbarSpacing: CGFloat = 0.0
-        if let toolbarNode = self.toolbarNode {
-            if displayBotStartButton {
-                toolbarNode.view.alpha = 0.0
-//                transition.updateAlpha(node: toolbarNode, alpha: 0.0)
-            /*} else if !self.isFocused {
-                transition.updateAlpha(node: toolbarNode, alpha: 0.0, completion: { _ in
-                    toolbarNode.isHidden = true
-                })*/
-            } else {
-                if !self.isFocused {
-                    transition.updateAlpha(node: toolbarNode, alpha: 0.0)
-                } else {
-                    toolbarHeight = 44.0
-                    toolbarSpacing = 6.0
-                    transition.updateFrame(node: toolbarNode, frame: CGRect(origin: CGPoint(x: leftInset, y: panelHeight + toolbarSpacing), size: CGSize(width: width - rightInset - leftInset, height: toolbarHeight)))
-                    transition.updateAlpha(node: toolbarNode, alpha: 1.0)
-                }
-            }
-        }
-        return toolbarHeight + toolbarSpacing
-    }
-}

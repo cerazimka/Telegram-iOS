@@ -72,7 +72,6 @@ public class EGSimpleSettings {
             { let _ = self.disableSnapDeletionEffect },
             { let _ = self.startTelescopeWithRearCam },
             { let _ = self.hideRecordingButton },
-            { let _ = self.inputToolbar },
             { let _ = self.dismissedSGSuggestions },
             { let _ = self.customAppBadge }
         ]
@@ -158,7 +157,6 @@ public class EGSimpleSettings {
         case videoPIPSwipeDirection
         case legacyNotificationsFix
         case messageFilterKeywords
-        case inputToolbar
         case pinnedMessageNotifications
         case mentionsAndRepliesNotifications
         case primaryUserId
@@ -314,7 +312,6 @@ public class EGSimpleSettings {
         Keys.confirmCalls.rawValue: true,
         Keys.videoPIPSwipeDirection.rawValue: VideoPIPSwipeDirection.up.rawValue,
         Keys.messageFilterKeywords.rawValue: [],
-        Keys.inputToolbar.rawValue: false,
         Keys.primaryUserId.rawValue: "",
         Keys.dismissedSGSuggestions.rawValue: [],
         Keys.duckyAppIconAvailable.rawValue: true,
@@ -551,8 +548,6 @@ public class EGSimpleSettings {
     @UserDefault(key: Keys.messageFilterKeywords.rawValue)
     public var messageFilterKeywords: [String]
     
-    @UserDefault(key: Keys.inputToolbar.rawValue)
-    public var inputToolbar: Bool
 
     @UserDefault(key: Keys.sendWithReturnKey.rawValue)
     public var sendWithReturnKey: Bool

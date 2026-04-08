@@ -1,7 +1,6 @@
 // MARK: ExteraGram
 import class SwiftUI.UIHostingController
 import EGSimpleSettings
-import EGInputToolbar
 
 import Foundation
 import UIKit
@@ -609,7 +608,6 @@ public final class MessageInputPanelComponent: Component {
         private var header: ComponentView<Empty>?
         
         // MARK: ExteraGram
-        private var toolbarView: UIView?
         
         private var disabledPlaceholder: ComponentView<Empty>?
         private var textClippingView = UIView()
@@ -715,10 +713,8 @@ public final class MessageInputPanelComponent: Component {
                 }
             )
             
-            // MARK: ExteraGram
-            self.initToolbarIfNeeded(context: context)
         }
-        
+
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
         }
@@ -927,10 +923,6 @@ public final class MessageInputPanelComponent: Component {
             }
             
             // MARK: ExteraGram
-            if result == nil, let toolbarView = self.toolbarView, let toolbarResult = toolbarView.hitTest(self.convert(point, to: toolbarView), with: event) {
-                return toolbarResult
-            }
-             
             return result
         }
         
@@ -2999,9 +2991,6 @@ public final class MessageInputPanelComponent: Component {
                 }
             }
             
-            // MARK: ExteraGram
-            size = self.layoutToolbar(transition: transition, layoutFromTop: layoutFromTop, size: size, availableSize: availableSize, defaultInsets: defaultInsets, textFieldSize: textFieldSize, previousComponent: previousComponent)
-            
             return size
         }
     }
@@ -3056,107 +3045,3 @@ final class ViewForOverlayContent: UIView {
     }
 }
 
-
-extension MessageInputPanelComponent.View {
-    func initToolbarIfNeeded(context: AccountContext) {
-        guard #available(iOS 13.0, *) else { return }
-        guard EGSimpleSettings.shared.inputToolbar else { return }
-        guard self.toolbarView == nil else { return }
-        let notificationName = Notification.Name("egToolbarAction")
-        let toolbar = ChatToolbarView(
-            onQuote: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "quote"])
-            },
-            onSpoiler: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "spoiler"])
-            },
-            onBold: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "bold"])
-            },
-            onItalic: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "italic"])
-            },
-            onMonospace: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "monospace"])
-            },
-            onLink: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "link"])
-            },
-            onStrikethrough: { [weak self]
-                in guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "strikethrough"])
-            },
-            onUnderline: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "underline"])
-            },
-            onCode: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "code"])
-            },
-            onNewLine: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "newline"])
-            },
-            // TODO(exteragram): Binding
-            showNewLine: .constant(true), //.constant(self.sendWithReturnKey)
-            onClearFormatting: { [weak self] in
-                guard let _ = self else { return }
-                NotificationCenter.default.post(name: notificationName, object: nil, userInfo: ["action": "clearFormatting"])
-            }
-        ).colorScheme(.dark)
-
-        let toolbarHostingController = UIHostingController(rootView: toolbar)
-        toolbarHostingController.view.backgroundColor = .clear
-        let toolbarView = toolbarHostingController.view
-        self.toolbarView = toolbarView
-        // assigning toolbarHostingController bugs responsivness and overrides layout
-        // self.toolbarHostingController = toolbarHostingController
-        
-        // Disable "Swipe to go back" gesture when touching scrollview
-        self.interactiveTransitionGestureRecognizerTest = { [weak self] point in
-            if let self, let _ = self.toolbarView?.hitTest(point, with: nil) {
-                return false
-            }
-            return true
-        }
-        if let toolbarView = self.toolbarView {
-            self.addSubview(toolbarView)
-        }
-    }
-    
-    func layoutToolbar(transition: ComponentTransition, layoutFromTop: Bool, size: CGSize, availableSize: CGSize, defaultInsets: UIEdgeInsets, textFieldSize: CGSize, previousComponent: MessageInputPanelComponent?) -> CGSize {
-        // TODO(exteragram): Do not show if locked formatting
-        var transition = transition
-        if let previousComponent = previousComponent {
-            let previousLayoutFromTop = previousComponent.attachmentButtonMode == .captionDown
-            if previousLayoutFromTop != layoutFromTop {
-                // attachmentButtonMode changed
-                transition = .immediate
-            }
-        }
-        var size = size
-        if let toolbarView = self.toolbarView {
-            let toolbarHeight: CGFloat = 44.0
-            let toolbarSpacing: CGFloat = 1.0
-            let toolbarSize = CGSize(width: availableSize.width, height: toolbarHeight)
-            let hasFirstResponder = self.hasFirstResponder()
-            transition.setAlpha(view: toolbarView, alpha: hasFirstResponder ? 1.0 : 0.0)
-            if layoutFromTop {
-                transition.setFrame(view: toolbarView, frame: CGRect(origin: CGPoint(x: .zero, y: availableSize.height + toolbarSpacing), size: toolbarSize))
-            } else {
-                transition.setFrame(view: toolbarView, frame: CGRect(origin: CGPoint(x: .zero, y: textFieldSize.height + defaultInsets.top + toolbarSpacing), size: toolbarSize))
-                if hasFirstResponder {
-                    size.height += toolbarHeight + toolbarSpacing
-                }
-            }
-        }
-        return size
-    }
-}

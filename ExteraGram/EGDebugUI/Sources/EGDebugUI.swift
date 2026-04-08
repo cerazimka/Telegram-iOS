@@ -43,7 +43,6 @@ private enum EGDebugActions: String {
 private enum EGDebugToggles: String {
     case forceImmediateShareSheet
     case legacyNotificationsFix
-    case inputToolbar
 }
 
 
@@ -88,8 +87,6 @@ public func egDebugController(context: AccountContext) -> ViewController {
             case .legacyNotificationsFix:
                 EGSimpleSettings.shared.legacyNotificationsFix = value
                 EGSimpleSettings.shared.synchronizeShared()
-            case .inputToolbar:
-                EGSimpleSettings.shared.inputToolbar = value
         }
     }, setOneFromManyValue: { setting in
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
