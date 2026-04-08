@@ -2245,10 +2245,6 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         if buttonTitleUpdated && !transition.isAnimated {
             transition = .animated(duration: 0.3, curve: .easeInOut)
         }
-        // MARK: ExteraGram
-        let originalLeftInset = leftInset
-        //
-        
         let textInputBackgroundWidthOffset: CGFloat = 0.0
         var attachmentButtonX: CGFloat = hideOffset.x + leftInset + leftMenuInset + 8.0
         
