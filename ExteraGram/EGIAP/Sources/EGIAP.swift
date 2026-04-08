@@ -233,8 +233,8 @@ public final class EGIAPManager: NSObject {
     }
     
     private func requestProducts() {
-        EGLogger.shared.log("EGIAP", "Requesting products for \(EG_CONFIG.iaps.count) ids...")
-        let productRequest = SKProductsRequest(productIdentifiers: Set(EG_CONFIG.iaps))
+        EGLogger.shared.log("EGIAP", "Requesting products for 0 ids...")
+        let productRequest = SKProductsRequest(productIdentifiers: Set<String>())
         
         productRequest.delegate = self
         productRequest.start()
