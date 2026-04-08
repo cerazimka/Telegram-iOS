@@ -74,12 +74,10 @@ struct AppBadgeSettingsView: View {
     private func onSelectBadge(_ badge: AppBadge) {
         self.selectedBadge = badge
         let image = UIImage(bundleImageName: selectedBadge.assetName) ?? UIImage(bundleImageName: "Components/AppBadge")
-        if self.context.sharedContext.immediateEGStatus.status > 1 {
-            DispatchQueue.main.async {
+        DispatchQueue.main.async {
                 EGSimpleSettings.shared.customAppBadge = selectedBadge.assetName
                 self.context.sharedContext.mainWindow?.badgeView.image = image
             }
-        }
     }
     
     var body: some View {

@@ -33,7 +33,7 @@ private enum EGProDisclosureLink: String {
 }
 
 private enum EGProToggles: String {
-    case inputToolbar
+    case _placeholder
 }
 
 private enum EGProOneFromManySetting: String {
@@ -55,8 +55,6 @@ private func EGProControllerEntries(presentationData: PresentationData) -> [EGPr
     
     entries.append(.disclosure(id: id.count, section: .base, link: .sessionBackupManager, text: "SessionBackup.Title".i18n(lang)))
     entries.append(.disclosure(id: id.count, section: .base, link: .messageFilter, text: "MessageFilter.Title".i18n(lang)))
-    entries.append(.toggle(id: id.count, section: .base, settingName: .inputToolbar, value: EGSimpleSettings.shared.inputToolbar, text: "InputToolbar.Title".i18n(lang), enabled: true))
-    
     entries.append(.header(id: id.count, section: .notifications, text: presentationData.strings.Notifications_Title.uppercased(), badge: nil))
     entries.append(.oneFromManySelector(id: id.count, section: .notifications, settingName: .pinnedMessageNotifications, text: "Notifications.PinnedMessages.Title".i18n(lang), value: "Notifications.PinnedMessages.value.\(EGSimpleSettings.shared.pinnedMessageNotifications)".i18n(lang), enabled: true))
     entries.append(.oneFromManySelector(id: id.count, section: .notifications, settingName: .mentionsAndRepliesNotifications, text: "Notifications.MentionsAndReplies.Title".i18n(lang), value: "Notifications.MentionsAndReplies.value.\(EGSimpleSettings.shared.mentionsAndRepliesNotifications)".i18n(lang), enabled: true))
@@ -84,8 +82,8 @@ public func egProController(context: AccountContext) -> ViewController {
     
     let arguments = EGItemListArguments<EGProToggles, AnyHashable, EGProOneFromManySetting, EGProDisclosureLink, EGProAction>(context: context, setBoolValue: { toggleName, value in
         switch toggleName {
-            case .inputToolbar:
-                EGSimpleSettings.shared.inputToolbar = value
+            case ._placeholder:
+                break
         }
     }, setOneFromManyValue: { setting in
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
@@ -140,8 +138,6 @@ public func egProController(context: AccountContext) -> ViewController {
             case .appBages:
                 if #available(iOS 14.0, *) {
                     pushControllerImpl?(egAppBadgeSettingsController(context: context, presentationData: presentationData))
-                } else {
-                    presentControllerImpl?(context.sharedContext.makeSGUpdateIOSController(), nil)
                 }
         }
     }, action: { action in
