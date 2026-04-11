@@ -500,7 +500,7 @@ official_carplay_fragment = """
 <key>com.apple.developer.carplay-messaging</key>
 <true/>
 """
-carplay_fragment = official_carplay_fragment if telegram_bundle_id in official_bundle_ids + ["app.exteragram.ios"] else ""
+carplay_fragment = official_carplay_fragment if telegram_bundle_id in official_bundle_ids else ""
 
 icloud_fragment = "" if not telegram_enable_icloud else """
 <key>com.apple.developer.icloud-services</key>
@@ -561,13 +561,13 @@ official_communication_notifications_fragment = """
 <key>com.apple.developer.usernotifications.communication</key>
 <true/>
 """
-communication_notifications_fragment = official_communication_notifications_fragment if telegram_bundle_id in official_bundle_ids + ["app.exteragram.ios"] else ""
+communication_notifications_fragment = official_communication_notifications_fragment if telegram_bundle_id in official_bundle_ids else ""
 
 official_notification_filtering_fragment = """
 <key>com.apple.developer.usernotifications.filtering</key>
 <true/>
 """
-notification_filtering_fragment = official_notification_filtering_fragment if telegram_bundle_id == "app.exteragram.ios" else ""
+notification_filtering_fragment = official_notification_filtering_fragment if telegram_bundle_id in official_bundle_ids else ""
 
 store_signin_fragment = """
 <key>com.apple.developer.applesignin</key>
@@ -581,7 +581,7 @@ official_background_gpu_fragment = """
 <key>com.apple.developer.background-tasks.continued-processing.gpu</key>
 <true/>
 """
-background_gpu_fragment = official_background_gpu_fragment if telegram_bundle_id == "app.exteragram.ios" else ""
+background_gpu_fragment = official_background_gpu_fragment if telegram_bundle_id in official_bundle_ids else ""
 
 plist_fragment(
     name = "TelegramEntitlements",
