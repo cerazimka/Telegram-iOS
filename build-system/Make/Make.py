@@ -264,7 +264,7 @@ class BazelCommandLine:
         if self.custom_target is not None:
             combined_arguments += [self.custom_target]
         else:
-            combined_arguments += ['Telegram/ExteraGram']
+            combined_arguments += ['Telegram/exteraGram']
 
         if self.continue_on_error:
             combined_arguments += ['--keep_going']

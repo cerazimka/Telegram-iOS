@@ -1,4 +1,4 @@
-name: Build ExteraGram
+name: Build exteraGram
 
 on:
   workflow_dispatch:
@@ -74,33 +74,33 @@ jobs:
           rm -rf "$OUTPUT_PATH"
           mkdir -p "$OUTPUT_PATH"
 
-          # IPA is at bazel-bin/Telegram/ExteraGram.ipa
-          cp bazel-bin/Telegram/ExteraGram.ipa "$OUTPUT_PATH/ExteraGram.ipa"
+          # IPA is at bazel-bin/Telegram/exteraGram.ipa
+          cp bazel-bin/Telegram/exteraGram.ipa "$OUTPUT_PATH/exteraGram.ipa"
 
           mkdir -p build/DSYMs
           find bazel-out bazel-bin \( -name "*.dSYM" \) -exec cp -R {} build/DSYMs/ \; 2>/dev/null || true
-          zip -r "$OUTPUT_PATH/ExteraGram.DSYMs.zip" build/DSYMs 1>/dev/null
+          zip -r "$OUTPUT_PATH/exteraGram.DSYMs.zip" build/DSYMs 1>/dev/null
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ExteraGram-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
+          name: exteraGram-${{ env.APP_VERSION }}-${{ env.BUILD_NUMBER }}
           path: |
-            /Users/Shared/telegram-ios/build/artifacts/ExteraGram.ipa
-            /Users/Shared/telegram-ios/build/artifacts/ExteraGram.DSYMs.zip
+            /Users/Shared/telegram-ios/build/artifacts/exteraGram.ipa
+            /Users/Shared/telegram-ios/build/artifacts/exteraGram.DSYMs.zip
           retention-days: 30
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ env.BUILD_NUMBER }}
-          name: ExteraGram ${{ env.APP_VERSION }} (${{ env.BUILD_NUMBER }})
+          name: exteraGram ${{ env.APP_VERSION }} (${{ env.BUILD_NUMBER }})
           body: |
-            Unsigned build of ExteraGram ${{ env.APP_VERSION }} (build ${{ env.BUILD_NUMBER }})
+            Unsigned build of exteraGram ${{ env.APP_VERSION }} (build ${{ env.BUILD_NUMBER }})
 
             > This IPA is not signed with a valid Apple certificate. To install, use AltStore, Sideloadly, or a similar tool.
           draft: false
           prerelease: false
           files: |
-            /Users/Shared/telegram-ios/build/artifacts/ExteraGram.ipa
-            /Users/Shared/telegram-ios/build/artifacts/ExteraGram.DSYMs.zip
+            /Users/Shared/telegram-ios/build/artifacts/exteraGram.ipa
+            /Users/Shared/telegram-ios/build/artifacts/exteraGram.DSYMs.zip
