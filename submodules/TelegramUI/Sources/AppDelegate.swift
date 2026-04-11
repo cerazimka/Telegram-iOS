@@ -65,6 +65,65 @@ private let handleVoipNotifications = false
 
 private var testIsLaunched = false
 
+// MARK: ExteraGram - Startup diagnostics
+private final class EGStartupDiagnostics {
+    static let shared = EGStartupDiagnostics()
+    private var milestones: [String] = []
+    private let startTime = Date()
+    private var workItem: DispatchWorkItem?
+    private let lock = NSLock()
+
+    func start() {
+        lock.lock()
+        milestones = []
+        lock.unlock()
+        let item = DispatchWorkItem { [weak self] in
+            self?.writeDiagnostics()
+        }
+        self.workItem = item
+        DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 10, execute: item)
+    }
+
+    func milestone(_ name: String) {
+        lock.lock()
+        let elapsed = String(format: "+%.2fs", Date().timeIntervalSince(startTime))
+        milestones.append("\(elapsed) \(name)")
+        lock.unlock()
+    }
+
+    func cancel() {
+        workItem?.cancel()
+        workItem = nil
+    }
+
+    private func writeDiagnostics() {
+        lock.lock()
+        let elapsed = String(format: "%.1f", Date().timeIntervalSince(startTime))
+        let steps = milestones.isEmpty ? "(none — stuck before first checkpoint)" : milestones.joined(separator: "\n  ")
+        let bundleId = Bundle.main.bundleIdentifier ?? "unknown"
+        lock.unlock()
+
+        let report = """
+        === exteraGram Startup Diagnostics ===
+        Bundle ID: \(bundleId)
+        Elapsed:   \(elapsed)s  ← app appears stuck
+        Checkpoints reached:
+          \(steps)
+
+        If no checkpoints: likely entitlement mismatch (provisioning profile
+        does not contain all entitlements embedded in the binary).
+        ======================================
+        """
+
+        if let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            try? report.write(to: dir.appendingPathComponent("eg_startup_log.txt"), atomically: true, encoding: .utf8)
+        }
+        DispatchQueue.main.async {
+            UIPasteboard.general.string = report
+        }
+    }
+}
+
 private func isKeyboardWindow(window: NSObject) -> Bool {
     let typeName = NSStringFromClass(type(of: window))
     if #available(iOS 9.0, *) {
@@ -338,6 +397,9 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         // MARK: ExteraGram - crash catcher
         EGCrashCatcher.install()
 
+        // MARK: ExteraGram - startup diagnostic (writes to clipboard + Documents if stuck > 10s)
+        EGStartupDiagnostics.shared.start()
+
         let _ = voipTokenPromise.get().start(next: { token in
             self.voipDeviceToken.set(.single(token))
         })
@@ -407,6 +469,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             )
         }
         
+        EGStartupDiagnostics.shared.milestone("windowSetup")
         let (window, hostView) = nativeWindowHostView()
         let statusBarHost = ApplicationStatusBarHost(scene: window.windowScene)
         self.mainWindow = Window1(hostView: hostView, statusBarHost: statusBarHost)
@@ -1017,6 +1080,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
         })
         
+        EGStartupDiagnostics.shared.milestone("accountManagerInit")
         let accountManager = AccountManager<TelegramAccountManagerTypes>(basePath: rootPath + "/accounts-metadata", isTemporary: false, isReadOnly: false, useCaches: true, removeDatabaseOnError: true)
         self.accountManager = accountManager
 
@@ -1373,6 +1437,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                         print("Application: context took \(readyTime) to become ready")
                     }
                     print("Launch to ready took \((CFAbsoluteTimeGetCurrent() - launchStartTime) * 1000.0) ms")
+                    EGStartupDiagnostics.shared.milestone("rootControllerReady")
+                    EGStartupDiagnostics.shared.cancel()
 
                     self.mainWindow.debugAction = nil
                     self.mainWindow.viewController = context.rootController

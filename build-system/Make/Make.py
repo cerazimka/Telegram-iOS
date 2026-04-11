@@ -623,22 +623,22 @@ def build(bazel, arguments):
 
     if arguments.outputBuildArtifactsPath is not None:
         artifacts_path = os.path.abspath(arguments.outputBuildArtifactsPath)
-        if os.path.exists(artifacts_path + '/ExteraGram.ipa'):
-            os.remove(artifacts_path + '/ExteraGram.ipa')
+        if os.path.exists(artifacts_path + '/exteraGram.ipa'):
+            os.remove(artifacts_path + '/exteraGram.ipa')
         if os.path.exists(artifacts_path + '/DSYMs'):
             shutil.rmtree(artifacts_path + '/DSYMs')
         os.makedirs(artifacts_path, exist_ok=True)
         os.makedirs(artifacts_path + '/DSYMs', exist_ok=True)
 
         built_ipa_path_prefix = 'bazel-bin/Telegram'
-        ipa_paths = glob.glob('{}/ExteraGram.ipa'.format(built_ipa_path_prefix))
+        ipa_paths = glob.glob('{}/exteraGram.ipa'.format(built_ipa_path_prefix))
         if len(ipa_paths) == 0:
-            print(f'Could not find the IPA at {built_ipa_path_prefix}/ExteraGram.ipa')
+            print(f'Could not find the IPA at {built_ipa_path_prefix}/exteraGram.ipa')
             sys.exit(1)
         elif len(ipa_paths) > 1:
             print('Multiple matching IPA files found: {}'.format(ipa_paths))
             sys.exit(1)
-        shutil.copyfile(ipa_paths[0], artifacts_path + '/ExteraGram.ipa')
+        shutil.copyfile(ipa_paths[0], artifacts_path + '/exteraGram.ipa')
 
         dsym_paths = glob.glob('bazel-bin/Telegram/*.dSYM') + glob.glob('bazel-out/watchos_arm64_32-opt-watchos-arm64_32-min7.0-applebin_watchos-ST-*/bin/Telegram/TelegramWatchApp_dsyms/*.dSYM') + glob.glob('bazel-out/watchos_armv7k-opt-watchos-armv7k-min7.0-applebin_watchos-ST-*/bin/Telegram/TelegramWatchApp_dsyms/*.dSYM') 
         for dsym_path in dsym_paths:
@@ -648,7 +648,7 @@ def build(bazel, arguments):
         os.chdir(artifacts_path)
         run_executable_with_output('zip', arguments=[
             '-r',
-            'ExteraGram.DSYMs.zip',
+            'exteraGram.DSYMs.zip',
             './DSYMs'
         ], check_result=True)
         os.chdir(previous_directory)
