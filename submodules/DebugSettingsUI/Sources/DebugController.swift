@@ -421,9 +421,9 @@ private enum DebugControllerEntry: ItemListNodeEntry {
             var fileName = "Log-iOS-Short.txt"
             var appName = "Telegram"
             if case .sendSGLogs(_) = self {
-                title = "Send ExteraGram Logs"
+                title = "Send exteraGram Logs"
                 logCollectionSignal = EGLogger.shared.collectLogs()
-                fileName = "Log-iOS-ExteraGram.txt"
+                fileName = "Log-iOS-exteraGram.txt"
                 appName = "exteraGram"
             }
             return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, title: title, label: "", sectionId: self.section, style: .blocks, action: {

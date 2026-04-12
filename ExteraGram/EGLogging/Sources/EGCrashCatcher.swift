@@ -29,7 +29,7 @@ private func signalHandler(_ sig: Int32) {
     var frames = [UnsafeMutableRawPointer?](repeating: nil, count: 64)
     let count = backtrace(&frames, 64)
 
-    var report = "=== ExteraGram Crash Report ===\n"
+    var report = "=== exteraGram Crash Report ===\n"
     report += "Signal: \(signalName(sig))\n\n"
     report += "Backtrace:\n"
 
@@ -70,7 +70,7 @@ private func signalHandler(_ sig: Int32) {
 // MARK: - ObjC exception handler
 
 private func uncaughtExceptionHandler(_ exception: NSException) {
-    var report = "=== ExteraGram Crash Report ===\n"
+    var report = "=== exteraGram Crash Report ===\n"
     report += "Exception: \(exception.name.rawValue)\n"
     report += "Reason: \(exception.reason ?? "nil")\n\n"
     report += "Call Stack:\n"

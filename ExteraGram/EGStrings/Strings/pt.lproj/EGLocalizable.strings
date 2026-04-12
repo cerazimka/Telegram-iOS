@@ -15,7 +15,7 @@
 /* Example: Hide "All Chats" */
 "Settings.Folders.AllChatsHidden" = "Ocultar \"%@\"";
 "Settings.Folders.RememberLast" = "Abrir última pasta";
-"Settings.Folders.RememberLast.Notice" = "O ExteraGram abrirá a última pasta usada após reiniciar ou trocar de conta";
+"Settings.Folders.RememberLast.Notice" = "O exteraGram abrirá a última pasta usada após reiniciar ou trocar de conta";
 
 "Settings.Folders.CompactNames" = "Espaçamento Menor";
 "Settings.Folders.AllChatsTitle" = "Título \"Todos os bate-papos\"";
@@ -41,7 +41,7 @@
 /* Do not translate */
 "Settings.Translation.Backend.gtranslate" = "GTranslate";
 "Settings.Translation.Backend.system" = "Sistema";
-"Settings.Translation.Backend.Notice" = "O ExteraGram usará %@ caso o serviço de tradução selecionado não esteja disponível.";
+"Settings.Translation.Backend.Notice" = "O exteraGram usará %@ caso o serviço de tradução selecionado não esteja disponível.";
 
 "Settings.Transcription.Header" = "VOZ PARA TEXTO";
 "Settings.Transcription.Backend" = "Serviço";
@@ -49,7 +49,7 @@
 "Settings.Transcription.Backend.default" = "Telegram";
 /* Do not translate */
 "Settings.Transcription.Backend.apple" = "Apple";
-"Settings.Transcription.Backend.Notice" = "O ExteraGram usará %@ caso o serviço de transcrição selecionado não esteja disponível.";
+"Settings.Transcription.Backend.Notice" = "O exteraGram usará %@ caso o serviço de transcrição selecionado não esteja disponível.";
 
 "Stories.Warning.Author" = "Autor";
 "Stories.Warning.ViewStory" = "Ver Story?";
@@ -98,7 +98,7 @@
 "Common.RestartRequired" = "Reinício necessário";
 "Common.RestartNow" = "Reiniciar agora";
 "Common.OpenTelegram" = "Abrir Telegram";
-"Common.UseTelegramForPremium" = "Observe que para obter o Telegram Premium, você precisa usar o aplicativo oficial do Telegram. Depois de obter o Telegram Premium, todos os seus recursos ficarão disponíveis no ExteraGram.";
+"Common.UseTelegramForPremium" = "Observe que para obter o Telegram Premium, você precisa usar o aplicativo oficial do Telegram. Depois de obter o Telegram Premium, todos os seus recursos ficarão disponíveis no exteraGram.";
 "Common.UpdateOS" = "Atualização do iOS necessária";
 
 "Message.HoldToShowOrReport" = "Segure para Mostrar ou Denunciar.";
@@ -113,7 +113,7 @@
 "ContextMenu.SelectFromUser" = "Selecionar do Autor";
 
 "Settings.ContextMenu" = "MENU DE CONTEXTO";
-"Settings.ContextMenu.Notice" = "Entradas desativadas estarão disponíveis no sub-menu 'ExteraGram'.";
+"Settings.ContextMenu.Notice" = "Entradas desativadas estarão disponíveis no sub-menu 'exteraGram'.";
 
 
 "Settings.ChatSwipeOptions" = "Opções de deslizar Lista de Chat";
@@ -139,7 +139,7 @@
 /* Date when chat was created. "created: 24 May 2016" */
 "Chat.Created" = "criado: %@";
 
-/* Date when user joined the chat. "Joined ExteraGram Chat" */
+/* Date when user joined the chat. "Joined exteraGram Chat" */
 "Chat.JoinedDateTitle" = "Entrou em %@";
 /* Date when user registered in Telegram. Will be shown like "Registered\n24 May 2016" */
 "Chat.RegDate" = "Registrado";
@@ -157,7 +157,7 @@
 "Settings.secondsInMessages" = "Segundos em Mensagens";
 
 "Settings.CallConfirmation" = "Confirmação de chamada";
-"Settings.CallConfirmation.Notice" = "O ExteraGram pedirá sua confirmação antes de fazer uma chamada.";
+"Settings.CallConfirmation.Notice" = "O exteraGram pedirá sua confirmação antes de fazer uma chamada.";
 
 /* Confirmation before making a Call */
 "CallConfirmation.Audio.Title" = "Fazer uma Chamada?";
@@ -182,11 +182,11 @@
 "SessionBackup.LoggedIn" = "Conectado";
 "SessionBackup.LoggedOut" = "Desconectado";
 "SessionBackup.DeleteAll.Title" = "Excluir Todas as Sessões?";
-"SessionBackup.DeleteAll.Text" = "Todas as sessões serão removidas do Keychain.\n\nAs contas não serão desconectadas do ExteraGram.";
+"SessionBackup.DeleteAll.Text" = "Todas as sessões serão removidas do Keychain.\n\nAs contas não serão desconectadas do exteraGram.";
 "SessionBackup.DeleteSingle.Title" = "Excluir 1 (uma) Sessão?";
-"SessionBackup.DeleteSingle.Text" = "%@ sessão será removida do Keychain.\n\nA conta não será desconectada do ExteraGram.";
+"SessionBackup.DeleteSingle.Text" = "%@ sessão será removida do Keychain.\n\nA conta não será desconectada do exteraGram.";
 "SessionBackup.RemoveFromApp.Title" = "Remover conta do App?";
-"SessionBackup.RemoveFromApp.Text" = "%@ sessão SERÁ REMOVIDA do ExteraGram! A sessão permanecerá ativa, para que você possa restaurá-la mais tarde.";
+"SessionBackup.RemoveFromApp.Text" = "%@ sessão SERÁ REMOVIDA do exteraGram! A sessão permanecerá ativa, para que você possa restaurá-la mais tarde.";
 "SessionBackup.Notice" = "As sessões são criptografadas e armazenadas no Acesso às Chaves do dispositivo. As sessões nunca saem do seu dispositivo.\n\nIMPORTANTE: Para restaurar sessões em um novo dispositivo ou após a redefinição do sistema operacional, você DEVE habilitar backups criptografados, caso contrário o Keychain não será transferido.\n\nNOTA: as sessões ainda podem ser revogadas pelo Telegram ou de outro dispositivo.";
 
 "MessageFilter.Title" = "Filtro de Mensagens";
@@ -210,11 +210,11 @@
 
 "PayWall.SessionBackup.Title" = "Backup de Sessão";
 "PayWall.SessionBackup.Notice" = "Faça login em contas sem código, mesmo depois de reinstalar. Armazenamento seguro com Keychain no dispositivo.";
-"PayWall.SessionBackup.Description" = "Alterar o dispositivo ou excluir o ExteraGram não é mais um problema. Restaure todas as sessões que ainda estão ativas nos servidores do Telegram.";
+"PayWall.SessionBackup.Description" = "Alterar o dispositivo ou excluir o exteraGram não é mais um problema. Restaure todas as sessões que ainda estão ativas nos servidores do Telegram.";
 
 "PayWall.MessageFilter.Title" = "Filtro de Mensagens";
 "PayWall.MessageFilter.Notice" = "Reduza a visibilidade de SPAM, promoções e mensagens irritantes.";
-"PayWall.MessageFilter.Description" = "Crie uma lista de palavras-chave que você não quer ver frequentemente e o ExteraGram reduzirá as distrações.";
+"PayWall.MessageFilter.Description" = "Crie uma lista de palavras-chave que você não quer ver frequentemente e o exteraGram reduzirá as distrações.";
 
 "PayWall.Notifications.Title" = "Desativar @menções e respostas";
 "PayWall.Notifications.Notice" = "Oculte ou silencie notificações não importantes.";
@@ -225,10 +225,10 @@
 "PayWall.InputToolbar.Description" = "Aplique e limpe a formatação ou insira novas linhas como um profissional.";
 
 "PayWall.AppIcons.Title" = "Ícones de Aplicativos Exclusivos";
-"PayWall.AppIcons.Notice" = "Personalize a aparência do ExteraGram na sua tela inicial.";
+"PayWall.AppIcons.Notice" = "Personalize a aparência do exteraGram na sua tela inicial.";
 
-"PayWall.About.Title" = "Sobre o ExteraGram Pro";
-"PayWall.About.Notice" = "A versão gratuita do ExteraGram oferece dezenas de recursos e melhorias em relação ao aplicativo Telegram. Inovar e manter o ExteraGram em sincronia com as atualizações mensais do Telegram é um grande esforço que requer muito tempo e hardware caro.\n\nO ExteraGram é um aplicativo de código aberto que respeita sua privacidade e não incomoda você com anúncios. Ao se inscrever no ExteraGram Pro, você obtém acesso a recursos exclusivos e apoia um desenvolvedor independente.";
+"PayWall.About.Title" = "Sobre o exteraGram Pro";
+"PayWall.About.Notice" = "A versão gratuita do exteraGram oferece dezenas de recursos e melhorias em relação ao aplicativo Telegram. Inovar e manter o exteraGram em sincronia com as atualizações mensais do Telegram é um grande esforço que requer muito tempo e hardware caro.\n\nO exteraGram é um aplicativo de código aberto que respeita sua privacidade e não incomoda você com anúncios. Ao se inscrever no exteraGram Pro, você obtém acesso a recursos exclusivos e apoia um desenvolvedor independente.";
 /* DO NOT TRANSLATE */
 "PayWall.About.Signature" = "@Kylmakalle";
 /* DO NOT TRANSLATE */
@@ -242,8 +242,8 @@
 "PayWall.Privacy" = "Política de Privacidade";
 "PayWall.TermsURL" = "https://exteragram.app/terms";
 "PayWall.PrivacyURL" = "https://exteragram.app/privacy";
-"PayWall.Notice.Markdown" = "Ao se inscrever no ExteraGram Pro, você concorda com os [Termos de Serviço do ExteraGram](%1$@) e com a [Política de Privacidade](%2$@).";
-"PayWall.Notice.Raw" = "Ao se inscrever no ExteraGram Pro, você concorda com os Termos de Serviço e Política de Privacidade do ExteraGram.";
+"PayWall.Notice.Markdown" = "Ao se inscrever no exteraGram Pro, você concorda com os [Termos de Serviço do exteraGram](%1$@) e com a [Política de Privacidade](%2$@).";
+"PayWall.Notice.Raw" = "Ao se inscrever no exteraGram Pro, você concorda com os Termos de Serviço e Política de Privacidade do exteraGram.";
 
 "PayWall.Button.OpenPro" = "Usar recursos Pro";
 "PayWall.Button.Purchasing" = "Adquirindo...";
