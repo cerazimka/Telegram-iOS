@@ -98,7 +98,7 @@ private struct EGMainMenuView: View {
                 categoryRow(systemImage: "star",
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
-                Text(i18n("Settings.Menu.Categories", lang))
+                sectionHeader(i18n("Settings.Menu.Categories", lang))
             }
 
             // ── Ссылки ────────────────────────────────────────────────────
@@ -120,7 +120,7 @@ private struct EGMainMenuView: View {
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
             } header: {
-                Text(i18n("Settings.Menu.Links", lang))
+                sectionHeader(i18n("Settings.Menu.Links", lang))
             }
         }
         .listStyle(InsetGroupedListStyle())
@@ -196,6 +196,13 @@ private struct EGMainMenuView: View {
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
+    // Matches Telegram's ItemListSectionHeaderItem: 13pt regular, secondaryLabel color, UPPERCASE
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 13, weight: .regular))
+            .foregroundColor(Color(UIColor.secondaryLabel))
+    }
+
     private func push(_ controller: ViewController) {
         (wrapperController?.navigationController as? NavigationController)?
             .pushViewController(controller)
@@ -231,24 +238,6 @@ public func egMainMenuController(context: AccountContext) -> ViewController {
         strings: strings
     )
     legacyController.statusBar.statusBarStyle = theme.rootController.statusBarStyle.style
-
-    // Use glass-style navigation bar to match standard Telegram settings screens:
-    // – opaque background (no blurred "челка")
-    // – glass-style back arrow
-    if let navBar = legacyController.navigationBar {
-        navBar.updatePresentationData(
-            NavigationBarPresentationData(
-                theme: NavigationBarTheme(rootControllerTheme: theme, style: .glass),
-                strings: NavigationBarStrings(presentationStrings: strings)
-            ),
-            transition: .immediate
-        )
-        navBar.backgroundNode.updateColor(
-            color: theme.rootController.navigationBar.opaqueBackgroundColor,
-            enableBlur: false,
-            transition: .immediate
-        )
-    }
 
     let swiftUIView = EGSwiftUIView<EGMainMenuView>(legacyController: legacyController) {
         EGMainMenuView(wrapperController: legacyController, context: context)
