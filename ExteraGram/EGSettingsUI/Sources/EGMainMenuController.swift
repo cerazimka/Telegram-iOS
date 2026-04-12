@@ -99,8 +99,6 @@ private struct EGMainMenuView: View {
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
                 Text(i18n("Settings.Menu.Categories", lang))
-                    .foregroundColor(.accentColor)
-                    .textCase(nil)
             }
 
             // ── Ссылки ────────────────────────────────────────────────────
@@ -123,8 +121,6 @@ private struct EGMainMenuView: View {
                         url: "https://exteraGram.app")
             } header: {
                 Text(i18n("Settings.Menu.Links", lang))
-                    .foregroundColor(.accentColor)
-                    .textCase(nil)
             }
         }
         .listStyle(InsetGroupedListStyle())
