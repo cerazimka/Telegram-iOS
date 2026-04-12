@@ -131,15 +131,18 @@ private struct EGMainMenuView: View {
     }
 
     // ── App Icon ─────────────────────────────────────────────────────────────
-    // 72×72dp rounded (iOS: 80pt, cornerRadius=18pt)
-    // backgroundColor = brand red, foreground = white plane
+    // Uses EGDefault from the asset catalog; falls back to bundle icon → red square
     @ViewBuilder
     private var appIconImage: some View {
-        if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
-           let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
-           let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
-           let lastName = iconFiles.last,
-           let image = UIImage(named: lastName) {
+        if let image = UIImage(bundleImageName: "EGDefault") {
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+        } else if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
+                  let primaryIcon = icons["CFBundlePrimaryIcon"] as? [String: Any],
+                  let iconFiles = primaryIcon["CFBundleIconFiles"] as? [String],
+                  let lastName = iconFiles.last,
+                  let image = UIImage(named: lastName) {
             Image(uiImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
