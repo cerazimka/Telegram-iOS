@@ -236,6 +236,24 @@ public func egMainMenuController(context: AccountContext) -> ViewController {
     )
     legacyController.statusBar.statusBarStyle = theme.rootController.statusBarStyle.style
 
+    // Use glass-style navigation bar to match standard Telegram settings screens:
+    // – opaque background (no blurred "челка")
+    // – glass-style back arrow
+    if let navBar = legacyController.navigationBar {
+        navBar.updatePresentationData(
+            NavigationBarPresentationData(
+                theme: NavigationBarTheme(rootControllerTheme: theme, style: .glass),
+                strings: NavigationBarStrings(presentationStrings: strings)
+            ),
+            transition: .immediate
+        )
+        navBar.backgroundNode.updateColor(
+            color: theme.rootController.navigationBar.opaqueBackgroundColor,
+            enableBlur: false,
+            transition: .immediate
+        )
+    }
+
     let swiftUIView = EGSwiftUIView<EGMainMenuView>(legacyController: legacyController) {
         EGMainMenuView(wrapperController: legacyController, context: context)
     }
