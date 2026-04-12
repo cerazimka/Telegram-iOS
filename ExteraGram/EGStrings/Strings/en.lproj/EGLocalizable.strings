@@ -1,3 +1,16 @@
+/* Main menu hub */
+"Settings.Menu.Categories" = "Categories";
+"Settings.Menu.General" = "General";
+"Settings.Menu.Appearance" = "Appearance";
+"Settings.Menu.Chats" = "Chats";
+"Settings.Menu.Plugins" = "Plugins";
+"Settings.Menu.Other" = "Other";
+"Settings.Menu.Links" = "Links";
+"Settings.Menu.Channel" = "Channel";
+"Settings.Menu.Chat" = "Chats";
+"Settings.Menu.Translation" = "Translation";
+"Settings.Menu.Website" = "Website";
+
 "Settings.ContentSettings" = "Content Settings";
 
 "Settings.Tabs.Header" = "TABS";

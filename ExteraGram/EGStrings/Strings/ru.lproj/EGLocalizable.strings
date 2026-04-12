@@ -1,3 +1,16 @@
+/* Main menu hub */
+"Settings.Menu.Categories" = "Категории";
+"Settings.Menu.General" = "Основные";
+"Settings.Menu.Appearance" = "Оформление";
+"Settings.Menu.Chats" = "Чаты";
+"Settings.Menu.Plugins" = "Плагины";
+"Settings.Menu.Other" = "Другое";
+"Settings.Menu.Links" = "Ссылки";
+"Settings.Menu.Channel" = "Канал";
+"Settings.Menu.Chat" = "Чаты";
+"Settings.Menu.Translation" = "Перевод";
+"Settings.Menu.Website" = "Веб-сайт";
+
 "Settings.ContentSettings" = "Настройки контента";
 
 "Settings.Tabs.Header" = "ВКЛАДКИ";

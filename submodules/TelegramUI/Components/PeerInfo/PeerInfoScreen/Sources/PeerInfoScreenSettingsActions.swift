@@ -48,7 +48,7 @@ extension PeerInfoScreenNode {
         }
         switch section {
         case .exteragram:
-            self.controller?.push(egSettingsController(context: self.context))
+            self.controller?.push(egMainMenuController(context: self.context))
         case .avatar:
             self.controller?.openAvatarForEditing()
         case .edit:

@@ -888,7 +888,7 @@ func openExternalUrlImpl(context: AccountContext, urlContext: OpenURLContext, ur
                                 navigationController?.pushViewController(egDebugController(context: context))
                                 return
                             case "settings":
-                                navigationController?.pushViewController(egSettingsController(context: context))
+                                navigationController?.pushViewController(egMainMenuController(context: context))
                                 return
                             case "ios_settings":
                                 context.sharedContext.applicationBindings.openSettings()
