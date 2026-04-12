@@ -7,7 +7,28 @@ import EGSwiftUI
 import EGStrings
 import AccountContext
 import Display
+import AppBundle
 import TelegramPresentationData
+
+// ── Icon helpers ────────────────────────────────────────────────────────────
+
+/// Loads a Telegram bundle image as a tintable template.
+private func bundleImage(_ name: String) -> UIImage? {
+    return UIImage(bundleImageName: name)?.withRenderingMode(.alwaysTemplate)
+}
+
+// Android msg_* → iOS Chat/Context Menu/* mapping:
+//  msg_media       → Settings    (General / Основные)
+//  msg_theme       → ApplyTheme  (Appearance / Оформление)
+//  msg_discussion  → Chats       (Chats / Чаты)
+//  msg_plugins     → (SF Symbol puzzlepiece — no direct match)
+//  msg_fave        → Fave        (Other / Другое)
+//  msg_channel     → Channels    (link: Channel)
+//  msg_groups      → Groups      (link: Chat group)
+//  msg_translate   → Translate   (link: Crowdin)
+//  msg_language    → Browser     (link: Website)
+
+// ── Main SwiftUI view ───────────────────────────────────────────────────────
 
 @available(iOS 14.0, *)
 private struct EGMainMenuView: View {
@@ -17,7 +38,7 @@ private struct EGMainMenuView: View {
 
     var body: some View {
         List {
-            // ── Header ──────────────────────────────────────────────────
+            // ── Header ────────────────────────────────────────────────────
             Section {
                 VStack(spacing: 8) {
                     appIconImage
@@ -38,44 +59,71 @@ private struct EGMainMenuView: View {
             }
             .listRowBackground(Color.clear)
 
-            // ── Categories ──────────────────────────────────────────────
+            // ── Categories ────────────────────────────────────────────────
             Section {
-                categoryRow(systemImage: "square.grid.2x2",
-                            text: i18n("Settings.Menu.General", lang)) {
+                categoryRow(
+                    bundleIcon: "Chat/Context Menu/Settings",
+                    sfFallback: "slider.horizontal.3",
+                    text: i18n("Settings.Menu.General", lang)
+                ) {
                     push(egSettingsController(context: context))
                 }
-                categoryRow(systemImage: "paintpalette",
-                            text: i18n("Settings.Menu.Appearance", lang)) { }
-                categoryRow(systemImage: "bubble.left",
-                            text: i18n("Settings.Menu.Chats", lang)) { }
-                categoryRow(systemImage: "puzzlepiece",
-                            text: i18n("Settings.Menu.Plugins", lang)) { }
-                categoryRow(systemImage: "star",
-                            text: i18n("Settings.Menu.Other", lang)) { }
+                categoryRow(
+                    bundleIcon: "Chat/Context Menu/ApplyTheme",
+                    sfFallback: "paintpalette",
+                    text: i18n("Settings.Menu.Appearance", lang)
+                ) { }
+                categoryRow(
+                    bundleIcon: "Chat/Context Menu/Chats",
+                    sfFallback: "bubble.left",
+                    text: i18n("Settings.Menu.Chats", lang)
+                ) { }
+                categoryRow(
+                    bundleIcon: nil,
+                    sfFallback: "puzzlepiece",
+                    text: i18n("Settings.Menu.Plugins", lang)
+                ) { }
+                categoryRow(
+                    bundleIcon: "Chat/Context Menu/Fave",
+                    sfFallback: "star",
+                    text: i18n("Settings.Menu.Other", lang)
+                ) { }
             } header: {
                 Text(i18n("Settings.Menu.Categories", lang))
                     .foregroundColor(.accentColor)
                     .textCase(nil)
             }
 
-            // ── Links ────────────────────────────────────────────────────
+            // ── Links ─────────────────────────────────────────────────────
             Section {
-                linkRow(systemImage: "megaphone",
-                        text: i18n("Settings.Menu.Channel", lang),
-                        label: "@exteraGram",
-                        url: "https://t.me/exteraGram")
-                linkRow(systemImage: "person.2",
-                        text: i18n("Settings.Menu.Chat", lang),
-                        label: "@exteraChat",
-                        url: "https://t.me/exteraChat")
-                linkRow(systemImage: "textformat",
-                        text: i18n("Settings.Menu.Translation", lang),
-                        label: "Crowdin",
-                        url: "https://crowdin.com/project/exteragram")
-                linkRow(systemImage: "globe",
-                        text: i18n("Settings.Menu.Website", lang),
-                        label: "exteraGram.app",
-                        url: "https://exteragram.app")
+                linkRow(
+                    bundleIcon: "Chat/Context Menu/Channels",
+                    sfFallback: "megaphone",
+                    text: i18n("Settings.Menu.Channel", lang),
+                    label: "@exteraGram",
+                    url: "https://t.me/exteraGram"
+                )
+                linkRow(
+                    bundleIcon: "Chat/Context Menu/Groups",
+                    sfFallback: "person.2",
+                    text: i18n("Settings.Menu.Chat", lang),
+                    label: "@exteraChat",
+                    url: "https://t.me/exteraChat"
+                )
+                linkRow(
+                    bundleIcon: "Chat/Context Menu/Translate",
+                    sfFallback: "textformat",
+                    text: i18n("Settings.Menu.Translation", lang),
+                    label: "Crowdin",
+                    url: "https://crowdin.com/project/exteragram"
+                )
+                linkRow(
+                    bundleIcon: "Chat/Context Menu/Browser",
+                    sfFallback: "globe",
+                    text: i18n("Settings.Menu.Website", lang),
+                    label: "exteraGram.app",
+                    url: "https://exteragram.app"
+                )
             } header: {
                 Text(i18n("Settings.Menu.Links", lang))
                     .foregroundColor(.accentColor)
@@ -85,7 +133,7 @@ private struct EGMainMenuView: View {
         .listStyle(InsetGroupedListStyle())
     }
 
-    // ── App Icon ────────────────────────────────────────────────────────
+    // ── App Icon ─────────────────────────────────────────────────────────────
     @ViewBuilder
     private var appIconImage: some View {
         if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
@@ -97,6 +145,7 @@ private struct EGMainMenuView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fill)
         } else {
+            // Fallback: red rounded square with paper plane
             ZStack {
                 Color(UIColor(red: 0.89, green: 0.25, blue: 0.22, alpha: 1.0))
                 Image(systemName: "paperplane.fill")
@@ -106,16 +155,16 @@ private struct EGMainMenuView: View {
         }
     }
 
-    // ── Row builders ────────────────────────────────────────────────────
+    // ── Row builders ─────────────────────────────────────────────────────────
+
     @ViewBuilder
-    private func categoryRow(systemImage: String,
+    private func categoryRow(bundleIcon iconName: String?,
+                              sfFallback: String,
                               text: String,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .foregroundColor(.secondary)
-                    .frame(width: 28)
+                iconView(bundle: iconName, sf: sfFallback)
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -127,15 +176,14 @@ private struct EGMainMenuView: View {
     }
 
     @ViewBuilder
-    private func linkRow(systemImage: String,
+    private func linkRow(bundleIcon iconName: String?,
+                         sfFallback: String,
                          text: String,
                          label: String,
                          url: String) -> some View {
         Button(action: { openURL(url) }) {
             HStack(spacing: 12) {
-                Image(systemName: systemImage)
-                    .foregroundColor(.secondary)
-                    .frame(width: 28)
+                iconView(bundle: iconName, sf: sfFallback)
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -145,7 +193,25 @@ private struct EGMainMenuView: View {
         }
     }
 
-    // ── Helpers ─────────────────────────────────────────────────────────
+    /// Renders a Telegram bundle icon with SF Symbol fallback.
+    @ViewBuilder
+    private func iconView(bundle name: String?, sf symbol: String) -> some View {
+        let image = name.flatMap { bundleImage($0) }
+        if let image = image {
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 22, height: 22)
+                .foregroundColor(.secondary)
+        } else {
+            Image(systemName: symbol)
+                .foregroundColor(.secondary)
+                .frame(width: 22, height: 22)
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
     private func push(_ controller: ViewController) {
         (wrapperController?.navigationController as? NavigationController)?
             .pushViewController(controller)
@@ -163,11 +229,11 @@ private struct EGMainMenuView: View {
     }
 }
 
-// ── Public entry point ───────────────────────────────────────────────────────
+// ── Public entry point ────────────────────────────────────────────────────────
 
 public func egMainMenuController(context: AccountContext) -> ViewController {
     guard #available(iOS 14.0, *) else {
-        // Fallback for iOS 13: show the flat settings list directly.
+        // iOS 13 fallback: show the flat settings list directly.
         return egSettingsController(context: context)
     }
 
