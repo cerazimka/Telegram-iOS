@@ -6,29 +6,21 @@ import LegacyUI
 import EGSwiftUI
 import EGStrings
 import AccountContext
-import Display
 import AppBundle
+import Display
 import TelegramPresentationData
 
-// ── Icon helpers ────────────────────────────────────────────────────────────
-
-/// Loads a Telegram bundle image as a tintable template.
-private func bundleImage(_ name: String) -> UIImage? {
-    return UIImage(bundleImageName: name)?.withRenderingMode(.alwaysTemplate)
-}
-
-// Android msg_* → iOS Chat/Context Menu/* mapping:
-//  msg_media       → Settings    (General / Основные)
-//  msg_theme       → ApplyTheme  (Appearance / Оформление)
-//  msg_discussion  → Chats       (Chats / Чаты)
-//  msg_plugins     → (SF Symbol puzzlepiece — no direct match)
-//  msg_fave        → Fave        (Other / Другое)
-//  msg_channel     → Channels    (link: Channel)
-//  msg_groups      → Groups      (link: Chat group)
-//  msg_translate   → Translate   (link: Crowdin)
-//  msg_language    → Browser     (link: Website)
-
-// ── Main SwiftUI view ───────────────────────────────────────────────────────
+// ── SF Symbol mapping (confirmed from Android APK reverse engineering)
+//
+//  msg_media       → square.grid.2x2   (Основные)
+//  msg_theme       → paintpalette      (Оформление)
+//  msg_discussion  → bubble.left       (Чаты)
+//  msg_plugins     → puzzlepiece       (Плагины)
+//  msg_fave        → star              (Другое)
+//  msg_channel     → megaphone         (Канал)
+//  msg_groups      → person.2          (Чаты — ссылки)
+//  msg_translate   → translate (iOS 15+) / Chat/Context Menu/Translate (iOS 14)
+//  msg_language    → globe             (Веб-сайт)
 
 @available(iOS 14.0, *)
 private struct EGMainMenuView: View {
@@ -36,21 +28,53 @@ private struct EGMainMenuView: View {
     weak var wrapperController: LegacyController?
     let context: AccountContext
 
+    // `translate` SF Symbol requires iOS 15+; use bundle icon on iOS 14.
+    private var translateIcon: AnyView {
+        if #available(iOS 15.0, *) {
+            return AnyView(
+                Image(systemName: "translate")
+                    .foregroundColor(.secondary)
+                    .frame(width: 22, height: 22)
+            )
+        }
+        if let img = UIImage(bundleImageName: "Chat/Context Menu/Translate")?
+            .withRenderingMode(.alwaysTemplate) {
+            return AnyView(
+                Image(uiImage: img)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 22, height: 22)
+                    .foregroundColor(.secondary)
+            )
+        }
+        return AnyView(
+            Image(systemName: "textformat")
+                .foregroundColor(.secondary)
+                .frame(width: 22, height: 22)
+        )
+    }
+
     var body: some View {
         List {
-            // ── Header ────────────────────────────────────────────────────
+            // ── Header (HeaderSettingsCell analog) ───────────────────────
             Section {
                 VStack(spacing: 8) {
                     appIconImage
                         .frame(width: 80, height: 80)
                         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        // Long press → toggle icon shape + haptic (mirrors Android behavior)
+                        .onLongPressGesture {
+                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        }
 
+                    // 20sp bold, R.string.exteraAppName
                     Text("exteraGram")
-                        .font(.system(size: 22, weight: .bold))
+                        .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.primary)
 
+                    // BUILD_VERSION_STRING + " (" + versionCode + ")", 15sp gray
                     Text(versionString)
-                        .font(.system(size: 14))
+                        .font(.system(size: 15, weight: .medium))
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -59,71 +83,44 @@ private struct EGMainMenuView: View {
             }
             .listRowBackground(Color.clear)
 
-            // ── Categories ────────────────────────────────────────────────
+            // ── Категории ────────────────────────────────────────────────
             Section {
-                categoryRow(
-                    bundleIcon: "Chat/Context Menu/Settings",
-                    sfFallback: "slider.horizontal.3",
-                    text: i18n("Settings.Menu.General", lang)
-                ) {
+                categoryRow(systemImage: "square.grid.2x2",
+                            text: i18n("Settings.Menu.General", lang)) {
                     push(egSettingsController(context: context))
                 }
-                categoryRow(
-                    bundleIcon: "Chat/Context Menu/ApplyTheme",
-                    sfFallback: "paintpalette",
-                    text: i18n("Settings.Menu.Appearance", lang)
-                ) { }
-                categoryRow(
-                    bundleIcon: "Chat/Context Menu/Chats",
-                    sfFallback: "bubble.left",
-                    text: i18n("Settings.Menu.Chats", lang)
-                ) { }
-                categoryRow(
-                    bundleIcon: nil,
-                    sfFallback: "puzzlepiece",
-                    text: i18n("Settings.Menu.Plugins", lang)
-                ) { }
-                categoryRow(
-                    bundleIcon: "Chat/Context Menu/Fave",
-                    sfFallback: "star",
-                    text: i18n("Settings.Menu.Other", lang)
-                ) { }
+                categoryRow(systemImage: "paintpalette",
+                            text: i18n("Settings.Menu.Appearance", lang)) { }
+                categoryRow(systemImage: "bubble.left",
+                            text: i18n("Settings.Menu.Chats", lang)) { }
+                categoryRow(systemImage: "puzzlepiece",
+                            text: i18n("Settings.Menu.Plugins", lang)) { }
+                categoryRow(systemImage: "star",
+                            text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
                 Text(i18n("Settings.Menu.Categories", lang))
                     .foregroundColor(.accentColor)
                     .textCase(nil)
             }
 
-            // ── Links ─────────────────────────────────────────────────────
+            // ── Ссылки ────────────────────────────────────────────────────
             Section {
-                linkRow(
-                    bundleIcon: "Chat/Context Menu/Channels",
-                    sfFallback: "megaphone",
-                    text: i18n("Settings.Menu.Channel", lang),
-                    label: "@exteraGram",
-                    url: "https://t.me/exteraGram"
-                )
-                linkRow(
-                    bundleIcon: "Chat/Context Menu/Groups",
-                    sfFallback: "person.2",
-                    text: i18n("Settings.Menu.Chat", lang),
-                    label: "@exteraChat",
-                    url: "https://t.me/exteraChat"
-                )
-                linkRow(
-                    bundleIcon: "Chat/Context Menu/Translate",
-                    sfFallback: "textformat",
-                    text: i18n("Settings.Menu.Translation", lang),
-                    label: "Crowdin",
-                    url: "https://crowdin.com/project/exteragram"
-                )
-                linkRow(
-                    bundleIcon: "Chat/Context Menu/Browser",
-                    sfFallback: "globe",
-                    text: i18n("Settings.Menu.Website", lang),
-                    label: "exteraGram.app",
-                    url: "https://exteragram.app"
-                )
+                linkRow(icon: AnyView(sfIcon("megaphone")),
+                        text: i18n("Settings.Menu.Channel", lang),
+                        label: "@exteraGram",
+                        url: "https://t.me/exteraGram")
+                linkRow(icon: AnyView(sfIcon("person.2")),
+                        text: i18n("Settings.Menu.Chat", lang),
+                        label: "@exteraChat",
+                        url: "https://t.me/exteraChat")
+                linkRow(icon: translateIcon,
+                        text: i18n("Settings.Menu.Translation", lang),
+                        label: "Crowdin",
+                        url: "https://crowdin.com/project/exteralocales")
+                linkRow(icon: AnyView(sfIcon("globe")),
+                        text: i18n("Settings.Menu.Website", lang),
+                        label: "exteraGram.app",
+                        url: "https://exteraGram.app")
             } header: {
                 Text(i18n("Settings.Menu.Links", lang))
                     .foregroundColor(.accentColor)
@@ -134,6 +131,8 @@ private struct EGMainMenuView: View {
     }
 
     // ── App Icon ─────────────────────────────────────────────────────────────
+    // 72×72dp rounded (iOS: 80pt, cornerRadius=18pt)
+    // backgroundColor = brand red, foreground = white plane
     @ViewBuilder
     private var appIconImage: some View {
         if let icons = Bundle.main.infoDictionary?["CFBundleIcons"] as? [String: Any],
@@ -145,7 +144,6 @@ private struct EGMainMenuView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fill)
         } else {
-            // Fallback: red rounded square with paper plane
             ZStack {
                 Color(UIColor(red: 0.89, green: 0.25, blue: 0.22, alpha: 1.0))
                 Image(systemName: "paperplane.fill")
@@ -158,13 +156,12 @@ private struct EGMainMenuView: View {
     // ── Row builders ─────────────────────────────────────────────────────────
 
     @ViewBuilder
-    private func categoryRow(bundleIcon iconName: String?,
-                              sfFallback: String,
+    private func categoryRow(systemImage: String,
                               text: String,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                iconView(bundle: iconName, sf: sfFallback)
+                sfIcon(systemImage)
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -176,14 +173,13 @@ private struct EGMainMenuView: View {
     }
 
     @ViewBuilder
-    private func linkRow(bundleIcon iconName: String?,
-                         sfFallback: String,
+    private func linkRow(icon: AnyView,
                          text: String,
                          label: String,
                          url: String) -> some View {
         Button(action: { openURL(url) }) {
             HStack(spacing: 12) {
-                iconView(bundle: iconName, sf: sfFallback)
+                icon
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -193,21 +189,10 @@ private struct EGMainMenuView: View {
         }
     }
 
-    /// Renders a Telegram bundle icon with SF Symbol fallback.
-    @ViewBuilder
-    private func iconView(bundle name: String?, sf symbol: String) -> some View {
-        let image = name.flatMap { bundleImage($0) }
-        if let image = image {
-            Image(uiImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 22, height: 22)
-                .foregroundColor(.secondary)
-        } else {
-            Image(systemName: symbol)
-                .foregroundColor(.secondary)
-                .frame(width: 22, height: 22)
-        }
+    private func sfIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .foregroundColor(.secondary)
+            .frame(width: 22, height: 22)
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -222,6 +207,7 @@ private struct EGMainMenuView: View {
         UIApplication.shared.open(url)
     }
 
+    // "12.5.1 (65819)" — mirrors Android BUILD_VERSION_STRING + " (" + versionCode + ")"
     private var versionString: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
         let build   = Bundle.main.infoDictionary?["CFBundleVersion"]             as? String ?? "?"
@@ -233,7 +219,6 @@ private struct EGMainMenuView: View {
 
 public func egMainMenuController(context: AccountContext) -> ViewController {
     guard #available(iOS 14.0, *) else {
-        // iOS 13 fallback: show the flat settings list directly.
         return egSettingsController(context: context)
     }
 
