@@ -491,7 +491,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         self.nativeWindow = window
         
         hostView.containerView.layer.addSublayer(MetalEngine.shared.rootLayer)
-        
+        EGStartupDiagnostics.shared.milestone("metalEngine")
+
         if !UIDevice.current.isBatteryMonitoringEnabled {
             UIDevice.current.isBatteryMonitoringEnabled = true
         }
@@ -600,12 +601,14 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
         })
         self.clearNotificationsManager = clearNotificationsManager
-        
+        EGStartupDiagnostics.shared.milestone("clearNotifManager")
+
         let appVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "unknown"
-        
+
         let baseAppBundleId = Bundle.main.bundleIdentifier!
         let appGroupName = "group.\(baseAppBundleId)"
         let maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
+        EGStartupDiagnostics.shared.milestone("appGroup:\(maybeAppGroupUrl != nil ? "ok" : "nil")")
         
         let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
         self.buildConfig = buildConfig
@@ -703,10 +706,19 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             |> runOn(Queue.mainQueue())
         }, autolockDeadine: autolockDeadine, encryptionProvider: OpenSSLEncryptionProvider(), deviceModelName: nil, useBetaFeatures: !buildConfig.isAppStoreBuild, isICloudEnabled: buildConfig.isICloudEnabled)
         
-        guard let appGroupUrl = maybeAppGroupUrl else {
-            self.mainWindow?.presentNative(UIAlertController(title: nil, message: "Error 2", preferredStyle: .alert))
-            return true
+        // MARK: ExteraGram — fall back to local Documents when app group isn't provisioned
+        // (personal certificates via Feather that haven't registered group.app.exteragram.ios)
+        let appGroupUrl: URL
+        if let url = maybeAppGroupUrl {
+            appGroupUrl = url
+        } else {
+            let fallback = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("eg-data", isDirectory: true)
+            try? FileManager.default.createDirectory(at: fallback, withIntermediateDirectories: true)
+            appGroupUrl = fallback
+            print("[exteraGram] App group '\(appGroupName)' not provisioned — using local fallback. Extensions will not share data with the main app.")
         }
+        EGStartupDiagnostics.shared.milestone("appGroupResolved")
         
         var isDebugConfiguration = false
         #if DEBUG
