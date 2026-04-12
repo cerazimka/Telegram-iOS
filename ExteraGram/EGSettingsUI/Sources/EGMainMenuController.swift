@@ -98,9 +98,7 @@ private struct EGMainMenuView: View {
                 categoryRow(systemImage: "star",
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
-                Text(i18n("Settings.Menu.Categories", lang))
-                    .foregroundColor(.accentColor)
-                    .textCase(nil)
+                sectionHeader(i18n("Settings.Menu.Categories", lang))
             }
 
             // ── Ссылки ────────────────────────────────────────────────────
@@ -122,9 +120,7 @@ private struct EGMainMenuView: View {
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
             } header: {
-                Text(i18n("Settings.Menu.Links", lang))
-                    .foregroundColor(.accentColor)
-                    .textCase(nil)
+                sectionHeader(i18n("Settings.Menu.Links", lang))
             }
         }
         .listStyle(InsetGroupedListStyle())
@@ -199,6 +195,13 @@ private struct EGMainMenuView: View {
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // Matches Telegram's ItemListSectionHeaderItem: 13pt regular, secondaryLabel color, UPPERCASE
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 13, weight: .regular))
+            .foregroundColor(Color(UIColor.secondaryLabel))
+    }
 
     private func push(_ controller: ViewController) {
         (wrapperController?.navigationController as? NavigationController)?
