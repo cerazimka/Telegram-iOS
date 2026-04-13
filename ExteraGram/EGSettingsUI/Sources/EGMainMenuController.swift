@@ -25,6 +25,7 @@ import TelegramPresentationData
 @available(iOS 14.0, *)
 private struct EGMainMenuView: View {
     @Environment(\.lang) var lang: String
+    @Environment(\.navigationBarHeight) var navigationBarHeight: CGFloat
     weak var wrapperController: LegacyController?
     let context: AccountContext
 
@@ -78,7 +79,8 @@ private struct EGMainMenuView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
+                .padding(.top, navigationBarHeight + 20)
+                .padding(.bottom, 20)
                 .listRowInsets(EdgeInsets())
             }
             .listRowBackground(Color.clear)
@@ -169,6 +171,7 @@ private struct EGMainMenuView: View {
                     .font(.system(size: 13, weight: .semibold))
             }
         }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -186,6 +189,7 @@ private struct EGMainMenuView: View {
                     .foregroundColor(.accentColor)
             }
         }
+        .buttonStyle(.plain)
     }
 
     private func sfIcon(_ name: String) -> some View {
