@@ -17,7 +17,8 @@ swift_library(
         "//ExteraGram/EGWebSettingsScheme:EGWebSettingsScheme",
         "//ExteraGram/EGRegDateScheme:EGRegDateScheme",
         "//ExteraGram/EGRequests:EGRequests",
-        "//ExteraGram/EGConfig:EGConfig"
+        "//ExteraGram/EGConfig:EGConfig",
+        "//ExteraGram/EGBadges:EGBadges",
     ],
     visibility = [
         "//visibility:public",

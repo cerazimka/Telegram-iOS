@@ -3,6 +3,7 @@ import Foundation
 import EGAPIToken
 import EGAPI
 import EGLogging
+import EGBadges
 
 import AccountContext
 
@@ -26,6 +27,16 @@ public func updateSGWebSettingsInteractivelly(context: AccountContext) {
         }, error: { e in
             if case let .generic(errorMessage) = e, let errorMessage = errorMessage {
                 EGLogger.shared.log("EGAPI", errorMessage)
+            }
+        })
+
+        // Sync ExteraGram badges using the same token.
+        let _ = getEGProfiles(token: token).startStandalone(next: { profiles in
+            BadgesController.shared.update(profiles: profiles)
+            EGLogger.shared.log("EGBadges", "Synced \(profiles.count) profile(s)")
+        }, error: { e in
+            if case let .generic(errorMessage) = e, let errorMessage = errorMessage {
+                EGLogger.shared.log("EGBadges", "Error syncing profiles: \(errorMessage)")
             }
         })
     }, error: { e in

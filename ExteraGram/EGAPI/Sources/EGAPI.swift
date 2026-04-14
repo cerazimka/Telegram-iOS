@@ -8,6 +8,7 @@ import EGWebAppExtensions
 import EGWebSettingsScheme
 import EGRequests
 import EGRegDateScheme
+import EGBadges
 
 private let API_VERSION: String = "0"
 
@@ -136,6 +137,43 @@ public func getEGAPIRegDate(token: String, deviceToken: String, userId: Int64) -
             subscriber.putError(.generic("Error requesting regDate: \(String(describing: error))"))
         })
         
+        return ActionDisposable {
+            if !completed.with({ $0 }) {
+                downloadSignal.dispose()
+            }
+        }
+    }
+}
+
+
+/// Fetch the full profiles list from the ExteraGram API.
+/// The result is used to populate `BadgesController.shared`.
+public func getEGProfiles(token: String) -> Signal<[EGProfileDTO], EGAPIError> {
+    return Signal { subscriber in
+        let url = URL(string: buildApiUrl("profiles"))!
+        let headers = [EG_API_AUTHORIZATION_HEADER: "Token \(token)"]
+        let completed = Atomic<Bool>(value: false)
+
+        var request = URLRequest(url: url)
+        headers.forEach { key, value in
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+        request.timeoutInterval = 10
+
+        let downloadSignal = requestsCustom(request: request).start(next: { data, _ in
+            let _ = completed.swap(true)
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            if let profiles = try? decoder.decode([EGProfileDTO].self, from: data) {
+                subscriber.putNext(profiles)
+                subscriber.putCompletion()
+            } else {
+                subscriber.putError(.generic("Can't parse profiles. Response: \(String(data: data, encoding: .utf8) ?? "")"))
+            }
+        }, error: { error in
+            subscriber.putError(.generic("Error requesting profiles: \(String(describing: error))"))
+        })
+
         return ActionDisposable {
             if !completed.with({ $0 }) {
                 downloadSignal.dispose()
