@@ -16,8 +16,8 @@ build --disk_cache=/Users/YOURNAME/.cache/bazel-telegram-ios
 # build --features=-swift.index_while_building
 # build --features=-swift.use_global_index_store
 #
-# ── Override batch mode thread count ─────────────────────────────────────────
-# Default is -j4 (set in .bazelrc).  Lower this if you need the machine
-# responsive while building (e.g. -j2 leaves 2 CPUs free):
+# ── Limit Bazel parallel jobs ─────────────────────────────────────────────────
+# By default Bazel uses all CPUs.  Lower this if you need the machine
+# responsive while building (e.g. 4 jobs on an 8-core machine):
 #
-# build --swiftcopt=-j2
+# build --jobs=4

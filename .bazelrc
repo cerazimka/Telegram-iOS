@@ -26,7 +26,6 @@ build --strategy=SwiftCompile=worker
 # incremental builds stay fast via the persistent worker above.
 # Disable with --config=no_batch if you ever hit a corner-case issue.
 build --features=swift.enable_batch_mode
-build --swiftcopt=-j4
 build:no_batch --features=-swift.enable_batch_mode
 
 # User-local overrides (gitignored).  Copy user.bazelrc.example → user.bazelrc
