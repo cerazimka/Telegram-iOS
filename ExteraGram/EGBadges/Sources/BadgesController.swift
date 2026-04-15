@@ -10,6 +10,10 @@ import Foundation
 public final class BadgesController {
     public static let shared = BadgesController()
 
+    /// Posted on the main thread whenever the cache is written (bulk sync or inject).
+    /// Observers (e.g. PeerInfoScreenNode) use this to trigger a re-layout.
+    public static let cacheUpdatedNotification = Notification.Name("EGBadgeCacheUpdated")
+
     // Hardcoded badge document IDs (from Android APK reverse engineering).
     public static let DEV_BADGE       = EGBadgeDTO(documentId: 5359407509327085568)
     public static let SUPPORTER_BADGE = EGBadgeDTO(documentId: 5391059537102927631)
@@ -112,5 +116,11 @@ public final class BadgesController {
     private func saveToDefaults() {
         guard let data = try? JSONEncoder().encode(cache) else { return }
         UserDefaults.standard.set(data, forKey: persistenceKey)
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: BadgesController.cacheUpdatedNotification, object: nil)
+        }
     }
+
+    /// Returns all cached peer IDs (as strings) — useful for debug/diagnostics.
+    public var allCachedPeerIds: [String] { Array(cache.keys) }
 }

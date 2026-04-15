@@ -41,6 +41,7 @@ private enum EGDebugActions: String {
     case clearOutgoingTranslationLanguageCache
     case toggleDevBadgeSelf
     case clearBadgeCache
+    case showBadgeCache
 }
 
 private enum EGDebugToggles: String {
@@ -68,6 +69,7 @@ private func EGDebugControllerEntries(presentationData: PresentationData) -> [EG
     entries.append(.action(id: id.count, section: .base, actionType: .clearRegDateCache, text: "Clear Regdate cache", kind: .generic))
     entries.append(.action(id: id.count, section: .base, actionType: .clearOutgoingTranslationLanguageCache, text: "Clear Outgoing Translation cache", kind: .generic))
     entries.append(.action(id: id.count, section: .base, actionType: .toggleDevBadgeSelf, text: "Toggle DEV badge (self)", kind: .generic))
+    entries.append(.action(id: id.count, section: .base, actionType: .showBadgeCache, text: "Show badge cache", kind: .generic))
     entries.append(.action(id: id.count, section: .base, actionType: .clearBadgeCache, text: "Clear Badge cache", kind: .destructive))
     entries.append(.toggle(id: id.count, section: .base, settingName: .forceImmediateShareSheet, value: EGSimpleSettings.shared.forceSystemSharing, text: "Force System Share Sheet", enabled: true))
     
@@ -142,6 +144,10 @@ public func egDebugController(context: AccountContext) -> ViewController {
                     BadgesController.shared.injectBadge(BadgesController.DEV_BADGE, forPeerIdValue: selfId)
                     presentControllerImpl?(okUndoController("DEV badge injected for \(selfId)", presentationData), nil)
                 }
+            case .showBadgeCache:
+                let ids = BadgesController.shared.allCachedPeerIds
+                let text = ids.isEmpty ? "Cache is empty" : "\(ids.count) peer(s):\n" + ids.joined(separator: "\n")
+                presentControllerImpl?(okUndoController(text, presentationData), nil)
             case .clearBadgeCache:
                 UserDefaults.standard.removeObject(forKey: "eg_badges_v1")
                 presentControllerImpl?(okUndoController("OK: Badge cache cleared", presentationData), nil)
