@@ -2284,7 +2284,8 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
         }
         
         var currentCredibilityIcon: (EmojiStatusComponent.Content, UIColor?)?
-        
+        var isEGCredibilityBadge = false
+
         var initialDisplayHeader = true
         if hidesHeaders || item.message.adAttribute != nil {
             initialDisplayHeader = false
@@ -2392,6 +2393,7 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 if currentCredibilityIcon == nil,
                    let badge = BadgesController.shared.getBadge(peerIdValue: effectiveAuthor.id.id._internalGetInt64Value()) {
                     currentCredibilityIcon = (.animation(content: .customEmoji(fileId: badge.documentId), size: CGSize(width: 20.0, height: 20.0), placeholderColor: incoming ? item.presentationData.theme.theme.chat.message.incoming.mediaPlaceholderColor : item.presentationData.theme.theme.chat.message.outgoing.mediaPlaceholderColor, themeColor: color.withMultipliedAlpha(0.4), loopMode: .count(2)), nil)
+                    isEGCredibilityBadge = true
                 }
             }
             if let rawAuthorNameColor = authorNameColor {
@@ -4115,16 +4117,17 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                 strongSelf.credibilityIconComponent = credibilityIconComponent
                 strongSelf.credibilityIconContent = currentCredibilityIcon
                 
+                let egBadgeIconDim: CGFloat = isEGCredibilityBadge ? 22.0 : 20.0
                 let credibilityIconSize = credibilityIconView.update(
                     transition: .immediate,
                     component: AnyComponent(credibilityIconComponent),
                     environment: {},
-                    containerSize: CGSize(width: 20.0, height: 20.0)
+                    containerSize: CGSize(width: egBadgeIconDim, height: egBadgeIconDim)
                 )
-                
-                let credibilityIconFrame = CGRect(origin: CGPoint(x: nameNode.frame.maxX + 3.0, y: nameNode.frame.minY + floor((nameNode.bounds.height - credibilityIconSize.height) / 2.0)), size: credibilityIconSize)
+                let egBadgeYOffset: CGFloat = isEGCredibilityBadge ? 2.0 : 0.0
+                let credibilityIconFrame = CGRect(origin: CGPoint(x: nameNode.frame.maxX + 3.0, y: nameNode.frame.minY + floor((nameNode.bounds.height - credibilityIconSize.height) / 2.0) + egBadgeYOffset), size: credibilityIconSize)
                 if !animateCredibilityIconFrame {
-                    credibilityIconView.frame = CGRect(origin: CGPoint(x: previousNameNodeFrame.maxX + 3.0, y: previousNameNodeFrame.minY + floor((previousNameNodeFrame.height - credibilityIconSize.height) / 2.0)), size: credibilityIconSize)
+                    credibilityIconView.frame = CGRect(origin: CGPoint(x: previousNameNodeFrame.maxX + 3.0, y: previousNameNodeFrame.minY + floor((previousNameNodeFrame.height - credibilityIconSize.height) / 2.0) + egBadgeYOffset), size: credibilityIconSize)
                 }
                 animation.animator.updateFrame(layer: credibilityIconView.layer, frame: credibilityIconFrame, completion: nil)
                 

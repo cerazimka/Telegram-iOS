@@ -2385,6 +2385,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
             var currentCredibilityIconContent: EmojiStatusComponent.Content?
             var currentVerifiedIconContent: EmojiStatusComponent.Content?
             var currentStatusIconContent: EmojiStatusComponent.Content?
+            var isEGCredibilityBadge = false
             var currentStatusIconParticleColor: UIColor?
             var currentSecretIconImage: UIImage?
             var currentForwardedIcon: UIImage?
@@ -3378,6 +3379,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                             if currentCredibilityIconContent == nil && currentStatusIconContent == nil,
                                let badge = BadgesController.shared.getBadge(peerIdValue: peer.id.id._internalGetInt64Value()) {
                                 currentCredibilityIconContent = .animation(content: .customEmoji(fileId: badge.documentId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(2))
+                                isEGCredibilityBadge = true
                             }
                         }
                     default:
@@ -3413,6 +3415,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     if currentCredibilityIconContent == nil && currentStatusIconContent == nil,
                        let badge = BadgesController.shared.getBadge(peerIdValue: peer.id.id._internalGetInt64Value()) {
                         currentCredibilityIconContent = .animation(content: .customEmoji(fileId: badge.documentId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(2))
+                        isEGCredibilityBadge = true
                     }
                 }
             }
@@ -4994,6 +4997,8 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                         let containerSize: CGSize
                         if case .verified = currentCredibilityIconContent {
                             containerSize = CGSize(width: 16.0, height: 16.0)
+                        } else if isEGCredibilityBadge {
+                            containerSize = CGSize(width: 22.0, height: 22.0)
                         } else {
                             containerSize = CGSize(width: 20.0, height: 20.0)
                         }
@@ -5003,7 +5008,8 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                             environment: {},
                             containerSize: containerSize
                         )
-                        transition.updateFrame(view: credibilityIconView, frame: CGRect(origin: CGPoint(x: iconOrigin, y: floorToScreenPixels(titleFrame.maxY - lastLineRect.height * 0.5 - iconSize.height / 2.0) - UIScreenPixel), size: iconSize))
+                        let egBadgeYOffset: CGFloat = isEGCredibilityBadge ? 2.0 : 0.0
+                        transition.updateFrame(view: credibilityIconView, frame: CGRect(origin: CGPoint(x: iconOrigin, y: floorToScreenPixels(titleFrame.maxY - lastLineRect.height * 0.5 - iconSize.height / 2.0) - UIScreenPixel + egBadgeYOffset), size: iconSize))
                         nextTitleIconOrigin += credibilityIconView.bounds.width + 4.0
                     } else if let credibilityIconView = strongSelf.credibilityIconView {
                         strongSelf.credibilityIconView = nil
