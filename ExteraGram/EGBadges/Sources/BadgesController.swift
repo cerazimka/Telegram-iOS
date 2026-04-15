@@ -22,6 +22,9 @@ public final class BadgesController {
     /// String-keyed so JSONEncoder/Decoder can handle the dictionary.
     private var cache: [String: EGBadgeInfo] = [:]
 
+    /// Last sync result — set by EGAPIWebSettings after each attempt (success or failure).
+    public private(set) var lastSyncStatus: String = "Never synced"
+
     private init() {
         loadFromDefaults()
     }
@@ -123,4 +126,9 @@ public final class BadgesController {
 
     /// Returns all cached peer IDs (as strings) — useful for debug/diagnostics.
     public var allCachedPeerIds: [String] { Array(cache.keys) }
+
+    /// Called by EGAPIWebSettings to record the outcome of the last profiles sync.
+    public func recordSyncResult(_ status: String) {
+        lastSyncStatus = status
+    }
 }

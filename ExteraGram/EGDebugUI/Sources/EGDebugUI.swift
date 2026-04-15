@@ -146,7 +146,8 @@ public func egDebugController(context: AccountContext) -> ViewController {
                 }
             case .showBadgeCache:
                 let ids = BadgesController.shared.allCachedPeerIds
-                let text = ids.isEmpty ? "Cache is empty" : "\(ids.count) peer(s):\n" + ids.joined(separator: "\n")
+                let cacheInfo = ids.isEmpty ? "Cache: empty" : "Cache: \(ids.count) peer(s): " + ids.joined(separator: ", ")
+                let text = "\(cacheInfo)\nLast sync: \(BadgesController.shared.lastSyncStatus)"
                 presentControllerImpl?(okUndoController(text, presentationData), nil)
             case .clearBadgeCache:
                 UserDefaults.standard.removeObject(forKey: "eg_badges_v1")
