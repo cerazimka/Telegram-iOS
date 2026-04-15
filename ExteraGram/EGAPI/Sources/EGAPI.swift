@@ -148,6 +148,7 @@ public func getEGAPIRegDate(token: String, deviceToken: String, userId: Int64) -
 
 /// Fetch the full profiles list from the ExteraGram API.
 /// The result is used to populate `BadgesController.shared`.
+/// Returns an empty array (no error) if the endpoint is not yet deployed (404).
 public func getEGProfiles(token: String) -> Signal<[EGProfileDTO], EGAPIError> {
     return Signal { subscriber in
         let url = URL(string: buildApiUrl("profiles"))!
@@ -160,8 +161,22 @@ public func getEGProfiles(token: String) -> Signal<[EGProfileDTO], EGAPIError> {
         }
         request.timeoutInterval = 10
 
-        let downloadSignal = requestsCustom(request: request).start(next: { data, _ in
+        let downloadSignal = requestsCustom(request: request).start(next: { data, urlResponse in
             let _ = completed.swap(true)
+
+            if let http = urlResponse as? HTTPURLResponse {
+                // 404 = endpoint not deployed yet; treat as empty list, not an error.
+                if http.statusCode == 404 {
+                    subscriber.putNext([])
+                    subscriber.putCompletion()
+                    return
+                }
+                guard (200...299).contains(http.statusCode) else {
+                    subscriber.putError(.generic("HTTP \(http.statusCode): \(String(data: data, encoding: .utf8) ?? "")"))
+                    return
+                }
+            }
+
             let decoder = JSONDecoder()
             decoder.keyDecodingStrategy = .convertFromSnakeCase
             if let profiles = try? decoder.decode([EGProfileDTO].self, from: data) {
