@@ -1,0 +1,23 @@
+# Copy this file to user.bazelrc (already gitignored) and adjust paths.
+#
+# ── Disk cache ────────────────────────────────────────────────────────────────
+# Persists build artifacts across clean builds, branch switches, and Bazel
+# version upgrades.  After the first full build, unchanged targets are served
+# from cache (near-instant).  ~5-20 GB typical size; Bazel evicts old entries
+# automatically.
+#
+# Replace /Users/YOURNAME with your actual home directory (~ is not expanded).
+#
+build --disk_cache=/Users/YOURNAME/.cache/bazel-telegram-ios
+#
+# ── Reduce index overhead for pure CLI / CI builds ───────────────────────────
+# Uncomment to skip Xcode source indexing (saves ~10-15% on non-Xcode builds):
+#
+# build --features=-swift.index_while_building
+# build --features=-swift.use_global_index_store
+#
+# ── Override batch mode thread count ─────────────────────────────────────────
+# Default is -j4 (set in .bazelrc).  Lower this if you need the machine
+# responsive while building (e.g. -j2 leaves 2 CPUs free):
+#
+# build --swiftcopt=-j2
