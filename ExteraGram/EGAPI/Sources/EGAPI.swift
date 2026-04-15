@@ -10,7 +10,7 @@ import EGRequests
 import EGRegDateScheme
 import EGBadges
 
-private let API_VERSION: String = "0"
+private let API_VERSION: String = "1"
 
 private func buildApiUrl(_ endpoint: String) -> String {
     return "\(EG_CONFIG.apiUrl)/v\(API_VERSION)/\(endpoint)"
