@@ -1,4 +1,5 @@
 import EGSimpleSettings
+import EGBadges
 import Foundation
 import UIKit
 import AsyncDisplayKit
@@ -3367,12 +3368,16 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                             } else if peer.isPremium && !premiumConfiguration.isPremiumDisabled {
                                 currentCredibilityIconContent = .premium(color: item.presentationData.theme.list.itemAccentColor)
                             }
-                            
+
                             if peer.isVerified {
                                 currentCredibilityIconContent = .verified(fillColor: item.presentationData.theme.list.itemCheckColors.fillColor, foregroundColor: item.presentationData.theme.list.itemCheckColors.foregroundColor, sizeType: .compact)
                             }
                             if let verificationIconFileId = peer.verificationIconFileId {
                                 currentVerifiedIconContent = .animation(content: .customEmoji(fileId: verificationIconFileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(0))
+                            }
+                            if currentCredibilityIconContent == nil && currentStatusIconContent == nil,
+                               let badge = BadgesController.shared.getBadge(peerIdValue: peer.id.id._internalGetInt64Value()) {
+                                currentCredibilityIconContent = .animation(content: .customEmoji(fileId: badge.documentId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(2))
                             }
                         }
                     default:
@@ -3404,6 +3409,10 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                     }
                     if let verificationIconFileId = peer.verificationIconFileId {
                         currentVerifiedIconContent = .animation(content: .customEmoji(fileId: verificationIconFileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(0))
+                    }
+                    if currentCredibilityIconContent == nil && currentStatusIconContent == nil,
+                       let badge = BadgesController.shared.getBadge(peerIdValue: peer.id.id._internalGetInt64Value()) {
+                        currentCredibilityIconContent = .animation(content: .customEmoji(fileId: badge.documentId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(2))
                     }
                 }
             }

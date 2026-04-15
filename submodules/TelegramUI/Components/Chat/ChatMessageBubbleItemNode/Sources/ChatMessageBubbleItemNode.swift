@@ -1,5 +1,6 @@
 import EGStrings
 import EGSimpleSettings
+import EGBadges
 import TranslateUI
 import Foundation
 import UIKit
@@ -2387,6 +2388,10 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     currentCredibilityIcon = (.verified(fillColor: item.presentationData.theme.theme.list.itemCheckColors.fillColor, foregroundColor: item.presentationData.theme.theme.list.itemCheckColors.foregroundColor, sizeType: .compact), nil)
                 } else if effectiveAuthor.isPremium {
                     currentCredibilityIcon = (.premium(color: color.withMultipliedAlpha(0.4)), nil)
+                }
+                if currentCredibilityIcon == nil,
+                   let badge = BadgesController.shared.getBadge(peerIdValue: effectiveAuthor.id.id._internalGetInt64Value()) {
+                    currentCredibilityIcon = (.animation(content: .customEmoji(fileId: badge.documentId), size: CGSize(width: 20.0, height: 20.0), placeholderColor: incoming ? item.presentationData.theme.theme.chat.message.incoming.mediaPlaceholderColor : item.presentationData.theme.theme.chat.message.outgoing.mediaPlaceholderColor, themeColor: color.withMultipliedAlpha(0.4), loopMode: .count(2)), nil)
                 }
             }
             if let rawAuthorNameColor = authorNameColor {
