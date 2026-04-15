@@ -5008,8 +5008,7 @@ public class ChatListItemNode: ItemListRevealOptionsItemNode {
                             environment: {},
                             containerSize: containerSize
                         )
-                        let egBadgeYOffset: CGFloat = isEGCredibilityBadge ? 2.0 : 0.0
-                        transition.updateFrame(view: credibilityIconView, frame: CGRect(origin: CGPoint(x: iconOrigin, y: floorToScreenPixels(titleFrame.maxY - lastLineRect.height * 0.5 - iconSize.height / 2.0) - UIScreenPixel + egBadgeYOffset), size: iconSize))
+                        transition.updateFrame(view: credibilityIconView, frame: CGRect(origin: CGPoint(x: iconOrigin, y: floorToScreenPixels(titleFrame.maxY - lastLineRect.height * 0.5 - iconSize.height / 2.0) - UIScreenPixel), size: iconSize))
                         nextTitleIconOrigin += credibilityIconView.bounds.width + 4.0
                     } else if let credibilityIconView = strongSelf.credibilityIconView {
                         strongSelf.credibilityIconView = nil

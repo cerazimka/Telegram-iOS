@@ -1,3 +1,4 @@
+import EGBadges
 import Foundation
 import UIKit
 import Display
@@ -459,6 +460,10 @@ public final class ChatTitleComponent: Component {
                             }
                             if let verificationIconFileId = peer.verificationIconFileId {
                                 titleVerifiedIcon = .emojiStatus(PeerEmojiStatus(content: .emoji(fileId: verificationIconFileId), expirationDate: nil))
+                            }
+                            if titleCredibilityIcon == .none && titleStatusIcon == .none,
+                               let badge = BadgesController.shared.getBadge(peerIdValue: peer.id.id._internalGetInt64Value()) {
+                                titleStatusIcon = .emojiStatus(PeerEmojiStatus(content: .emoji(fileId: badge.documentId), expirationDate: nil))
                             }
                         }
                     }

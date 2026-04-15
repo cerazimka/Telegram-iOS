@@ -4126,10 +4126,9 @@ public class ChatMessageBubbleItemNode: ChatMessageItemView, ChatMessagePreviewI
                     environment: {},
                     containerSize: CGSize(width: egBadgeIconDim, height: egBadgeIconDim)
                 )
-                let egBadgeYOffset: CGFloat = isEGCredibilityBadge ? 2.0 : 0.0
-                let credibilityIconFrame = CGRect(origin: CGPoint(x: nameNode.frame.maxX + 3.0, y: nameNode.frame.minY + floor((nameNode.bounds.height - credibilityIconSize.height) / 2.0) + egBadgeYOffset), size: credibilityIconSize)
+                let credibilityIconFrame = CGRect(origin: CGPoint(x: nameNode.frame.maxX + 3.0, y: nameNode.frame.minY + floor((nameNode.bounds.height - credibilityIconSize.height) / 2.0)), size: credibilityIconSize)
                 if !animateCredibilityIconFrame {
-                    credibilityIconView.frame = CGRect(origin: CGPoint(x: previousNameNodeFrame.maxX + 3.0, y: previousNameNodeFrame.minY + floor((previousNameNodeFrame.height - credibilityIconSize.height) / 2.0) + egBadgeYOffset), size: credibilityIconSize)
+                    credibilityIconView.frame = CGRect(origin: CGPoint(x: previousNameNodeFrame.maxX + 3.0, y: previousNameNodeFrame.minY + floor((previousNameNodeFrame.height - credibilityIconSize.height) / 2.0)), size: credibilityIconSize)
                 }
                 animation.animator.updateFrame(layer: credibilityIconView.layer, frame: credibilityIconFrame, completion: nil)
                 
