@@ -15,11 +15,7 @@ public struct EGBadgeDTO: Codable, Equatable, Hashable {
         self.documentId = documentId
         self.text = text
     }
-
-    enum CodingKeys: String, CodingKey {
-        case documentId = "document_id"
-        case text
-    }
+    // No CodingKeys: JSON already uses camelCase "documentId" which matches the property name.
 }
 
 public enum EGProfileStatus: String, Equatable {
@@ -43,6 +39,7 @@ extension EGProfileStatus: Codable {
 }
 
 /// Full profile record returned by the ExteraGram API `/profiles` endpoint.
+/// All JSON keys are camelCase — no CodingKeys needed; unknown fields (e.g. nowPlaying) are ignored.
 public struct EGProfileDTO: Codable {
     public let id: Int64
     /// `"USER"` or `"CHAT"`.
@@ -51,15 +48,6 @@ public struct EGProfileDTO: Codable {
     public let badge: EGBadgeDTO?
     public let canChangeBadge: Bool?
     public let deleted: Bool?
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case type
-        case status
-        case badge
-        case canChangeBadge = "can_change_badge"
-        case deleted
-    }
 }
 
 // MARK: - Internal cache model

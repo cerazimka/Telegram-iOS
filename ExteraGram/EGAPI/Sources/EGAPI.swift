@@ -177,9 +177,8 @@ public func getEGProfiles(token: String) -> Signal<[EGProfileDTO], EGAPIError> {
                 }
             }
 
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            if let profiles = try? decoder.decode([EGProfileDTO].self, from: data) {
+            // JSON uses camelCase throughout — no key decoding strategy needed.
+            if let profiles = try? JSONDecoder().decode([EGProfileDTO].self, from: data) {
                 subscriber.putNext(profiles)
                 subscriber.putCompletion()
             } else {
