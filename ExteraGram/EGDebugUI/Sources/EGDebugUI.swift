@@ -13,6 +13,7 @@ import PresentationDataUtils
 import TelegramUIPreferences
 
 // Optional
+import EGBadges
 import EGSimpleSettings
 import EGLogging
 import EGPayWall
@@ -38,6 +39,8 @@ private enum EGDebugActions: String {
     case fileManager
     case clearRegDateCache
     case clearOutgoingTranslationLanguageCache
+    case toggleDevBadgeSelf
+    case clearBadgeCache
 }
 
 private enum EGDebugToggles: String {
@@ -64,6 +67,8 @@ private func EGDebugControllerEntries(presentationData: PresentationData) -> [EG
 
     entries.append(.action(id: id.count, section: .base, actionType: .clearRegDateCache, text: "Clear Regdate cache", kind: .generic))
     entries.append(.action(id: id.count, section: .base, actionType: .clearOutgoingTranslationLanguageCache, text: "Clear Outgoing Translation cache", kind: .generic))
+    entries.append(.action(id: id.count, section: .base, actionType: .toggleDevBadgeSelf, text: "Toggle DEV badge (self)", kind: .generic))
+    entries.append(.action(id: id.count, section: .base, actionType: .clearBadgeCache, text: "Clear Badge cache", kind: .destructive))
     entries.append(.toggle(id: id.count, section: .base, settingName: .forceImmediateShareSheet, value: EGSimpleSettings.shared.forceSystemSharing, text: "Force System Share Sheet", enabled: true))
     
     entries.append(.toggle(id: id.count, section: .notifications, settingName: .legacyNotificationsFix, value: EGSimpleSettings.shared.legacyNotificationsFix, text: "[OLD] Fix empty notifications", enabled: true))
@@ -128,6 +133,18 @@ public func egDebugController(context: AccountContext) -> ViewController {
                 EGSimpleSettings.shared.outgoingLanguageTranslation.drop()
                 EGLogger.shared.log("EGDebug", "Outgoing translation language cache cleanup succesfull")
                 presentControllerImpl?(okUndoController("OK: Outgoing translation language cache cleaned", presentationData), nil)
+            case .toggleDevBadgeSelf:
+                let selfId = context.account.peerId.id._internalGetInt64Value()
+                if BadgesController.shared.hasBadge(peerIdValue: selfId) {
+                    BadgesController.shared.injectBadge(nil, forPeerIdValue: selfId)
+                    presentControllerImpl?(okUndoController("DEV badge removed for \(selfId)", presentationData), nil)
+                } else {
+                    BadgesController.shared.injectBadge(BadgesController.DEV_BADGE, forPeerIdValue: selfId)
+                    presentControllerImpl?(okUndoController("DEV badge injected for \(selfId)", presentationData), nil)
+                }
+            case .clearBadgeCache:
+                UserDefaults.standard.removeObject(forKey: "eg_badges_v1")
+                presentControllerImpl?(okUndoController("OK: Badge cache cleared", presentationData), nil)
         case .flexing:
             #if DEBUG
             FLEXManager.shared.toggleExplorer()

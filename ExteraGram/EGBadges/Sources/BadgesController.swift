@@ -73,6 +73,23 @@ public final class BadgesController {
         saveToDefaults()
     }
 
+    /// Debug helper: force-inject (or remove) a badge for any peer without an API call.
+    /// Pass `nil` to remove the badge entirely.
+    public func injectBadge(_ badge: EGBadgeDTO?, forPeerIdValue peerIdValue: Int64) {
+        let k = key(peerIdValue)
+        if let badge = badge {
+            let existing = cache[k]
+            cache[k] = EGBadgeInfo(
+                badge: badge,
+                status: existing?.status ?? .developer,
+                canChangeBadge: existing?.canChangeBadge ?? true
+            )
+        } else {
+            cache.removeValue(forKey: k)
+        }
+        saveToDefaults()
+    }
+
     /// Update a single peer's badge locally (called after the user changes their own badge via bot).
     public func updateLocalBadge(peerIdValue: Int64, badge: EGBadgeDTO?) {
         let k = key(peerIdValue)

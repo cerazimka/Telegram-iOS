@@ -22,10 +22,24 @@ public struct EGBadgeDTO: Codable, Equatable, Hashable {
     }
 }
 
-public enum EGProfileStatus: String, Codable, Equatable {
+public enum EGProfileStatus: String, Equatable {
     case `default`  = "DEFAULT"
     case developer  = "DEVELOPER"
     case supporter  = "SUPPORTER"
+}
+
+extension EGProfileStatus: Codable {
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        // Accept both upper-case ("DEVELOPER") and lower-case ("developer") from the API.
+        self = EGProfileStatus(rawValue: raw.uppercased()) ?? .default
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 /// Full profile record returned by the ExteraGram API `/profiles` endpoint.
