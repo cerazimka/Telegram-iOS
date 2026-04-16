@@ -20,6 +20,7 @@ import CheckNode
 import AnimationCache
 import MultiAnimationRenderer
 import TextNodeWithEntities
+import EGBadges
 
 private final class ShimmerEffectNode: ASDisplayNode {
     private var currentBackgroundColor: UIColor?
@@ -745,6 +746,8 @@ public class ItemListPeerItemNode: ItemListRevealOptionsItemNode, ItemListItemNo
     private let statusNode: TextNode
     private var credibilityIconComponent: EmojiStatusComponent?
     private var credibilityIconView: ComponentHostView<Empty>?
+    private var egBadgeIconComponent: EmojiStatusComponent?
+    private var egBadgeIconView: ComponentHostView<Empty>?
     private var verifiedIconComponent: EmojiStatusComponent?
     private var verifiedIconView: ComponentHostView<Empty>?
     private var switchNode: SwitchNode?
@@ -785,6 +788,14 @@ public class ItemListPeerItemNode: ItemListRevealOptionsItemNode, ItemListItemNo
                         component: AnyComponent(credibilityIconComponent.withVisibleForAnimations(self.visibilityStatus)),
                         environment: {},
                         containerSize: credibilityIconView.bounds.size
+                    )
+                }
+                if let egBadgeIconView = self.egBadgeIconView, let egBadgeIconComponent = self.egBadgeIconComponent {
+                    let _ = egBadgeIconView.update(
+                        transition: .immediate,
+                        component: AnyComponent(egBadgeIconComponent.withVisibleForAnimations(self.visibilityStatus)),
+                        environment: {},
+                        containerSize: egBadgeIconView.bounds.size
                     )
                 }
                 if let verifiedIconView = self.verifiedIconView, let verifiedIconComponent = self.verifiedIconComponent {
@@ -934,7 +945,8 @@ public class ItemListPeerItemNode: ItemListRevealOptionsItemNode, ItemListItemNo
             var credibilityIcon: EmojiStatusComponent.Content?
             var credibilityParticleColor: UIColor?
             var verifiedIcon: EmojiStatusComponent.Content?
-            
+            var egBadgeIcon: EmojiStatusComponent.Content?
+
             if case .threatSelfAsSaved = item.aliasHandling, item.peer.id == item.context.accountPeerId {
             } else {
                 if item.peer.isScam {
@@ -949,12 +961,16 @@ public class ItemListPeerItemNode: ItemListRevealOptionsItemNode, ItemListItemNo
                 } else if item.peer.isPremium && !item.context.isPremiumDisabled {
                     credibilityIcon = .premium(color: item.presentationData.theme.list.itemAccentColor)
                 }
-                
+
                 if item.peer.isVerified {
                     credibilityIcon = .verified(fillColor: item.presentationData.theme.list.itemCheckColors.fillColor, foregroundColor: item.presentationData.theme.list.itemCheckColors.foregroundColor, sizeType: .compact)
                 }
                 if let verificationIconFileId = item.peer.verificationIconFileId {
                     verifiedIcon = .animation(content: .customEmoji(fileId: verificationIconFileId), size: CGSize(width: 32.0, height: 32.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(0))
+                }
+                if !item.peer.isScam && !item.peer.isFake,
+                   let badge = BadgesController.shared.getBadge(peerIdValue: item.peer.id.id._internalGetInt64Value()) {
+                    egBadgeIcon = .animation(content: .customEmoji(fileId: badge.documentId), size: CGSize(width: 20.0, height: 20.0), placeholderColor: item.presentationData.theme.list.mediaPlaceholderColor, themeColor: item.presentationData.theme.list.itemAccentColor, loopMode: .count(2))
                 }
             }
             
@@ -981,7 +997,10 @@ public class ItemListPeerItemNode: ItemListRevealOptionsItemNode, ItemListItemNo
                     titleIconsWidth += 16.0
                 }
             }
-            
+            if egBadgeIcon != nil {
+                titleIconsWidth += 4.0 + 22.0
+            }
+
             var badgeColor: UIColor?
             if case .badge = item.label {
                 badgeColor = item.presentationData.theme.list.itemAccentColor
@@ -1563,11 +1582,53 @@ public class ItemListPeerItemNode: ItemListRevealOptionsItemNode, ItemListItemNo
                         
                         nextIconX += 4.0
                         creditibilityIconTransition.updateFrame(view: credibilityIconView, frame: CGRect(origin: CGPoint(x: nextIconX, y: floorToScreenPixels(titleFrame.midY - iconSize.height / 2.0)), size: iconSize))
+                        nextIconX += iconSize.width
                     } else if let credibilityIconView = strongSelf.credibilityIconView {
                         strongSelf.credibilityIconView = nil
                         credibilityIconView.removeFromSuperview()
                     }
-                    
+
+                    if let egBadgeIcon = egBadgeIcon {
+                        let animationCache = item.context.animationCache
+                        let animationRenderer = item.context.animationRenderer
+
+                        var egBadgeIconTransition = transition
+                        let egBadgeIconView: ComponentHostView<Empty>
+                        if let current = strongSelf.egBadgeIconView {
+                            egBadgeIconView = current
+                        } else {
+                            egBadgeIconTransition = .immediate
+                            egBadgeIconView = ComponentHostView<Empty>()
+                            strongSelf.containerNode.view.addSubview(egBadgeIconView)
+                            strongSelf.egBadgeIconView = egBadgeIconView
+                        }
+
+                        let egBadgeIconComponent = EmojiStatusComponent(
+                            postbox: item.context.postbox,
+                            energyUsageSettings: item.context.energyUsageSettings,
+                            resolveInlineStickers: item.context.resolveInlineStickers,
+                            animationCache: animationCache,
+                            animationRenderer: animationRenderer,
+                            content: egBadgeIcon,
+                            isVisibleForAnimations: strongSelf.visibilityStatus,
+                            action: nil,
+                            emojiFileUpdated: nil
+                        )
+                        strongSelf.egBadgeIconComponent = egBadgeIconComponent
+                        let iconSize = egBadgeIconView.update(
+                            transition: .immediate,
+                            component: AnyComponent(egBadgeIconComponent),
+                            environment: {},
+                            containerSize: CGSize(width: 22.0, height: 22.0)
+                        )
+
+                        nextIconX += 4.0
+                        egBadgeIconTransition.updateFrame(view: egBadgeIconView, frame: CGRect(origin: CGPoint(x: nextIconX, y: floorToScreenPixels(titleFrame.midY - iconSize.height / 2.0)), size: iconSize))
+                    } else if let egBadgeIconView = strongSelf.egBadgeIconView {
+                        strongSelf.egBadgeIconView = nil
+                        egBadgeIconView.removeFromSuperview()
+                    }
+
                     if let currentSwitchNode = currentSwitchNode {
                         if currentSwitchNode !== strongSelf.switchNode {
                             strongSelf.switchNode = currentSwitchNode
