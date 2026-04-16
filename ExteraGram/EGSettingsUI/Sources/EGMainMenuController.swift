@@ -155,19 +155,23 @@ private struct EGMainMenuView: View {
     }
 
     // Renders a 29×29 Telegram-style settings icon: red rounded-rect + white PDF icon.
-    // All Settings/Menu/* and ExteraGramSettings assets are PDF vectors and support
-    // template rendering mode, so white tinting works correctly.
+    // Uses generateTintedImage to rasterize the PDF asset before passing to SwiftUI,
+    // because PDF-backed UIImages have no cgImage and render as solid squares in SwiftUI
+    // template mode.
     private func telegramIcon(_ bundleImageName: String) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
                 .fill(Color(UIColor.systemRed))
-            if let uiImage = UIImage(bundleImageName: bundleImageName)?
-                .withRenderingMode(.alwaysTemplate) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFit()
-                    .foregroundColor(.white)
-                    .padding(5)
+            Group {
+                if let rendered = generateTintedImage(
+                    image: UIImage(bundleImageName: bundleImageName),
+                    color: .white
+                ) {
+                    Image(uiImage: rendered)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(5)
+                }
             }
         }
         .frame(width: 29, height: 29)
