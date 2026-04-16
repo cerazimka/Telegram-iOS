@@ -10,50 +10,12 @@ import AppBundle
 import Display
 import TelegramPresentationData
 
-// ── SF Symbol mapping (confirmed from Android APK reverse engineering)
-//
-//  msg_media       → square.grid.2x2   (Основные)
-//  msg_theme       → paintpalette      (Оформление)
-//  msg_discussion  → bubble.left       (Чаты)
-//  msg_plugins     → puzzlepiece       (Плагины)
-//  msg_fave        → star              (Другое)
-//  msg_channel     → megaphone         (Канал)
-//  msg_groups      → person.2          (Чаты — ссылки)
-//  msg_translate   → translate (iOS 15+) / Chat/Context Menu/Translate (iOS 14)
-//  msg_language    → globe             (Веб-сайт)
-
 @available(iOS 14.0, *)
 private struct EGMainMenuView: View {
     @Environment(\.lang) var lang: String
     @Environment(\.navigationBarHeight) var navigationBarHeight: CGFloat
     weak var wrapperController: LegacyController?
     let context: AccountContext
-
-    // `translate` SF Symbol requires iOS 15+; use bundle icon on iOS 14.
-    private var translateIcon: AnyView {
-        if #available(iOS 15.0, *) {
-            return AnyView(
-                Image(systemName: "translate")
-                    .foregroundColor(.secondary)
-                    .frame(width: 22, height: 22)
-            )
-        }
-        if let img = UIImage(bundleImageName: "Chat/Context Menu/Translate")?
-            .withRenderingMode(.alwaysTemplate) {
-            return AnyView(
-                Image(uiImage: img)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 22, height: 22)
-                    .foregroundColor(.secondary)
-            )
-        }
-        return AnyView(
-            Image(systemName: "textformat")
-                .foregroundColor(.secondary)
-                .frame(width: 22, height: 22)
-        )
-    }
 
     var body: some View {
         List {
@@ -87,17 +49,17 @@ private struct EGMainMenuView: View {
 
             // ── Категории ────────────────────────────────────────────────
             Section {
-                categoryRow(systemImage: "square.grid.2x2",
+                categoryRow(bundleImageName: "ExteraGramSettings",
                             text: i18n("Settings.Menu.General", lang)) {
                     push(egSettingsController(context: context))
                 }
-                categoryRow(systemImage: "paintpalette",
+                categoryRow(bundleImageName: "Settings/Menu/Appearance",
                             text: i18n("Settings.Menu.Appearance", lang)) { }
-                categoryRow(systemImage: "bubble.left",
+                categoryRow(bundleImageName: "Settings/Menu/SavedMessages",
                             text: i18n("Settings.Menu.Chats", lang)) { }
-                categoryRow(systemImage: "puzzlepiece",
+                categoryRow(bundleImageName: "Settings/Menu/Stickers",
                             text: i18n("Settings.Menu.Plugins", lang)) { }
-                categoryRow(systemImage: "star",
+                categoryRow(bundleImageName: "Settings/Menu/Support",
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
                 sectionHeader(i18n("Settings.Menu.Categories", lang))
@@ -105,19 +67,19 @@ private struct EGMainMenuView: View {
 
             // ── Ссылки ────────────────────────────────────────────────────
             Section {
-                linkRow(icon: AnyView(sfIcon("megaphone")),
+                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Channels")),
                         text: i18n("Settings.Menu.Channel", lang),
                         label: "@exteraGram",
                         url: "https://t.me/exteraGram")
-                linkRow(icon: AnyView(sfIcon("person.2")),
+                linkRow(icon: AnyView(telegramIcon("Settings/Menu/GroupChats")),
                         text: i18n("Settings.Menu.Chat", lang),
                         label: "@exteraChat",
                         url: "https://t.me/exteraChat")
-                linkRow(icon: translateIcon,
+                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Language")),
                         text: i18n("Settings.Menu.Translation", lang),
                         label: "Crowdin",
                         url: "https://crowdin.com/project/exteralocales")
-                linkRow(icon: AnyView(sfIcon("globe")),
+                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Websites")),
                         text: i18n("Settings.Menu.Website", lang),
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
@@ -157,12 +119,12 @@ private struct EGMainMenuView: View {
     // ── Row builders ─────────────────────────────────────────────────────────
 
     @ViewBuilder
-    private func categoryRow(systemImage: String,
+    private func categoryRow(bundleImageName: String,
                               text: String,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                sfIcon(systemImage)
+                telegramIcon(bundleImageName)
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -192,10 +154,23 @@ private struct EGMainMenuView: View {
         .buttonStyle(.plain)
     }
 
-    private func sfIcon(_ name: String) -> some View {
-        Image(systemName: name)
-            .foregroundColor(.secondary)
-            .frame(width: 22, height: 22)
+    // Renders a 29×29 Telegram-style settings icon: red rounded-rect + white PDF icon.
+    // All Settings/Menu/* and ExteraGramSettings assets are PDF vectors and support
+    // template rendering mode, so white tinting works correctly.
+    private func telegramIcon(_ bundleImageName: String) -> some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(Color(UIColor.systemRed))
+            if let uiImage = UIImage(bundleImageName: bundleImageName)?
+                .withRenderingMode(.alwaysTemplate) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundColor(.white)
+                    .padding(5)
+            }
+        }
+        .frame(width: 29, height: 29)
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
