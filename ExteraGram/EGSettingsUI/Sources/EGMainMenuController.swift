@@ -132,8 +132,8 @@ private struct EGMainMenuView: View {
                     .foregroundColor(Color(UIColor.tertiaryLabel))
                     .font(.system(size: 13, weight: .semibold))
             }
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -150,8 +150,8 @@ private struct EGMainMenuView: View {
                 Text(label)
                     .foregroundColor(.accentColor)
             }
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
     }
 
     // Renders a 29×29 icon: red rounded-rect background + white-tinted symbol.
