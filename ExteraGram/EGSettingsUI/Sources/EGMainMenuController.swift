@@ -155,10 +155,11 @@ private struct EGMainMenuView: View {
     }
 
     // Renders a 29×29 icon: red rounded-rect background + white-tinted symbol.
-    // Icons are transparent-background PNGs; generateTintedImage uses their alpha
-    // channel as a clipping mask and fills with white.
+    // Source PNGs are 24px declared @3x (= 8pt natural size). Drawing at a fixed
+    // 17pt keeps the icon proportional regardless of the image's declared scale.
     private func telegramIcon(_ bundleImageName: String) -> some View {
         let size = CGSize(width: 29, height: 29)
+        let iconPt: CGFloat = 17
         let renderer = UIGraphicsImageRenderer(size: size)
         let result = renderer.image { _ in
             UIColor.systemRed.setFill()
@@ -166,10 +167,9 @@ private struct EGMainMenuView: View {
 
             if let tinted = generateTintedImage(image: UIImage(bundleImageName: bundleImageName),
                                                 color: .white) {
-                let iw = tinted.size.width, ih = tinted.size.height
-                tinted.draw(in: CGRect(x: (size.width - iw) / 2,
-                                       y: (size.height - ih) / 2,
-                                       width: iw, height: ih))
+                let x = (size.width - iconPt) / 2
+                let y = (size.height - iconPt) / 2
+                tinted.draw(in: CGRect(x: x, y: y, width: iconPt, height: iconPt))
             }
         }
         return Image(uiImage: result).frame(width: 29, height: 29)
