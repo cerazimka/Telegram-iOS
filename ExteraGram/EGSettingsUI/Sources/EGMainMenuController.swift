@@ -154,37 +154,20 @@ private struct EGMainMenuView: View {
         .buttonStyle(.plain)
     }
 
-    // Mirrors PresentationResourcesSettings.renderIcon: generateImage creates a CG bitmap,
-    // draws a red rounded-rect, then overlays a generateTintedImage(white) of the bundle PDF.
+    // Mirrors renderIcon(name:) without backgroundColors: draws the original bundle icon
+    // as-is. Settings/Menu PDFs include their own colored rounded-rect backgrounds,
+    // so no tinting is needed — just display at 29×29.
+    @ViewBuilder
     private func telegramIcon(_ bundleImageName: String) -> some View {
-        let iconSize = CGSize(width: 29, height: 29)
-        let image: UIImage? = generateImage(iconSize, contextGenerator: { size, context in
-            let bounds = CGRect(origin: .zero, size: size)
-            context.clear(bounds)
-
-            let path = CGPath(roundedRect: bounds, cornerWidth: 7, cornerHeight: 7, transform: nil)
-            context.addPath(path)
-            context.clip()
-            context.setFillColor(UIColor.systemRed.cgColor)
-            context.fill(bounds)
-            context.resetClip()
-
-            if let tinted = generateTintedImage(image: UIImage(bundleImageName: bundleImageName), color: .white),
-               let cgImage = tinted.cgImage {
-                let sz = tinted.size
-                context.draw(cgImage, in: CGRect(x: (size.width - sz.width) / 2,
-                                                  y: (size.height - sz.height) / 2,
-                                                  width: sz.width, height: sz.height))
-            }
-        })
-        return Group {
-            if let img = image {
-                Image(uiImage: img)
-            } else {
-                Color(UIColor.systemRed)
-            }
+        if let icon = UIImage(bundleImageName: bundleImageName) {
+            Image(uiImage: icon)
+                .resizable()
+                .frame(width: 29, height: 29)
+        } else {
+            Color(UIColor.systemGray3)
+                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .frame(width: 29, height: 29)
         }
-        .frame(width: 29, height: 29)
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
