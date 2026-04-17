@@ -49,17 +49,17 @@ private struct EGMainMenuView: View {
 
             // ── Категории ────────────────────────────────────────────────
             Section {
-                categoryRow(systemImage: "square.grid.2x2",
+                categoryRow(bundleImageName: "ExteraGramSettings",
                             text: i18n("Settings.Menu.General", lang)) {
                     push(egSettingsController(context: context))
                 }
-                categoryRow(systemImage: "paintpalette",
+                categoryRow(bundleImageName: "Settings/Menu/Appearance",
                             text: i18n("Settings.Menu.Appearance", lang)) { }
-                categoryRow(systemImage: "bubble.left",
+                categoryRow(bundleImageName: "Settings/Menu/ChatListFilters",
                             text: i18n("Settings.Menu.Chats", lang)) { }
-                categoryRow(systemImage: "puzzlepiece",
+                categoryRow(bundleImageName: "Settings/Menu/Stickers",
                             text: i18n("Settings.Menu.Plugins", lang)) { }
-                categoryRow(systemImage: "star",
+                categoryRow(bundleImageName: "Settings/Menu/Support",
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
                 sectionHeader(i18n("Settings.Menu.Categories", lang))
@@ -67,19 +67,19 @@ private struct EGMainMenuView: View {
 
             // ── Ссылки ────────────────────────────────────────────────────
             Section {
-                linkRow(icon: AnyView(telegramIcon("megaphone")),
+                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Channels")),
                         text: i18n("Settings.Menu.Channel", lang),
                         label: "@exteraGram",
                         url: "https://t.me/exteraGram")
-                linkRow(icon: AnyView(telegramIcon("person.2")),
+                linkRow(icon: AnyView(telegramIcon("Settings/Menu/GroupChats")),
                         text: i18n("Settings.Menu.Chat", lang),
                         label: "@exteraChat",
                         url: "https://t.me/exteraChat")
-                linkRow(icon: AnyView(telegramIcon("globe")),
+                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Language")),
                         text: i18n("Settings.Menu.Translation", lang),
                         label: "Crowdin",
                         url: "https://crowdin.com/project/exteralocales")
-                linkRow(icon: AnyView(telegramIcon("safari")),
+                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Websites")),
                         text: i18n("Settings.Menu.Website", lang),
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
@@ -119,12 +119,12 @@ private struct EGMainMenuView: View {
     // ── Row builders ─────────────────────────────────────────────────────────
 
     @ViewBuilder
-    private func categoryRow(systemImage: String,
+    private func categoryRow(bundleImageName: String,
                               text: String,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                telegramIcon(systemImage)
+                telegramIcon(bundleImageName)
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -154,26 +154,37 @@ private struct EGMainMenuView: View {
         .buttonStyle(.plain)
     }
 
-    // Renders a 29×29 Telegram-style settings icon: red rounded-rect background + white
-    // SF Symbol. UIGraphicsImageRenderer with SF Symbols is used instead of PDF bundle
-    // assets because most Settings/Menu/*.pdf icons have their background color baked in
-    // (fully opaque), which causes generateTintedImage to fill a solid white square.
-    // SF Symbols always have proper alpha channels and render correctly as white silhouettes.
-    private func telegramIcon(_ systemName: String) -> some View {
-        let size = CGSize(width: 29, height: 29)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let rendered = renderer.image { _ in
-            UIColor.systemRed.setFill()
-            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7).fill()
-            let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
-            if let symbol = UIImage(systemName: systemName, withConfiguration: config)?
-                .withTintColor(.white, renderingMode: .alwaysOriginal) {
-                let x = (size.width - symbol.size.width) / 2
-                let y = (size.height - symbol.size.height) / 2
-                symbol.draw(at: CGPoint(x: x, y: y))
+    // Mirrors PresentationResourcesSettings.renderIcon: generateImage creates a CG bitmap,
+    // draws a red rounded-rect, then overlays a generateTintedImage(white) of the bundle PDF.
+    private func telegramIcon(_ bundleImageName: String) -> some View {
+        let iconSize = CGSize(width: 29, height: 29)
+        let image: UIImage? = generateImage(iconSize, contextGenerator: { size, context in
+            let bounds = CGRect(origin: .zero, size: size)
+            context.clear(bounds)
+
+            let path = CGPath(roundedRect: bounds, cornerWidth: 7, cornerHeight: 7, transform: nil)
+            context.addPath(path)
+            context.clip()
+            context.setFillColor(UIColor.systemRed.cgColor)
+            context.fill(bounds)
+            context.resetClip()
+
+            if let tinted = generateTintedImage(image: UIImage(bundleImageName: bundleImageName), color: .white),
+               let cgImage = tinted.cgImage {
+                let sz = tinted.size
+                context.draw(cgImage, in: CGRect(x: (size.width - sz.width) / 2,
+                                                  y: (size.height - sz.height) / 2,
+                                                  width: sz.width, height: sz.height))
+            }
+        })
+        return Group {
+            if let img = image {
+                Image(uiImage: img)
+            } else {
+                Color(UIColor.systemRed)
             }
         }
-        return Image(uiImage: rendered).frame(width: 29, height: 29)
+        .frame(width: 29, height: 29)
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
