@@ -49,17 +49,17 @@ private struct EGMainMenuView: View {
 
             // ── Категории ────────────────────────────────────────────────
             Section {
-                categoryRow(bundleImageName: "ExteraGramSettings",
+                categoryRow(bundleImageName: "msg_media",
                             text: i18n("Settings.Menu.General", lang)) {
                     push(egSettingsController(context: context))
                 }
-                categoryRow(bundleImageName: "Settings/Menu/Appearance",
+                categoryRow(bundleImageName: "msg_theme",
                             text: i18n("Settings.Menu.Appearance", lang)) { }
-                categoryRow(bundleImageName: "Settings/Menu/ChatListFilters",
+                categoryRow(bundleImageName: "msg_discussion",
                             text: i18n("Settings.Menu.Chats", lang)) { }
-                categoryRow(bundleImageName: "Settings/Menu/Stickers",
+                categoryRow(bundleImageName: "msg_plugins",
                             text: i18n("Settings.Menu.Plugins", lang)) { }
-                categoryRow(bundleImageName: "Settings/Menu/Support",
+                categoryRow(bundleImageName: "msg_fave",
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
                 sectionHeader(i18n("Settings.Menu.Categories", lang))
@@ -67,19 +67,19 @@ private struct EGMainMenuView: View {
 
             // ── Ссылки ────────────────────────────────────────────────────
             Section {
-                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Channels")),
+                linkRow(icon: AnyView(telegramIcon("msg_channel")),
                         text: i18n("Settings.Menu.Channel", lang),
                         label: "@exteraGram",
                         url: "https://t.me/exteraGram")
-                linkRow(icon: AnyView(telegramIcon("Settings/Menu/GroupChats")),
+                linkRow(icon: AnyView(telegramIcon("msg_groups")),
                         text: i18n("Settings.Menu.Chat", lang),
                         label: "@exteraChat",
                         url: "https://t.me/exteraChat")
-                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Language")),
+                linkRow(icon: AnyView(telegramIcon("msg_translate")),
                         text: i18n("Settings.Menu.Translation", lang),
                         label: "Crowdin",
                         url: "https://crowdin.com/project/exteralocales")
-                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Websites")),
+                linkRow(icon: AnyView(telegramIcon("msg_language")),
                         text: i18n("Settings.Menu.Website", lang),
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
@@ -154,56 +154,22 @@ private struct EGMainMenuView: View {
         .buttonStyle(.plain)
     }
 
-    // Renders a 29×29 icon with red rounded-rect background and a white symbol extracted
-    // from the bundle PDF. Settings/Menu PDFs contain a colored background + white symbol;
-    // we rasterize the icon, threshold out the bright (white) pixels, and composite them
-    // on top of the red background.
+    // Renders a 29×29 icon: red rounded-rect background + white-tinted symbol.
+    // Icons are transparent-background PNGs; generateTintedImage uses their alpha
+    // channel as a clipping mask and fills with white.
     private func telegramIcon(_ bundleImageName: String) -> some View {
         let size = CGSize(width: 29, height: 29)
-        let scale = UIScreen.main.scale
-        let pw = Int(size.width * scale)
-        let ph = Int(size.height * scale)
-        let bpr = pw * 4
-        let byteCount = ph * bpr
-
         let renderer = UIGraphicsImageRenderer(size: size)
         let result = renderer.image { _ in
             UIColor.systemRed.setFill()
             UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7).fill()
 
-            guard let source = UIImage(bundleImageName: bundleImageName),
-                  let sourceCG = source.cgImage else { return }
-
-            let cs = CGColorSpaceCreateDeviceRGB()
-            let bmi = CGImageAlphaInfo.premultipliedLast.rawValue
-            let rawBuf = UnsafeMutableRawPointer.allocate(byteCount: byteCount, alignment: 16)
-            defer { rawBuf.deallocate() }
-            rawBuf.initializeMemory(as: UInt8.self, repeating: 0, count: byteCount)
-
-            guard let ctx = CGContext(data: rawBuf, width: pw, height: ph,
-                                      bitsPerComponent: 8, bytesPerRow: bpr,
-                                      colorSpace: cs, bitmapInfo: bmi) else { return }
-            // Flip so the image is stored right-side-up in the pixel buffer.
-            ctx.translateBy(x: 0, y: CGFloat(ph))
-            ctx.scaleBy(x: 1, y: -1)
-            ctx.draw(sourceCG, in: CGRect(x: 0, y: 0, width: pw, height: ph))
-
-            // Luminance threshold: white symbol pixels (lum ≈ 255) stay, colored
-            // background pixels (lum ≈ 100–160 for typical Telegram icon colors) become
-            // transparent. Threshold 200 cleanly separates the two.
-            let buf = rawBuf.assumingMemoryBound(to: UInt8.self)
-            for i in stride(from: 0, to: byteCount, by: 4) {
-                let lum = (Int(buf[i]) * 299 + Int(buf[i+1]) * 587 + Int(buf[i+2]) * 114) / 1000
-                if lum > 200 {
-                    buf[i]=255; buf[i+1]=255; buf[i+2]=255; buf[i+3]=255
-                } else {
-                    buf[i]=0; buf[i+1]=0; buf[i+2]=0; buf[i+3]=0
-                }
-            }
-
-            if let maskedCG = ctx.makeImage() {
-                UIImage(cgImage: maskedCG, scale: scale, orientation: .up)
-                    .draw(in: CGRect(origin: .zero, size: size))
+            if let tinted = generateTintedImage(image: UIImage(bundleImageName: bundleImageName),
+                                                color: .white) {
+                let iw = tinted.size.width, ih = tinted.size.height
+                tinted.draw(in: CGRect(x: (size.width - iw) / 2,
+                                       y: (size.height - ih) / 2,
+                                       width: iw, height: ih))
             }
         }
         return Image(uiImage: result).frame(width: 29, height: 29)
