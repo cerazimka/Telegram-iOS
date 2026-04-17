@@ -2,7 +2,7 @@ import Foundation
 import BuildConfig
 
 public struct EGConfig: Codable {
-    public var apiUrl: String = "https://api.swiftgram.app"
+    public var apiUrl: String = "https://api.exteragram.app/api"
     public var webappUrl: String = "https://my.swiftgram.app"
     public var botUsername: String = "ExteraGramBot"
     public var publicKey: String?

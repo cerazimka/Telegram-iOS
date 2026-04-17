@@ -1,3 +1,12 @@
+/* Badges */
+"Badge.Developer" = "%@ is an exteraGram developer";
+"Badge.Supporter" = "%@ supports exteraGram";
+"Badge.OfficialChannel" = "%@ is an official exteraGram channel";
+"Badge.OpenDonate" = "Open donation page";
+"Badge.SupportDevelopment" = "Support development";
+"Badge.MakeDonation" = "Make a donation";
+"Badge.ReceiveBadge" = "Get a badge";
+
 /* Main menu hub */
 "Settings.Menu.Categories" = "Categories";
 "Settings.Menu.General" = "General";

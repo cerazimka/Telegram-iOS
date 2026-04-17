@@ -11,5 +11,5 @@
 	"premium_iap_product_id": "org.telegram.telegramPremium.monthly",
 	"enable_siri": false,
 	"enable_icloud": false,
-	"eg_config": "{\"api_url\":\"https://api.swiftgram.app\",\"webapp_url\":\"https://my.swiftgram.app\",\"bot_username\":\"ExteraGramBot\",\"iaps\":[]}"
+	"eg_config": "{\"api_url\":\"https://api.exteragram.app/api\",\"webapp_url\":\"https://my.swiftgram.app\",\"bot_username\":\"ExteraGramBot\",\"iaps\":[]}"
 }

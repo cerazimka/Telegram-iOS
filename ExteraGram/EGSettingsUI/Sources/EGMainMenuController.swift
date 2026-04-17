@@ -10,49 +10,12 @@ import AppBundle
 import Display
 import TelegramPresentationData
 
-// ── SF Symbol mapping (confirmed from Android APK reverse engineering)
-//
-//  msg_media       → square.grid.2x2   (Основные)
-//  msg_theme       → paintpalette      (Оформление)
-//  msg_discussion  → bubble.left       (Чаты)
-//  msg_plugins     → puzzlepiece       (Плагины)
-//  msg_fave        → star              (Другое)
-//  msg_channel     → megaphone         (Канал)
-//  msg_groups      → person.2          (Чаты — ссылки)
-//  msg_translate   → translate (iOS 15+) / Chat/Context Menu/Translate (iOS 14)
-//  msg_language    → globe             (Веб-сайт)
-
 @available(iOS 14.0, *)
 private struct EGMainMenuView: View {
     @Environment(\.lang) var lang: String
+    @Environment(\.navigationBarHeight) var navigationBarHeight: CGFloat
     weak var wrapperController: LegacyController?
     let context: AccountContext
-
-    // `translate` SF Symbol requires iOS 15+; use bundle icon on iOS 14.
-    private var translateIcon: AnyView {
-        if #available(iOS 15.0, *) {
-            return AnyView(
-                Image(systemName: "translate")
-                    .foregroundColor(.secondary)
-                    .frame(width: 22, height: 22)
-            )
-        }
-        if let img = UIImage(bundleImageName: "Chat/Context Menu/Translate")?
-            .withRenderingMode(.alwaysTemplate) {
-            return AnyView(
-                Image(uiImage: img)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 22, height: 22)
-                    .foregroundColor(.secondary)
-            )
-        }
-        return AnyView(
-            Image(systemName: "textformat")
-                .foregroundColor(.secondary)
-                .frame(width: 22, height: 22)
-        )
-    }
 
     var body: some View {
         List {
@@ -78,7 +41,8 @@ private struct EGMainMenuView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
+                .padding(.top, navigationBarHeight + 20)
+                .padding(.bottom, 20)
                 .listRowInsets(EdgeInsets())
             }
             .listRowBackground(Color.clear)
@@ -103,19 +67,19 @@ private struct EGMainMenuView: View {
 
             // ── Ссылки ────────────────────────────────────────────────────
             Section {
-                linkRow(icon: AnyView(sfIcon("megaphone")),
+                linkRow(icon: AnyView(telegramIcon("megaphone")),
                         text: i18n("Settings.Menu.Channel", lang),
                         label: "@exteraGram",
                         url: "https://t.me/exteraGram")
-                linkRow(icon: AnyView(sfIcon("person.2")),
+                linkRow(icon: AnyView(telegramIcon("person.2")),
                         text: i18n("Settings.Menu.Chat", lang),
                         label: "@exteraChat",
                         url: "https://t.me/exteraChat")
-                linkRow(icon: translateIcon,
+                linkRow(icon: AnyView(telegramIcon("globe")),
                         text: i18n("Settings.Menu.Translation", lang),
                         label: "Crowdin",
                         url: "https://crowdin.com/project/exteralocales")
-                linkRow(icon: AnyView(sfIcon("globe")),
+                linkRow(icon: AnyView(telegramIcon("safari")),
                         text: i18n("Settings.Menu.Website", lang),
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
@@ -160,7 +124,7 @@ private struct EGMainMenuView: View {
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                sfIcon(systemImage)
+                telegramIcon(systemImage)
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -169,6 +133,7 @@ private struct EGMainMenuView: View {
                     .font(.system(size: 13, weight: .semibold))
             }
         }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -186,12 +151,29 @@ private struct EGMainMenuView: View {
                     .foregroundColor(.accentColor)
             }
         }
+        .buttonStyle(.plain)
     }
 
-    private func sfIcon(_ name: String) -> some View {
-        Image(systemName: name)
-            .foregroundColor(.secondary)
-            .frame(width: 22, height: 22)
+    // Renders a 29×29 Telegram-style settings icon: red rounded-rect background + white
+    // SF Symbol. UIGraphicsImageRenderer with SF Symbols is used instead of PDF bundle
+    // assets because most Settings/Menu/*.pdf icons have their background color baked in
+    // (fully opaque), which causes generateTintedImage to fill a solid white square.
+    // SF Symbols always have proper alpha channels and render correctly as white silhouettes.
+    private func telegramIcon(_ systemName: String) -> some View {
+        let size = CGSize(width: 29, height: 29)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let rendered = renderer.image { _ in
+            UIColor.systemRed.setFill()
+            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7).fill()
+            let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+            if let symbol = UIImage(systemName: systemName, withConfiguration: config)?
+                .withTintColor(.white, renderingMode: .alwaysOriginal) {
+                let x = (size.width - symbol.size.width) / 2
+                let y = (size.height - symbol.size.height) / 2
+                symbol.draw(at: CGPoint(x: x, y: y))
+            }
+        }
+        return Image(uiImage: rendered).frame(width: 29, height: 29)
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

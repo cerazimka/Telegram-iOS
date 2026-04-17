@@ -172,13 +172,13 @@ public final class LegacySwiftUIController: LegacyController {
     public let lang: String
 //    public var containerViewLayoutUpdateCountModel: ObservedValue<Int64>
 
-    override public init(presentation: LegacyControllerPresentation, theme: PresentationTheme? = nil, strings: PresentationStrings? = nil, initialLayout: ContainerViewLayout? = nil) {
+    override public init(presentation: LegacyControllerPresentation, theme: PresentationTheme? = nil, strings: PresentationStrings? = nil, initialLayout: ContainerViewLayout? = nil, navigationBarStyle: NavigationBar.Style = .glass) {
         navigationBarHeightModel = ObservedValue<CGFloat>(0.0)
         containerViewLayoutModel = ObservedValue<ContainerViewLayout?>(initialLayout)
         inputHeightModel = ObservedValue<CGFloat?>(nil)
         lang = strings?.baseLanguageCode ?? "en"
 //        containerViewLayoutUpdateCountModel = ObservedValue<Int64>(0)
-        super.init(presentation: presentation, theme: theme, strings: strings, initialLayout: initialLayout, navigationBarStyle: .glass)
+        super.init(presentation: presentation, theme: theme, strings: strings, initialLayout: initialLayout, navigationBarStyle: navigationBarStyle)
     }
 
     override public func containerLayoutUpdated(_ layout: ContainerViewLayout, transition: ContainedViewLayoutTransition) {

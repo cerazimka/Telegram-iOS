@@ -4,6 +4,7 @@ egdeps = [
     "//ExteraGram/EGSettingsUI:EGSettingsUI",
     "//ExteraGram/EGStrings:EGStrings",
     "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//ExteraGram/EGBadges:EGBadges",
 
     "//ExteraGram/EGRegDate:EGRegDate",
     "//ExteraGram/EGRegDateScheme:EGRegDateScheme",

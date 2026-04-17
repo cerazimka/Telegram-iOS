@@ -3,6 +3,7 @@ import Foundation
 import EGAPIToken
 import EGAPI
 import EGLogging
+import EGBadges
 
 import AccountContext
 
@@ -26,6 +27,22 @@ public func updateSGWebSettingsInteractivelly(context: AccountContext) {
         }, error: { e in
             if case let .generic(errorMessage) = e, let errorMessage = errorMessage {
                 EGLogger.shared.log("EGAPI", errorMessage)
+            }
+        })
+
+        // Sync ExteraGram badges using the same token.
+        let _ = getEGProfiles(token: token).startStandalone(next: { profiles in
+            BadgesController.shared.update(profiles: profiles)
+            let status = profiles.isEmpty
+                ? "Endpoint returned 0 profiles (not deployed yet?)"
+                : "OK: \(profiles.count) profile(s)"
+            BadgesController.shared.recordSyncResult(status)
+            EGLogger.shared.log("EGBadges", status)
+        }, error: { e in
+            if case let .generic(errorMessage) = e, let errorMessage = errorMessage {
+                let truncated = String(errorMessage.prefix(300))
+                BadgesController.shared.recordSyncResult("ERR: \(truncated)")
+                EGLogger.shared.log("EGBadges", "Error syncing profiles: \(errorMessage)")
             }
         })
     }, error: { e in

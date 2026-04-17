@@ -1,3 +1,12 @@
+/* Badges */
+"Badge.Developer" = "%@ — разработчик exteraGram";
+"Badge.Supporter" = "%@ поддерживает exteraGram";
+"Badge.OfficialChannel" = "%@ — официальный канал exteraGram";
+"Badge.OpenDonate" = "Открыть страницу доната";
+"Badge.SupportDevelopment" = "Поддержи разработку";
+"Badge.MakeDonation" = "Сделать донат";
+"Badge.ReceiveBadge" = "Получить бейдж";
+
 /* Main menu hub */
 "Settings.Menu.Categories" = "Категории";
 "Settings.Menu.General" = "Основные";

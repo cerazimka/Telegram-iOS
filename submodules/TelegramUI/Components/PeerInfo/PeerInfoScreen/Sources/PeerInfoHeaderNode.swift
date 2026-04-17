@@ -45,6 +45,7 @@ import PlainButtonComponent
 import BundleIconComponent
 import MarqueeComponent
 import EdgeEffect
+import EGBadges
 
 final class PeerInfoHeaderNavigationTransition {
     let sourceNavigationBar: NavigationBar
@@ -139,7 +140,13 @@ final class PeerInfoHeaderNode: ASDisplayNode {
     var statusIconSize: CGSize?
     let titleExpandedStatusIconView: ComponentHostView<Empty>
     var titleExpandedStatusIconSize: CGSize?
-    
+
+    // ExteraGram badge (animated emoji from the "exteraBadges" sticker pack)
+    let titleBadgeIconView: ComponentHostView<Empty>
+    var badgeIconSize: CGSize?
+    let titleExpandedBadgeIconView: ComponentHostView<Empty>
+    var titleExpandedBadgeIconSize: CGSize?
+
     var subtitleRating: ComponentView<Empty>?
     
     let subtitleNodeContainer: ASDisplayNode
@@ -249,10 +256,17 @@ final class PeerInfoHeaderNode: ASDisplayNode {
         
         self.titleStatusIconView = ComponentHostView<Empty>()
         self.titleNode.stateNode(forKey: TitleNodeStateRegular)?.view.addSubview(self.titleStatusIconView)
-        
+
         self.titleExpandedStatusIconView = ComponentHostView<Empty>()
         self.titleNode.stateNode(forKey: TitleNodeStateExpanded)?.view.addSubview(self.titleExpandedStatusIconView)
-        
+
+        // ExteraGram badge
+        self.titleBadgeIconView = ComponentHostView<Empty>()
+        self.titleNode.stateNode(forKey: TitleNodeStateRegular)?.view.addSubview(self.titleBadgeIconView)
+
+        self.titleExpandedBadgeIconView = ComponentHostView<Empty>()
+        self.titleNode.stateNode(forKey: TitleNodeStateExpanded)?.view.addSubview(self.titleExpandedBadgeIconView)
+
         self.subtitleNodeContainer = ASDisplayNode()
         self.subtitleNodeRawContainer = ASDisplayNode()
         self.subtitleNode = MultiScaleTextNode(stateKeys: [TitleNodeStateRegular, TitleNodeStateExpanded])
@@ -1136,7 +1150,61 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             self.verifiedIconSize = iconSize
             self.titleExpandedVerifiedIconSize = expandedIconSize
         }
-        
+
+        // ExteraGram badge — animated emoji from the "exteraBadges" sticker pack.
+        do {
+            let egBadgeDocumentId: Int64?
+            if let peer = peer {
+                egBadgeDocumentId = BadgesController.shared.getBadge(peerIdValue: peer.id.id._internalGetInt64Value())?.documentId
+            } else {
+                egBadgeDocumentId = nil
+            }
+
+            let badgeRegularContent: EmojiStatusComponent.Content
+            let badgeExpandedContent: EmojiStatusComponent.Content
+            if let docId = egBadgeDocumentId {
+                badgeRegularContent = .animation(content: .customEmoji(fileId: docId), size: CGSize(width: 80.0, height: 80.0), placeholderColor: presentationData.theme.list.mediaPlaceholderColor, themeColor: navigationContentsAccentColor, loopMode: .forever)
+                badgeExpandedContent = .animation(content: .customEmoji(fileId: docId), size: CGSize(width: 80.0, height: 80.0), placeholderColor: navigationContentsAccentColor, themeColor: navigationContentsAccentColor, loopMode: .forever)
+            } else {
+                badgeRegularContent = .none
+                badgeExpandedContent = .none
+            }
+
+            let iconSize = self.titleBadgeIconView.update(
+                transition: ComponentTransition(navigationTransition),
+                component: AnyComponent(EmojiStatusComponent(
+                    context: self.context,
+                    animationCache: self.animationCache,
+                    animationRenderer: self.animationRenderer,
+                    content: badgeRegularContent,
+                    isVisibleForAnimations: true,
+                    useSharedAnimation: true,
+                    action: nil,
+                    emojiFileUpdated: nil
+                )),
+                environment: {},
+                containerSize: CGSize(width: 26.0, height: 26.0)
+            )
+            let expandedIconSize = self.titleExpandedBadgeIconView.update(
+                transition: ComponentTransition(navigationTransition),
+                component: AnyComponent(EmojiStatusComponent(
+                    context: self.context,
+                    animationCache: self.animationCache,
+                    animationRenderer: self.animationRenderer,
+                    content: badgeExpandedContent,
+                    isVisibleForAnimations: true,
+                    useSharedAnimation: true,
+                    action: nil,
+                    emojiFileUpdated: nil
+                )),
+                environment: {},
+                containerSize: CGSize(width: 26.0, height: 26.0)
+            )
+
+            self.badgeIconSize = iconSize
+            self.titleExpandedBadgeIconSize = expandedIconSize
+        }
+
         var actualNavigationContentsColor = navigationContentsAccentColor
         actualNavigationContentsColor = presentationData.theme.chat.inputPanel.panelControlColor
         
@@ -1595,7 +1663,27 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 nextExpandedIconX += 4.0 + titleExpandedVerifiedIconSize.width
             }
         }
-        
+
+        // ExteraGram badge positioning
+        if let badgeIconSize = self.badgeIconSize, let titleExpandedBadgeIconSize = self.titleExpandedBadgeIconSize, badgeIconSize.width > 0.0 {
+            let offset = (badgeIconSize.width + 4.0) / 2.0
+
+            let leftOffset: CGFloat = nextIconX + 4.0
+            let leftExpandedOffset: CGFloat = nextExpandedIconX + 4.0
+            titleHorizontalOffset -= offset
+
+            var collapsedTransitionOffset: CGFloat = 0.0
+            if let navigationTransition = self.navigationTransition {
+                collapsedTransitionOffset = -10.0 * navigationTransition.fraction
+            }
+
+            transition.updateFrame(view: self.titleBadgeIconView, frame: CGRect(origin: CGPoint(x: leftOffset + collapsedTransitionOffset, y: floor((titleSize.height - badgeIconSize.height) / 2.0)), size: badgeIconSize))
+            transition.updateFrame(view: self.titleExpandedBadgeIconView, frame: CGRect(origin: CGPoint(x: leftExpandedOffset, y: floor((titleExpandedSize.height - titleExpandedBadgeIconSize.height) / 2.0) + 1.0), size: titleExpandedBadgeIconSize))
+
+            nextIconX += 4.0 + badgeIconSize.width
+            nextExpandedIconX += 4.0 + titleExpandedBadgeIconSize.width
+        }
+
         var titleFrame: CGRect
         var subtitleFrame: CGRect
         let usernameFrame: CGRect

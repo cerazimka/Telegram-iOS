@@ -8,8 +8,9 @@ import EGWebAppExtensions
 import EGWebSettingsScheme
 import EGRequests
 import EGRegDateScheme
+import EGBadges
 
-private let API_VERSION: String = "0"
+private let API_VERSION: String = "1"
 
 private func buildApiUrl(_ endpoint: String) -> String {
     return "\(EG_CONFIG.apiUrl)/v\(API_VERSION)/\(endpoint)"
@@ -136,6 +137,57 @@ public func getEGAPIRegDate(token: String, deviceToken: String, userId: Int64) -
             subscriber.putError(.generic("Error requesting regDate: \(String(describing: error))"))
         })
         
+        return ActionDisposable {
+            if !completed.with({ $0 }) {
+                downloadSignal.dispose()
+            }
+        }
+    }
+}
+
+
+/// Fetch the full profiles list from the ExteraGram API.
+/// The result is used to populate `BadgesController.shared`.
+/// Returns an empty array (no error) if the endpoint is not yet deployed (404).
+public func getEGProfiles(token: String) -> Signal<[EGProfileDTO], EGAPIError> {
+    return Signal { subscriber in
+        let url = URL(string: buildApiUrl("profiles"))!
+        let headers = [EG_API_AUTHORIZATION_HEADER: "Token \(token)"]
+        let completed = Atomic<Bool>(value: false)
+
+        var request = URLRequest(url: url)
+        headers.forEach { key, value in
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+        request.timeoutInterval = 10
+
+        let downloadSignal = requestsCustom(request: request).start(next: { data, urlResponse in
+            let _ = completed.swap(true)
+
+            if let http = urlResponse as? HTTPURLResponse {
+                // 404 = endpoint not deployed yet; treat as empty list, not an error.
+                if http.statusCode == 404 {
+                    subscriber.putNext([])
+                    subscriber.putCompletion()
+                    return
+                }
+                guard (200...299).contains(http.statusCode) else {
+                    subscriber.putError(.generic("HTTP \(http.statusCode): \(String(data: data, encoding: .utf8) ?? "")"))
+                    return
+                }
+            }
+
+            // JSON uses camelCase throughout — no key decoding strategy needed.
+            if let profiles = try? JSONDecoder().decode([EGProfileDTO].self, from: data) {
+                subscriber.putNext(profiles)
+                subscriber.putCompletion()
+            } else {
+                subscriber.putError(.generic("Can't parse profiles. Response: \(String(data: data, encoding: .utf8) ?? "")"))
+            }
+        }, error: { error in
+            subscriber.putError(.generic("Error requesting profiles: \(String(describing: error))"))
+        })
+
         return ActionDisposable {
             if !completed.with({ $0 }) {
                 downloadSignal.dispose()

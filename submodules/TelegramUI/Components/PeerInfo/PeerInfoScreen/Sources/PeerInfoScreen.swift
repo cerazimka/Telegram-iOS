@@ -121,6 +121,7 @@ import PeerMessagesMediaPlaylist
 import EdgeEffect
 import Pasteboard
 import AccountPeerContextItem
+import EGBadges
 
 public enum PeerInfoAvatarEditingMode {
     case generic
@@ -403,9 +404,18 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
         self.paneContainerNode = PeerInfoPaneContainerNode(context: context, updatedPresentationData: controller.updatedPresentationData, peerId: peerId, chatLocation: chatLocation, sharedMediaFromForumTopic: sharedMediaFromForumTopic, chatLocationContextHolder: chatLocationContextHolder, isMediaOnly: self.isMediaOnly, initialPaneKey: initialPaneKey, initialStoryFolderId: switchToStoryFolder, initialGiftCollectionId: switchToGiftCollection, switchToMediaTarget: switchToMediaTarget)
         
         super.init()
-        
+
+        // ExteraGram: re-layout when the badge cache is updated (e.g. API sync completes
+        // after the profile screen is already open).
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(self.egBadgeCacheUpdated),
+            name: BadgesController.cacheUpdatedNotification,
+            object: nil
+        )
+
         self.paneContainerNode.parentController = controller
-        
+
         self._interaction = PeerInfoInteraction(
             notifyTextCopied: { [weak self] in
                 let presentationData = context.sharedContext.currentPresentationData.with { $0 }
@@ -2655,8 +2665,14 @@ final class PeerInfoScreenNode: ViewControllerTracingNode, PeerInfoScreenNodePro
         self.boostStatusDisposable?.dispose()
         self.personalChannelsDisposable?.dispose()
         self.autoTranslateDisposable?.dispose()
+        NotificationCenter.default.removeObserver(self, name: BadgesController.cacheUpdatedNotification, object: nil)
     }
-    
+
+    // ExteraGram: triggered by BadgesController.cacheUpdatedNotification
+    @objc private func egBadgeCacheUpdated() {
+        self.requestLayout(animated: false)
+    }
+
     override func didLoad() {
         super.didLoad()
                 

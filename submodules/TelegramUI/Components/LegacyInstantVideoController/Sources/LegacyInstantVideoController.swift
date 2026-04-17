@@ -34,10 +34,10 @@ public final class InstantVideoController: LegacyController, StandalonePresentab
     private var completed = false
     private var dismissed = false
     
-    override public init(presentation: LegacyControllerPresentation, theme: PresentationTheme?, strings: PresentationStrings? = nil, initialLayout: ContainerViewLayout? = nil) {
+    override public init(presentation: LegacyControllerPresentation, theme: PresentationTheme?, strings: PresentationStrings? = nil, initialLayout: ContainerViewLayout? = nil, navigationBarStyle: NavigationBar.Style = .legacy) {
         self.audioStatus = InstantVideoControllerRecordingStatus(micLevel: self.micLevelValue.get(), duration: self.durationValue.get())
-        
-        super.init(presentation: presentation, theme: theme, initialLayout: initialLayout)
+
+        super.init(presentation: presentation, theme: theme, strings: strings, initialLayout: initialLayout, navigationBarStyle: navigationBarStyle)
         
         self.hasSparseContainerView = true
         self.lockOrientation = true

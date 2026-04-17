@@ -14,6 +14,7 @@ swift_library(
         "//ExteraGram/EGAPIToken:EGAPIToken",
         "//ExteraGram/EGLogging:EGLogging",
         "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//ExteraGram/EGBadges:EGBadges",
         "//submodules/AccountContext:AccountContext",
         "//submodules/TelegramCore:TelegramCore",
     ],
