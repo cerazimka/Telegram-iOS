@@ -10,9 +10,6 @@ import AppBundle
 import Display
 import TelegramPresentationData
 
-// Placeholder — replace with real check when plugin engine is implemented.
-private func isPluginEngineSupported() -> Bool { return false }
-
 @available(iOS 14.0, *)
 private struct EGMainMenuView: View {
     @Environment(\.lang) var lang: String
@@ -60,10 +57,8 @@ private struct EGMainMenuView: View {
                             text: i18n("Settings.Menu.Appearance", lang)) { }
                 categoryRow(bundleImageName: "msg_discussion",
                             text: i18n("Settings.Menu.Chats", lang)) { }
-                if isPluginEngineSupported() {
-                    categoryRow(bundleImageName: "msg_plugins",
-                                text: i18n("Settings.Menu.Plugins", lang)) { }
-                }
+                categoryRow(bundleImageName: "msg_plugins",
+                            text: i18n("Settings.Menu.Plugins", lang)) { }
                 categoryRow(bundleImageName: "msg_fave",
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
