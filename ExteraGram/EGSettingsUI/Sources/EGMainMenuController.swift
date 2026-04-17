@@ -49,17 +49,17 @@ private struct EGMainMenuView: View {
 
             // ── Категории ────────────────────────────────────────────────
             Section {
-                categoryRow(bundleImageName: "ExteraGramSettings",
+                categoryRow(systemImage: "square.grid.2x2",
                             text: i18n("Settings.Menu.General", lang)) {
                     push(egSettingsController(context: context))
                 }
-                categoryRow(bundleImageName: "Settings/Menu/Appearance",
+                categoryRow(systemImage: "paintpalette",
                             text: i18n("Settings.Menu.Appearance", lang)) { }
-                categoryRow(bundleImageName: "Settings/Menu/SavedMessages",
+                categoryRow(systemImage: "bubble.left",
                             text: i18n("Settings.Menu.Chats", lang)) { }
-                categoryRow(bundleImageName: "Settings/Menu/Stickers",
+                categoryRow(systemImage: "puzzlepiece",
                             text: i18n("Settings.Menu.Plugins", lang)) { }
-                categoryRow(bundleImageName: "Settings/Menu/Support",
+                categoryRow(systemImage: "star",
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
                 sectionHeader(i18n("Settings.Menu.Categories", lang))
@@ -67,19 +67,19 @@ private struct EGMainMenuView: View {
 
             // ── Ссылки ────────────────────────────────────────────────────
             Section {
-                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Channels")),
+                linkRow(icon: AnyView(telegramIcon("megaphone")),
                         text: i18n("Settings.Menu.Channel", lang),
                         label: "@exteraGram",
                         url: "https://t.me/exteraGram")
-                linkRow(icon: AnyView(telegramIcon("Settings/Menu/GroupChats")),
+                linkRow(icon: AnyView(telegramIcon("person.2")),
                         text: i18n("Settings.Menu.Chat", lang),
                         label: "@exteraChat",
                         url: "https://t.me/exteraChat")
-                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Language")),
+                linkRow(icon: AnyView(telegramIcon("globe")),
                         text: i18n("Settings.Menu.Translation", lang),
                         label: "Crowdin",
                         url: "https://crowdin.com/project/exteralocales")
-                linkRow(icon: AnyView(telegramIcon("Settings/Menu/Websites")),
+                linkRow(icon: AnyView(telegramIcon("safari")),
                         text: i18n("Settings.Menu.Website", lang),
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
@@ -119,12 +119,12 @@ private struct EGMainMenuView: View {
     // ── Row builders ─────────────────────────────────────────────────────────
 
     @ViewBuilder
-    private func categoryRow(bundleImageName: String,
+    private func categoryRow(systemImage: String,
                               text: String,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                telegramIcon(bundleImageName)
+                telegramIcon(systemImage)
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -154,27 +154,26 @@ private struct EGMainMenuView: View {
         .buttonStyle(.plain)
     }
 
-    // Renders a 29×29 Telegram-style settings icon: red rounded-rect + white PDF icon.
-    // Uses generateTintedImage to rasterize the PDF asset before passing to SwiftUI,
-    // because PDF-backed UIImages have no cgImage and render as solid squares in SwiftUI
-    // template mode.
-    private func telegramIcon(_ bundleImageName: String) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(Color(UIColor.systemRed))
-            Group {
-                if let rendered = generateTintedImage(
-                    image: UIImage(bundleImageName: bundleImageName),
-                    color: .white
-                ) {
-                    Image(uiImage: rendered)
-                        .resizable()
-                        .scaledToFit()
-                        .padding(5)
-                }
+    // Renders a 29×29 Telegram-style settings icon: red rounded-rect background + white
+    // SF Symbol. UIGraphicsImageRenderer with SF Symbols is used instead of PDF bundle
+    // assets because most Settings/Menu/*.pdf icons have their background color baked in
+    // (fully opaque), which causes generateTintedImage to fill a solid white square.
+    // SF Symbols always have proper alpha channels and render correctly as white silhouettes.
+    private func telegramIcon(_ systemName: String) -> some View {
+        let size = CGSize(width: 29, height: 29)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let rendered = renderer.image { _ in
+            UIColor.systemRed.setFill()
+            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7).fill()
+            let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+            if let symbol = UIImage(systemName: systemName, withConfiguration: config)?
+                .withTintColor(.white, renderingMode: .alwaysOriginal) {
+                let x = (size.width - symbol.size.width) / 2
+                let y = (size.height - symbol.size.height) / 2
+                symbol.draw(at: CGPoint(x: x, y: y))
             }
         }
-        .frame(width: 29, height: 29)
+        return Image(uiImage: rendered).frame(width: 29, height: 29)
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
