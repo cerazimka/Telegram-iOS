@@ -473,15 +473,17 @@ public func egPluginsController(context: AccountContext) -> ViewController {
     legacyController.title = i18n("Settings.Menu.Plugins", strings.baseLanguageCode)
     legacyController.statusBar.statusBarStyle = theme.rootController.statusBarStyle.style
 
-    legacyController.navigationItem.rightBarButtonItem = UIBarButtonItem(
+    let infoButton = UIBarButtonItem(
         image: UIImage(systemName: "info.circle"),
         primaryAction: UIAction { [weak legacyController] _ in
             guard let nav = legacyController?.navigationController as? NavigationController else { return }
             nav.pushViewController(egPluginsInfoController(context: context))
         }
     )
+    infoButton.tintColor = theme.rootController.navigationBar.buttonColor
+    legacyController.navigationItem.rightBarButtonItem = infoButton
 
-    let swiftUIView = EGSwiftUIView<EGPluginsView>(legacyController: legacyController) {
+    let swiftUIView = EGSwiftUIView<EGPluginsView>(legacyController: legacyController, manageSafeArea: true) {
         EGPluginsView(wrapperController: legacyController, context: context)
     }
     let hostingController = UIHostingController(rootView: swiftUIView, ignoreSafeArea: true)

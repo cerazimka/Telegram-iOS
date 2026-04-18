@@ -175,7 +175,7 @@ public func egPluginsInfoController(context: AccountContext) -> ViewController {
     legacyController.title = i18n("Plugins.Info.Title", strings.baseLanguageCode)
     legacyController.statusBar.statusBarStyle = theme.rootController.statusBarStyle.style
 
-    let swiftUIView = EGSwiftUIView<EGPluginsInfoView>(legacyController: legacyController) {
+    let swiftUIView = EGSwiftUIView<EGPluginsInfoView>(legacyController: legacyController, manageSafeArea: true) {
         EGPluginsInfoView(wrapperController: legacyController)
     }
     let hostingController = UIHostingController(rootView: swiftUIView, ignoreSafeArea: true)
