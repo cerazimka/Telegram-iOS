@@ -150,112 +150,144 @@ private struct PluginsEmptyView: View {
 }
 
 // MARK: - Plugin Row
-// Layout matches the screenshot exactly:
-// HStack: [optional icon 52pt] [VStack: name bold / subtitle] [Spacer] [Toggle]
-// Below: description text, divider, action buttons (bundle icons, no labels).
+// Layout mirrors Android PluginCell (FrameLayout overlay pattern):
+// - Content LinearLayout: margin l=16, t=16, r=16, b=8 (non-compact=VERTICAL header; compact=HORIZONTAL)
+// - Toggle (checkBox): FrameLayout overlay gravity=TOP|RIGHT, margin t=16, r=24
+// - Delete button: FrameLayout overlay gravity=BOTTOM|RIGHT, margin r=16, b=8
+// - actionsLinear contains only share/openIn/pin/settings — NO delete
 
 @available(iOS 14.0, *)
 private struct PluginRowView: View {
     @Binding var plugin: EGPlugin
     let lang: String
+    let isCompact: Bool
     let onChanged: () -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
 
-    // "v{version} · {author}"
     private var subtitleString: String {
-        let ver = "v\(plugin.version)"
-        return plugin.subtitle.isEmpty ? ver : "\(ver) · \(plugin.subtitle)"
+        "v\(plugin.version)" + (plugin.subtitle.isEmpty ? "" : " · \(plugin.subtitle)")
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // ── Header row: icon (if any) + name/subtitle + toggle ──────────
-            HStack(alignment: .top, spacing: 12) {
-                if plugin.iconUrl != nil {
-                    iconView(size: 56)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(plugin.name)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                    Text(subtitleString)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                if !plugin.isError && !plugin.isNotResponding {
-                    Toggle("", isOn: Binding(
-                        get: { plugin.isEnabled },
-                        set: { plugin.isEnabled = $0; onChanged() }
-                    ))
-                    .labelsHidden()
-                    .fixedSize()
-                }
+        ZStack {
+            // Content area: LinearLayout(VERTICAL) margin l=16,t=16,r=16,b=8
+            VStack(alignment: .leading, spacing: 0) {
+                headerSection
+                descriptionSection
+                permissionsSection
+                // Divider: margin r=12, b=8
+                Divider()
+                    .padding(.trailing, 12)
+                    .padding(.top, 8)
+                    .padding(.bottom, 8)
+                // actionsLinear: share, openIn, pin, settings (no delete)
+                actionsRow
+                    .frame(height: 40)
             }
+            .padding(.leading, 16)
+            .padding(.top, 16)
+            .padding(.trailing, 16)
+            .padding(.bottom, 8)
 
-            // ── Description / error / notResponding ──────────────────────────
-            descriptionSection
-
-            // ── Requirements ─────────────────────────────────────────────────
-            if !plugin.requiresPermissions.isEmpty {
-                Text(plugin.requiresPermissions.joined(separator: " · "))
-                    .font(.footnote)
-                    .foregroundColor(.orange)
-                    .padding(.top, 6)
-            }
-
-            // ── Divider ───────────────────────────────────────────────────────
-            Divider()
-                .padding(.top, 10)
-
-            // ── Action buttons ────────────────────────────────────────────────
-            HStack(spacing: 0) {
-                cellButton(image: "msg_share") { onShare() }
-                cellButton(image: "msg_openin") {} // stub: real engine needed
-                cellButton(image: plugin.isPinned ? "msg_unpin" : "msg_pin") {
-                    plugin.isPinned.toggle()
-                    onChanged()
-                }
-                if plugin.hasSettings && plugin.isEnabled && !plugin.isError && !plugin.isNotResponding {
-                    cellButton(image: "msg_settings") {}
+            // Toggle overlay: gravity=TOP|RIGHT, margin t=16, r=24
+            VStack {
+                HStack {
+                    Spacer()
+                    if !plugin.isError && !plugin.isNotResponding {
+                        Toggle("", isOn: Binding(
+                            get: { plugin.isEnabled },
+                            set: { plugin.isEnabled = $0; onChanged() }
+                        ))
+                        .labelsHidden()
+                        .fixedSize()
+                        .padding(.top, 16)
+                        .padding(.trailing, 24)
+                    }
                 }
                 Spacer()
-                cellButton(
-                    image: plugin.isNotResponding ? "ic_ab_other" : "msg_delete",
-                    isDestructive: !plugin.isNotResponding
-                ) {
-                    if !plugin.isNotResponding { onDelete() }
+            }
+
+            // Delete overlay: gravity=BOTTOM|RIGHT, margin r=16, b=8
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    cellButton(
+                        image: plugin.isNotResponding ? "ic_ab_other" : "msg_delete",
+                        isDestructive: !plugin.isNotResponding
+                    ) {
+                        if !plugin.isNotResponding { onDelete() }
+                    }
+                    .frame(width: 40, height: 40)
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 8)
                 }
             }
-            .padding(.top, 2)
-            .padding(.bottom, 4)
         }
-        .padding(.top, 10)
+        .listRowInsets(EdgeInsets())
+    }
+
+    @ViewBuilder private var headerSection: some View {
+        if isCompact {
+            // compact=true → HORIZONTAL: icon(49×49, r=16) + name/subtitle
+            HStack(alignment: .top, spacing: 0) {
+                iconView(size: 49)
+                    .padding(.trailing, 16)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(plugin.name).font(.headline).foregroundColor(.primary).lineLimit(1)
+                    Text(subtitleString).font(.subheadline).foregroundColor(.secondary).lineLimit(1)
+                }
+            }
+        } else {
+            // compact=false → VERTICAL: icon(56×56, b=12) then name/subtitle below
+            VStack(alignment: .leading, spacing: 0) {
+                iconView(size: 56)
+                    .padding(.bottom, 12)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(plugin.name).font(.headline).foregroundColor(.primary).lineLimit(1)
+                    Text(subtitleString).font(.subheadline).foregroundColor(.secondary).lineLimit(1)
+                }
+            }
+        }
     }
 
     @ViewBuilder private var descriptionSection: some View {
         if plugin.isNotResponding {
             Text(i18n("Plugins.State.NotResponding", lang))
-                .font(.subheadline)
-                .foregroundColor(.red)
-                .padding(.top, 6)
+                .font(.subheadline).foregroundColor(.red)
+                .padding(.trailing, 12).padding(.top, 6)
         } else if plugin.isError {
             Text(i18n("Plugins.State.Error", lang))
-                .font(.subheadline)
-                .foregroundColor(.red)
-                .padding(.top, 6)
+                .font(.subheadline).foregroundColor(.red)
+                .padding(.trailing, 12).padding(.top, 6)
         } else if !plugin.pluginDescription.isEmpty {
             Text(plugin.pluginDescription)
-                .font(.subheadline)
-                .foregroundColor(.primary)
+                .font(.subheadline).foregroundColor(.primary)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 6)
+                .padding(.trailing, 12).padding(.top, 6)
+        }
+    }
+
+    @ViewBuilder private var permissionsSection: some View {
+        if !plugin.requiresPermissions.isEmpty {
+            Text(plugin.requiresPermissions.joined(separator: " · "))
+                .font(.footnote).foregroundColor(.orange)
+                .padding(.top, 4)
+        }
+    }
+
+    @ViewBuilder private var actionsRow: some View {
+        HStack(spacing: 0) {
+            cellButton(image: "msg_share") { onShare() }
+            cellButton(image: "msg_openin") {}
+            cellButton(image: plugin.isPinned ? "msg_unpin" : "msg_pin") {
+                plugin.isPinned.toggle(); onChanged()
+            }
+            if plugin.hasSettings && plugin.isEnabled && !plugin.isError && !plugin.isNotResponding {
+                cellButton(image: "msg_settings") {}
+            }
+            Spacer()
         }
     }
 
@@ -272,11 +304,7 @@ private struct PluginRowView: View {
     }
 
     @ViewBuilder
-    private func cellButton(
-        image: String,
-        isDestructive: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
+    private func cellButton(image: String, isDestructive: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(image)
                 .renderingMode(.template)
@@ -298,6 +326,7 @@ private struct EGPluginsView: View {
 
     @State private var isEngineEnabled: Bool = PluginsController.shared.isEngineEnabled
     @State private var plugins: [EGPlugin] = PluginsController.shared.plugins
+    @State private var isCompact: Bool = PluginsController.shared.isCompactView
     @State private var isSwitchingEngine: Bool = false
     @State private var pluginToShare: EGPlugin? = nil
     @State private var pluginToDelete: String? = nil
@@ -374,6 +403,7 @@ private struct EGPluginsView: View {
                             PluginRowView(
                                 plugin: $plugins[idx],
                                 lang: lang,
+                                isCompact: isCompact,
                                 onChanged: { PluginsController.shared.plugins = plugins },
                                 onShare: { pluginToShare = plugins[idx] },
                                 onDelete: {
