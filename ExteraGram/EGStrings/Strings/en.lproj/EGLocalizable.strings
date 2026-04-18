@@ -314,6 +314,8 @@
 "Plugins.Delete.Title" = "Delete Plugin";
 "Plugins.Delete.Message" = "This plugin will be removed.";
 "Plugins.Delete.Confirm" = "Delete";
+"Plugins.State.Error" = "Plugin error";
+"Plugins.State.NotResponding" = "Not responding";
 "Plugins.Info.Title" = "Plugin Engine";
 "Plugins.Engine.Header" = "Engine";
 "Plugins.DevMode" = "Developer Mode";

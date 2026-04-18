@@ -150,136 +150,151 @@ private struct PluginsEmptyView: View {
 }
 
 // MARK: - Plugin Row
+// Mirrors Android PluginCell: always fully expanded, no chevron.
+// Non-compact: icon above name+subtitle (VERTICAL headerLayout).
+// Compact: icon left of name+subtitle (HORIZONTAL headerLayout).
+// Switch overlaid top-right; Delete overlaid bottom-right.
 
 @available(iOS 14.0, *)
 private struct PluginRowView: View {
     @Binding var plugin: EGPlugin
     let isCompact: Bool
+    let lang: String
     let onChanged: () -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
 
+    // Mirrors Android set(): "Version v{X} · {author}"
+    private var subtitleString: String {
+        let ver = "v\(plugin.version)"
+        return plugin.subtitle.isEmpty ? ver : "\(ver) · \(plugin.subtitle)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 12) {
-                pluginIcon
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(plugin.name)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                    if !plugin.subtitle.isEmpty {
-                        Text(plugin.subtitle)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                Spacer()
-
-                Toggle("", isOn: Binding(
-                    get: { plugin.isEnabled },
-                    set: { plugin.isEnabled = $0; onChanged() }
-                ))
-                .labelsHidden()
-                .disabled(plugin.isError || plugin.isNotResponding)
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        plugin.isExpanded.toggle()
-                    }
-                } label: {
-                    Image(systemName: plugin.isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(Color(UIColor.tertiaryLabel))
-                        .font(.system(size: 13, weight: .semibold))
-                }
-                .buttonStyle(.plain)
-            }
-
-            if plugin.isExpanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    if !isCompact, !plugin.pluginDescription.isEmpty {
-                        Text(plugin.pluginDescription)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.top, 4)
-                    }
-
-                    HStack(spacing: 0) {
-                        actionButton(systemImage: "square.and.arrow.up", label: "Share", color: .accentColor) {
-                            onShare()
+            // Header + Switch overlay
+            ZStack(alignment: .topTrailing) {
+                if isCompact {
+                    // COMPACT: HORIZONTAL — icon left, text right (matches compact=true → HORIZONTAL)
+                    HStack(alignment: .top, spacing: 8) {
+                        iconView(size: 56)
+                        VStack(alignment: .leading, spacing: 2) {
+                            nameText.lineLimit(1)
+                            subtitleText.lineLimit(1)
                         }
-                        actionButton(
-                            systemImage: plugin.isPinned ? "pin.slash" : "pin",
-                            label: plugin.isPinned ? "Unpin" : "Pin",
-                            color: .accentColor
-                        ) {
-                            plugin.isPinned.toggle()
-                            onChanged()
-                        }
-                        if plugin.hasSettings {
-                            actionButton(systemImage: "gearshape", label: "Settings", color: .accentColor) {}
-                        }
+                        // Space for Switch
                         Spacer()
-                        actionButton(systemImage: "trash", label: "Delete", color: .red) {
-                            onDelete()
-                        }
+                        Color.clear.frame(width: 52, height: 1)
                     }
-                    .padding(.top, 4)
-
-                    if !plugin.requiresPermissions.isEmpty {
-                        Text("Requires: \(plugin.requiresPermissions.joined(separator: ", "))")
-                            .font(.caption2)
-                            .foregroundColor(.orange)
+                } else {
+                    // NON-COMPACT: VERTICAL — icon top, text below
+                    VStack(alignment: .leading, spacing: 0) {
+                        iconView(size: 60)
+                            .padding(.bottom, 14)
+                        nameText
+                        subtitleText
                     }
-
-                    if plugin.isError {
-                        Label("Plugin error", systemImage: "exclamationmark.triangle")
-                            .font(.caption)
-                            .foregroundColor(.red)
-                    } else if plugin.isNotResponding {
-                        Label("Not responding", systemImage: "clock")
-                            .font(.caption)
-                            .foregroundColor(.orange)
-                    }
+                    .padding(.trailing, 56) // reserve space for switch
                 }
-                .padding(.top, 8)
-                .transition(.opacity)
+
+                // Switch — hidden in error/notResponding state (mirrors bindErrorState/bindNotRespondingState)
+                if !plugin.isError && !plugin.isNotResponding {
+                    Toggle("", isOn: Binding(
+                        get: { plugin.isEnabled },
+                        set: { plugin.isEnabled = $0; onChanged() }
+                    ))
+                    .labelsHidden()
+                    .fixedSize()
+                }
             }
+            .padding(.bottom, 8)
+
+            // Description / error / notResponding — mirrors descriptionView state binding
+            descriptionView
+                .padding(.bottom, 12)
+
+            // Requirements — mirrors requirementsLayout (shown when non-empty)
+            if !plugin.requiresPermissions.isEmpty {
+                Text(plugin.requiresPermissions.joined(separator: " · "))
+                    .font(.caption)
+                    .foregroundColor(.orange)
+                    .padding(.bottom, 12)
+            }
+
+            // Divider — mirrors the divider View drawn between text content and action buttons
+            Divider()
+
+            // Action buttons row — mirrors actionsLinear (share/openIn/pin/settings) + deleteButton
+            HStack(spacing: 0) {
+                cellButton(systemImage: "square.and.arrow.up") { onShare() }
+                cellButton(
+                    systemImage: plugin.isPinned ? "pin.slash.fill" : "pin"
+                ) {
+                    plugin.isPinned.toggle()
+                    onChanged()
+                }
+                if plugin.hasSettings && plugin.isEnabled {
+                    cellButton(systemImage: "gearshape") {}
+                }
+                Spacer()
+                cellButton(systemImage: "trash", isDestructive: true) { onDelete() }
+            }
+            .padding(.top, 4)
         }
-        .padding(.vertical, 4)
-        .animation(.easeInOut(duration: 0.2), value: plugin.isExpanded)
+        .padding(.vertical, 8)
+    }
+
+    @ViewBuilder private var nameText: some View {
+        Text(plugin.name)
+            .font(.body.bold())
+            .foregroundColor(.primary)
+    }
+
+    @ViewBuilder private var subtitleText: some View {
+        Text(subtitleString)
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+    }
+
+    @ViewBuilder private var descriptionView: some View {
+        if plugin.isNotResponding {
+            Text(i18n("Plugins.State.NotResponding", lang))
+                .font(.footnote)
+                .foregroundColor(.red)
+        } else if plugin.isError {
+            Text(i18n("Plugins.State.Error", lang))
+                .font(.footnote)
+                .foregroundColor(.red)
+        } else if !plugin.pluginDescription.isEmpty {
+            Text(plugin.pluginDescription)
+                .font(.subheadline)
+                .foregroundColor(.primary)
+        }
     }
 
     @ViewBuilder
-    private var pluginIcon: some View {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
+    private func iconView(size: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: size * 0.19, style: .continuous)
             .fill(Color(UIColor.secondarySystemFill))
-            .frame(width: 44, height: 44)
+            .frame(width: size, height: size)
             .overlay(
                 Image(systemName: "puzzlepiece.extension")
                     .foregroundColor(Color(UIColor.secondaryLabel))
-                    .font(.system(size: 20))
+                    .font(.system(size: size * 0.38))
             )
     }
 
     @ViewBuilder
-    private func actionButton(
+    private func cellButton(
         systemImage: String,
-        label: String,
-        color: Color,
+        isDestructive: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 2) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 16))
-                Text(label)
-                    .font(.caption2)
-            }
-            .foregroundColor(color)
-            .frame(minWidth: 52)
-            .padding(.vertical, 4)
+            Image(systemName: systemImage)
+                .font(.system(size: 19))
+                .foregroundColor(isDestructive ? .red : Color(UIColor.secondaryLabel))
+                .frame(width: 44, height: 44)
         }
         .buttonStyle(.plain)
     }
@@ -374,6 +389,7 @@ private struct EGPluginsView: View {
                                 PluginRowView(
                                     plugin: $plugins[idx],
                                     isCompact: PluginsController.shared.isCompactView,
+                                    lang: lang,
                                     onChanged: { PluginsController.shared.plugins = plugins },
                                     onShare: { pluginToShare = plugins[idx] },
                                     onDelete: {

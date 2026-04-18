@@ -309,6 +309,8 @@
 "Plugins.Delete.Title" = "Удалить плагин";
 "Plugins.Delete.Message" = "Плагин будет удалён.";
 "Plugins.Delete.Confirm" = "Удалить";
+"Plugins.State.Error" = "Ошибка плагина";
+"Plugins.State.NotResponding" = "Не отвечает";
 "Plugins.Info.Title" = "Движок плагинов";
 "Plugins.Engine.Header" = "Движок";
 "Plugins.DevMode" = "Режим разработчика";
