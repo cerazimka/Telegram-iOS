@@ -171,9 +171,9 @@ private struct PluginRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // ── Header row: icon (if any) + name/subtitle + toggle ──────────
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
                 if plugin.iconUrl != nil {
-                    iconView(size: 52)
+                    iconView(size: 56)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -334,48 +334,53 @@ private struct EGPluginsView: View {
                 }
             }
 
-            // Plugin list — only when engine is enabled
-            if isEngineEnabled {
+            // Inline search field — own section when active
+            if isEngineEnabled && navState.isSearchActive {
                 Section {
-                    // Inline search field (shown when search is active from nav bar)
-                    if navState.isSearchActive {
-                        HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass")
-                                .foregroundColor(.secondary)
-                            TextField(i18n("Plugins.Search", lang), text: $navState.searchText)
-                                .autocapitalization(.none)
-                                .disableAutocorrection(true)
-                            if !navState.searchText.isEmpty {
-                                Button(action: { navState.searchText = "" }) {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .foregroundColor(Color(UIColor.tertiaryLabel))
-                                }
-                                .buttonStyle(.plain)
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+                        TextField(i18n("Plugins.Search", lang), text: $navState.searchText)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                        if !navState.searchText.isEmpty {
+                            Button(action: { navState.searchText = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(Color(UIColor.tertiaryLabel))
                             }
+                            .buttonStyle(.plain)
                         }
                     }
+                }
+            }
 
-                    if showEmptyState {
-                        PluginsEmptyView(
-                            isSearching: !navState.searchText.isEmpty,
-                            lang: lang
-                        )
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
-                    } else {
-                        ForEach(displayPlugins) { plugin in
-                            if let idx = plugins.firstIndex(where: { $0.id == plugin.id }) {
-                                PluginRowView(
-                                    plugin: $plugins[idx],
-                                    lang: lang,
-                                    onChanged: { PluginsController.shared.plugins = plugins },
-                                    onShare: { pluginToShare = plugins[idx] },
-                                    onDelete: {
-                                        pluginToDelete = plugins[idx].id
-                                        showDeleteAlert = true
-                                    }
-                                )
-                            }
+            // Empty state — own section
+            if isEngineEnabled && showEmptyState {
+                Section {
+                    PluginsEmptyView(
+                        isSearching: !navState.searchText.isEmpty,
+                        lang: lang
+                    )
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                }
+            }
+
+            // Each plugin = its own Section = its own rounded card (matches screenshot)
+            if isEngineEnabled && !showEmptyState {
+                ForEach(displayPlugins) { plugin in
+                    if let idx = plugins.firstIndex(where: { $0.id == plugin.id }) {
+                        Section {
+                            PluginRowView(
+                                plugin: $plugins[idx],
+                                lang: lang,
+                                onChanged: { PluginsController.shared.plugins = plugins },
+                                onShare: { pluginToShare = plugins[idx] },
+                                onDelete: {
+                                    pluginToDelete = plugins[idx].id
+                                    showDeleteAlert = true
+                                }
+                            )
                         }
                     }
                 }
