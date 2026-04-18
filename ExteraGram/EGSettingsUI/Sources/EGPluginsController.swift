@@ -450,7 +450,7 @@ public func egPluginsController(context: AccountContext) -> ViewController {
     legacyController.statusBar.statusBarStyle = theme.rootController.statusBarStyle.style
 
     let navState = PluginsNavState()
-    let buttonColor = theme.rootController.navigationBar.buttonColor
+    let buttonColor = theme.rootController.navigationBar.accentTextColor
 
     // Mirrors Android: searchItem + infoItem both in the action bar.
     // When search expands → infoItem hidden (visibility GONE). When collapsed → restored.
@@ -469,23 +469,21 @@ public func egPluginsController(context: AccountContext) -> ViewController {
     cancelButton?.tintColor = buttonColor
 
     searchButton = UIBarButtonItem(
-        image: UIImage(systemName: "magnifyingglass"),
+        image: PresentationResourcesRootController.navigationSearchIcon(theme),
         primaryAction: UIAction { [weak legacyController] _ in
             navState.isSearchActive = true
             legacyController?.navigationItem.rightBarButtonItems =
                 [cancelButton].compactMap { $0 }
         }
     )
-    searchButton?.tintColor = buttonColor
 
     infoButton = UIBarButtonItem(
-        image: UIImage(systemName: "info.circle"),
+        image: PresentationResourcesRootController.navigationInfoIcon(theme),
         primaryAction: UIAction { [weak legacyController] _ in
             guard let nav = legacyController?.navigationController as? NavigationController else { return }
             nav.pushViewController(egPluginsInfoController(context: context))
         }
     )
-    infoButton?.tintColor = buttonColor
 
     // Restore both buttons when search collapses from the SwiftUI side.
     navState.onSearchDeactivated = { [weak legacyController] in
