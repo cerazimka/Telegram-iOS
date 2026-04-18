@@ -41,7 +41,7 @@ private struct EGMainMenuView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.top, navigationBarHeight + 12)
+                .padding(.top, navigationBarHeight)
                 .padding(.bottom, 20)
                 .listRowInsets(EdgeInsets())
             }
@@ -58,7 +58,9 @@ private struct EGMainMenuView: View {
                 categoryRow(bundleImageName: "msg_discussion",
                             text: i18n("Settings.Menu.Chats", lang)) { }
                 categoryRow(bundleImageName: "msg_plugins",
-                            text: i18n("Settings.Menu.Plugins", lang)) { }
+                            text: i18n("Settings.Menu.Plugins", lang)) {
+                    push(egPluginsController(context: context))
+                }
                 categoryRow(bundleImageName: "msg_fave",
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
