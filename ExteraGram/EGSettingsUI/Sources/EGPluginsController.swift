@@ -97,6 +97,22 @@ public final class PluginsController {
     }
 }
 
+// MARK: - Search/Nav State Bridge
+// Bridges UIKit nav bar buttons with the SwiftUI list state.
+
+@available(iOS 14.0, *)
+private final class PluginsNavState: ObservableObject {
+    @Published var isSearchActive: Bool = false
+    @Published var searchText: String = ""
+    var onSearchDeactivated: (() -> Void)?
+
+    func deactivate() {
+        isSearchActive = false
+        searchText = ""
+        onSearchDeactivated?()
+    }
+}
+
 // MARK: - Share Sheet
 
 @available(iOS 14.0, *)
@@ -108,79 +124,28 @@ private struct ActivityView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-// MARK: - Install Plugin Sheet
+// MARK: - Empty State View
+// Mirrors Android EmptyPluginsView: emoji sticker + descriptive text.
+// isSearching=true  → 🔎 + PluginsNotFound
+// isSearching=false → 📂 + PluginsInfo (no plugins installed)
 
 @available(iOS 14.0, *)
-private struct InstallPluginSheet: View {
+private struct PluginsEmptyView: View {
+    let isSearching: Bool
     let lang: String
-    let onInstall: (EGPlugin) -> Void
-    @Environment(\.presentationMode) private var presentationMode
-    @State private var isLoading = false
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 24) {
-                Spacer()
-
-                Image(systemName: "puzzlepiece.extension.fill")
-                    .font(.system(size: 56))
-                    .foregroundColor(.accentColor)
-
-                Text(i18n("Plugins.Install.Title", lang))
-                    .font(.title2.bold())
-
-                Text(i18n("Plugins.Install.Description", lang))
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                Spacer()
-
-                if isLoading {
-                    ProgressView()
-                        .padding(.bottom, 32)
-                } else {
-                    VStack(spacing: 12) {
-                        Button(action: performInstall) {
-                            Text(i18n("Plugins.Install.Confirm", lang))
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.accentColor)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
-                        }
-                        .padding(.horizontal)
-
-                        Button(i18n("Plugins.Cancel", lang)) {
-                            presentationMode.wrappedValue.dismiss()
-                        }
-                        .foregroundColor(.secondary)
-                    }
-                    .padding(.bottom, 32)
-                }
-            }
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(trailing:
-                Button(i18n("Plugins.Cancel", lang)) {
-                    presentationMode.wrappedValue.dismiss()
-                }
-            )
+        VStack(spacing: 16) {
+            Text(isSearching ? "🔎" : "📂")
+                .font(.system(size: 52))
+            Text(i18n(isSearching ? "Plugins.NoResults" : "Plugins.Empty", lang))
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
         }
-    }
-
-    private func performInstall() {
-        isLoading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            let stub = EGPlugin(
-                name: "Example Plugin",
-                subtitle: "ExteraGram",
-                pluginDescription: "A sample plugin for demonstration purposes.",
-                version: "1.0"
-            )
-            onInstall(stub)
-            isLoading = false
-            presentationMode.wrappedValue.dismiss()
-        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 48)
     }
 }
 
@@ -327,51 +292,67 @@ private struct EGPluginsView: View {
     @Environment(\.lang) var lang: String
     weak var wrapperController: LegacyController?
     let context: AccountContext
+    @ObservedObject var navState: PluginsNavState
 
     @State private var isEngineEnabled: Bool = PluginsController.shared.isEngineEnabled
     @State private var plugins: [EGPlugin] = PluginsController.shared.plugins
-    @State private var searchText: String = ""
-    @State private var showingInstallSheet: Bool = false
+    @State private var isSwitchingEngine: Bool = false
     @State private var pluginToShare: EGPlugin? = nil
     @State private var pluginToDelete: String? = nil
     @State private var showDeleteAlert: Bool = false
 
+    // Mirrors fillItems ordering: pinned (alphabetical) first, then non-pinned (alphabetical).
+    // When searching, filters by name only (mirrors lambda$fillItems$1).
     private var displayPlugins: [EGPlugin] {
-        let base: [EGPlugin]
-        if searchText.isEmpty {
-            base = plugins
-        } else {
-            base = plugins.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText) ||
-                $0.subtitle.localizedCaseInsensitiveContains(searchText)
-            }
+        var pool = plugins
+        if !navState.searchText.isEmpty {
+            pool = pool.filter { $0.name.lowercased().contains(navState.searchText.lowercased()) }
         }
-        return base.sorted { $0.isPinned && !$1.isPinned }
+        let pinned   = pool.filter {  $0.isPinned }.sorted { $0.name.lowercased() < $1.name.lowercased() }
+        let unpinned = pool.filter { !$0.isPinned }.sorted { $0.name.lowercased() < $1.name.lowercased() }
+        return pinned + unpinned
+    }
+
+    private var showEmptyState: Bool {
+        guard isEngineEnabled else { return false }
+        if !navState.searchText.isEmpty { return displayPlugins.isEmpty }
+        return plugins.isEmpty
     }
 
     var body: some View {
         List {
-            Section {
-                Toggle(i18n("Plugins.Enable", lang), isOn: Binding(
-                    get: { isEngineEnabled },
-                    set: { v in
-                        isEngineEnabled = v
-                        PluginsController.shared.isEngineEnabled = v
+            // Engine toggle — hidden while search is active (mirrors fillItems: only added when !searching)
+            if !navState.isSearchActive {
+                Section {
+                    Button(action: toggleEngine) {
+                        HStack {
+                            Text(i18n("Plugins.Enable", lang))
+                                .foregroundColor(isSwitchingEngine ? .secondary : .primary)
+                            Spacer()
+                            Image(systemName: isEngineEnabled ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(isEngineEnabled ? .accentColor : Color(UIColor.tertiaryLabel))
+                                .font(.system(size: 22, weight: .medium))
+                                .animation(.easeInOut(duration: 0.15), value: isEngineEnabled)
+                        }
+                        .contentShape(Rectangle())
                     }
-                ))
+                    .disabled(isSwitchingEngine)
+                }
             }
 
+            // Plugin list — only when engine is enabled
             if isEngineEnabled {
-                if !plugins.isEmpty {
-                    Section {
+                Section {
+                    // Inline search field (shown when search is active from nav bar)
+                    if navState.isSearchActive {
                         HStack(spacing: 8) {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(.secondary)
-                            TextField(i18n("Plugins.Search", lang), text: $searchText)
+                            TextField(i18n("Plugins.Search", lang), text: $navState.searchText)
                                 .autocapitalization(.none)
                                 .disableAutocorrection(true)
-                            if !searchText.isEmpty {
-                                Button(action: { searchText = "" }) {
+                            if !navState.searchText.isEmpty {
+                                Button(action: { navState.searchText = "" }) {
                                     Image(systemName: "xmark.circle.fill")
                                         .foregroundColor(Color(UIColor.tertiaryLabel))
                                 }
@@ -379,16 +360,14 @@ private struct EGPluginsView: View {
                             }
                         }
                     }
-                }
 
-                Section {
-                    if displayPlugins.isEmpty {
-                        Text(searchText.isEmpty
-                            ? i18n("Plugins.Empty", lang)
-                            : i18n("Plugins.NoResults", lang))
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 8)
+                    if showEmptyState {
+                        PluginsEmptyView(
+                            isSearching: !navState.searchText.isEmpty,
+                            lang: lang
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets())
                     } else {
                         ForEach(displayPlugins) { plugin in
                             if let idx = plugins.firstIndex(where: { $0.id == plugin.id }) {
@@ -405,33 +384,10 @@ private struct EGPluginsView: View {
                             }
                         }
                     }
-                } header: {
-                    if !plugins.isEmpty {
-                        Text(i18n("Plugins.Installed", lang).uppercased())
-                            .font(.system(size: 13, weight: .regular))
-                            .foregroundColor(Color(UIColor.secondaryLabel))
-                    }
-                }
-
-                Section {
-                    Button(action: { showingInstallSheet = true }) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.accentColor)
-                            Text(i18n("Plugins.Install", lang))
-                                .foregroundColor(.accentColor)
-                        }
-                    }
                 }
             }
         }
         .listStyle(InsetGroupedListStyle())
-        .sheet(isPresented: $showingInstallSheet) {
-            InstallPluginSheet(lang: lang) { plugin in
-                plugins.append(plugin)
-                PluginsController.shared.plugins = plugins
-            }
-        }
         .sheet(item: $pluginToShare) { plugin in
             ActivityView(items: [plugin.name])
         }
@@ -450,6 +406,26 @@ private struct EGPluginsView: View {
                     pluginToDelete = nil
                 }
             )
+        }
+    }
+
+    // Mirrors togglePluginsEngine: guarded by isSwitchingEngineState,
+    // collapses search when engine is disabled.
+    private func toggleEngine() {
+        guard !isSwitchingEngine else { return }
+        isSwitchingEngine = true
+        let enabling = !isEngineEnabled
+        withAnimation(.easeInOut(duration: 0.15)) {
+            isEngineEnabled = enabling
+        }
+        PluginsController.shared.isEngineEnabled = enabling
+        if !enabling, navState.isSearchActive {
+            navState.deactivate()
+        }
+        // Stub: real engine calls PluginsController.init(runnable) / shutdown(runnable);
+        // the runnable clears isSwitchingEngineState after async work completes.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            isSwitchingEngine = false
         }
     }
 }
@@ -473,18 +449,55 @@ public func egPluginsController(context: AccountContext) -> ViewController {
     legacyController.title = i18n("Settings.Menu.Plugins", strings.baseLanguageCode)
     legacyController.statusBar.statusBarStyle = theme.rootController.statusBarStyle.style
 
-    let infoButton = UIBarButtonItem(
+    let navState = PluginsNavState()
+    let buttonColor = theme.rootController.navigationBar.buttonColor
+
+    // Mirrors Android: searchItem + infoItem both in the action bar.
+    // When search expands → infoItem hidden (visibility GONE). When collapsed → restored.
+    var infoButton: UIBarButtonItem? = nil
+    var searchButton: UIBarButtonItem? = nil
+    var cancelButton: UIBarButtonItem? = nil
+
+    cancelButton = UIBarButtonItem(
+        title: i18n("Plugins.Cancel", strings.baseLanguageCode),
+        primaryAction: UIAction { [weak legacyController] _ in
+            navState.deactivate()
+            legacyController?.navigationItem.rightBarButtonItems =
+                [infoButton, searchButton].compactMap { $0 }
+        }
+    )
+    cancelButton?.tintColor = buttonColor
+
+    searchButton = UIBarButtonItem(
+        image: UIImage(systemName: "magnifyingglass"),
+        primaryAction: UIAction { [weak legacyController] _ in
+            navState.isSearchActive = true
+            legacyController?.navigationItem.rightBarButtonItems =
+                [cancelButton].compactMap { $0 }
+        }
+    )
+    searchButton?.tintColor = buttonColor
+
+    infoButton = UIBarButtonItem(
         image: UIImage(systemName: "info.circle"),
         primaryAction: UIAction { [weak legacyController] _ in
             guard let nav = legacyController?.navigationController as? NavigationController else { return }
             nav.pushViewController(egPluginsInfoController(context: context))
         }
     )
-    infoButton.tintColor = theme.rootController.navigationBar.buttonColor
-    legacyController.navigationItem.rightBarButtonItem = infoButton
+    infoButton?.tintColor = buttonColor
+
+    // Restore both buttons when search collapses from the SwiftUI side.
+    navState.onSearchDeactivated = { [weak legacyController] in
+        legacyController?.navigationItem.rightBarButtonItems =
+            [infoButton, searchButton].compactMap { $0 }
+    }
+
+    legacyController.navigationItem.rightBarButtonItems =
+        [infoButton, searchButton].compactMap { $0 }
 
     let swiftUIView = EGSwiftUIView<EGPluginsView>(legacyController: legacyController, manageSafeArea: true) {
-        EGPluginsView(wrapperController: legacyController, context: context)
+        EGPluginsView(wrapperController: legacyController, context: context, navState: navState)
     }
     let hostingController = UIHostingController(rootView: swiftUIView, ignoreSafeArea: true)
     legacyController.bind(controller: hostingController)
