@@ -150,21 +150,19 @@ private struct PluginsEmptyView: View {
 }
 
 // MARK: - Plugin Row
-// Mirrors Android PluginCell: always fully expanded, no chevron.
-// Non-compact: icon above name+subtitle (VERTICAL headerLayout).
-// Compact: icon left of name+subtitle (HORIZONTAL headerLayout).
-// Switch overlaid top-right; Delete overlaid bottom-right.
+// Layout matches the screenshot exactly:
+// HStack: [optional icon 52pt] [VStack: name bold / subtitle] [Spacer] [Toggle]
+// Below: description text, divider, action buttons (bundle icons, no labels).
 
 @available(iOS 14.0, *)
 private struct PluginRowView: View {
     @Binding var plugin: EGPlugin
-    let isCompact: Bool
     let lang: String
     let onChanged: () -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
 
-    // Mirrors Android set(): "Version v{X} · {author}"
+    // "v{version} · {author}"
     private var subtitleString: String {
         let ver = "v\(plugin.version)"
         return plugin.subtitle.isEmpty ? ver : "\(ver) · \(plugin.subtitle)"
@@ -172,32 +170,25 @@ private struct PluginRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header + Switch overlay
-            ZStack(alignment: .topTrailing) {
-                if isCompact {
-                    // COMPACT: HORIZONTAL — icon left, text right (matches compact=true → HORIZONTAL)
-                    HStack(alignment: .top, spacing: 8) {
-                        iconView(size: 56)
-                        VStack(alignment: .leading, spacing: 2) {
-                            nameText.lineLimit(1)
-                            subtitleText.lineLimit(1)
-                        }
-                        // Space for Switch
-                        Spacer()
-                        Color.clear.frame(width: 52, height: 1)
-                    }
-                } else {
-                    // NON-COMPACT: VERTICAL — icon top, text below
-                    VStack(alignment: .leading, spacing: 0) {
-                        iconView(size: 60)
-                            .padding(.bottom, 14)
-                        nameText
-                        subtitleText
-                    }
-                    .padding(.trailing, 56) // reserve space for switch
+            // ── Header row: icon (if any) + name/subtitle + toggle ──────────
+            HStack(alignment: .center, spacing: 12) {
+                if plugin.iconUrl != nil {
+                    iconView(size: 52)
                 }
 
-                // Switch — hidden in error/notResponding state (mirrors bindErrorState/bindNotRespondingState)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(plugin.name)
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    Text(subtitleString)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
                 if !plugin.isError && !plugin.isNotResponding {
                     Toggle("", isOn: Binding(
                         get: { plugin.isEnabled },
@@ -207,94 +198,90 @@ private struct PluginRowView: View {
                     .fixedSize()
                 }
             }
-            .padding(.bottom, 8)
 
-            // Description / error / notResponding — mirrors descriptionView state binding
-            descriptionView
-                .padding(.bottom, 12)
+            // ── Description / error / notResponding ──────────────────────────
+            descriptionSection
 
-            // Requirements — mirrors requirementsLayout (shown when non-empty)
+            // ── Requirements ─────────────────────────────────────────────────
             if !plugin.requiresPermissions.isEmpty {
                 Text(plugin.requiresPermissions.joined(separator: " · "))
-                    .font(.caption)
+                    .font(.footnote)
                     .foregroundColor(.orange)
-                    .padding(.bottom, 12)
+                    .padding(.top, 6)
             }
 
-            // Divider — mirrors the divider View drawn between text content and action buttons
+            // ── Divider ───────────────────────────────────────────────────────
             Divider()
+                .padding(.top, 10)
 
-            // Action buttons row — mirrors actionsLinear (share/openIn/pin/settings) + deleteButton
+            // ── Action buttons ────────────────────────────────────────────────
             HStack(spacing: 0) {
-                cellButton(systemImage: "square.and.arrow.up") { onShare() }
-                cellButton(
-                    systemImage: plugin.isPinned ? "pin.slash.fill" : "pin"
-                ) {
+                cellButton(image: "msg_share") { onShare() }
+                cellButton(image: "msg_openin") {} // stub: real engine needed
+                cellButton(image: plugin.isPinned ? "msg_unpin" : "msg_pin") {
                     plugin.isPinned.toggle()
                     onChanged()
                 }
-                if plugin.hasSettings && plugin.isEnabled {
-                    cellButton(systemImage: "gearshape") {}
+                if plugin.hasSettings && plugin.isEnabled && !plugin.isError && !plugin.isNotResponding {
+                    cellButton(image: "msg_settings") {}
                 }
                 Spacer()
-                cellButton(systemImage: "trash", isDestructive: true) { onDelete() }
+                cellButton(
+                    image: plugin.isNotResponding ? "ic_ab_other" : "msg_delete",
+                    isDestructive: !plugin.isNotResponding
+                ) {
+                    if !plugin.isNotResponding { onDelete() }
+                }
             }
-            .padding(.top, 4)
+            .padding(.top, 2)
+            .padding(.bottom, 4)
         }
-        .padding(.vertical, 8)
+        .padding(.top, 10)
     }
 
-    @ViewBuilder private var nameText: some View {
-        Text(plugin.name)
-            .font(.body.bold())
-            .foregroundColor(.primary)
-    }
-
-    @ViewBuilder private var subtitleText: some View {
-        Text(subtitleString)
-            .font(.subheadline)
-            .foregroundColor(.secondary)
-    }
-
-    @ViewBuilder private var descriptionView: some View {
+    @ViewBuilder private var descriptionSection: some View {
         if plugin.isNotResponding {
             Text(i18n("Plugins.State.NotResponding", lang))
-                .font(.footnote)
+                .font(.subheadline)
                 .foregroundColor(.red)
+                .padding(.top, 6)
         } else if plugin.isError {
             Text(i18n("Plugins.State.Error", lang))
-                .font(.footnote)
+                .font(.subheadline)
                 .foregroundColor(.red)
+                .padding(.top, 6)
         } else if !plugin.pluginDescription.isEmpty {
             Text(plugin.pluginDescription)
                 .font(.subheadline)
                 .foregroundColor(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
         }
     }
 
     @ViewBuilder
     private func iconView(size: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: size * 0.19, style: .continuous)
+        RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
             .fill(Color(UIColor.secondarySystemFill))
             .frame(width: size, height: size)
             .overlay(
                 Image(systemName: "puzzlepiece.extension")
                     .foregroundColor(Color(UIColor.secondaryLabel))
-                    .font(.system(size: size * 0.38))
+                    .font(.system(size: size * 0.4))
             )
     }
 
     @ViewBuilder
     private func cellButton(
-        systemImage: String,
+        image: String,
         isDestructive: Bool = false,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 19))
+            Image(image)
+                .renderingMode(.template)
                 .foregroundColor(isDestructive ? .red : Color(UIColor.secondaryLabel))
-                .frame(width: 44, height: 44)
+                .frame(width: 44, height: 40)
         }
         .buttonStyle(.plain)
     }
@@ -339,18 +326,10 @@ private struct EGPluginsView: View {
             // Engine toggle — hidden while search is active (mirrors fillItems: only added when !searching)
             if !navState.isSearchActive {
                 Section {
-                    Button(action: toggleEngine) {
-                        HStack {
-                            Text(i18n("Plugins.Enable", lang))
-                                .foregroundColor(isSwitchingEngine ? .secondary : .primary)
-                            Spacer()
-                            Image(systemName: isEngineEnabled ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(isEngineEnabled ? .accentColor : Color(UIColor.tertiaryLabel))
-                                .font(.system(size: 22, weight: .medium))
-                                .animation(.easeInOut(duration: 0.15), value: isEngineEnabled)
-                        }
-                        .contentShape(Rectangle())
-                    }
+                    Toggle(i18n("Plugins.Enable", lang), isOn: Binding(
+                        get: { isEngineEnabled },
+                        set: { _ in toggleEngine() }
+                    ))
                     .disabled(isSwitchingEngine)
                 }
             }
@@ -388,7 +367,6 @@ private struct EGPluginsView: View {
                             if let idx = plugins.firstIndex(where: { $0.id == plugin.id }) {
                                 PluginRowView(
                                     plugin: $plugins[idx],
-                                    isCompact: PluginsController.shared.isCompactView,
                                     lang: lang,
                                     onChanged: { PluginsController.shared.plugins = plugins },
                                     onShare: { pluginToShare = plugins[idx] },
