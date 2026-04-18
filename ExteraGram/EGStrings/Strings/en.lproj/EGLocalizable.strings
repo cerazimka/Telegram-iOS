@@ -299,3 +299,31 @@
 "Settings.NY.Style.snow" = "Snow";
 "Settings.NY.Style.lightning" = "Lightning";
 "Settings.NY.Notice" = "Available for a limited time only!";
+
+/* Plugins */
+"Plugins.Enable" = "Enable Plugin Engine";
+"Plugins.Search" = "Search plugins";
+"Plugins.Empty" = "No plugins installed";
+"Plugins.NoResults" = "No results";
+"Plugins.Installed" = "Installed";
+"Plugins.Install" = "Install Plugin";
+"Plugins.Install.Title" = "Install Plugin";
+"Plugins.Install.Description" = "Select a .egplugin file to install.";
+"Plugins.Install.Confirm" = "Install";
+"Plugins.Cancel" = "Cancel";
+"Plugins.Delete.Title" = "Delete Plugin";
+"Plugins.Delete.Message" = "This plugin will be removed.";
+"Plugins.Delete.Confirm" = "Delete";
+"Plugins.Info.Title" = "Plugin Engine";
+"Plugins.Engine.Header" = "Engine";
+"Plugins.DevMode" = "Developer Mode";
+"Plugins.CompactView" = "Compact View";
+"Plugins.SafeMode.Header" = "Safe Mode";
+"Plugins.SafeMode.Toggle" = "Safe Mode";
+"Plugins.SafeMode.Title" = "Safe Mode";
+"Plugins.SafeMode.Description" = "Safe Mode disables all plugins. Use it if a plugin causes issues.";
+"Plugins.SafeMode.Notice" = "All plugins are disabled in Safe Mode.";
+"Plugins.SafeMode.Disable" = "Disable Safe Mode";
+"Plugins.Links.Header" = "Resources";
+"Plugins.Links.SDK" = "SDK Documentation";
+"Plugins.Links.GitHub" = "Source Code";

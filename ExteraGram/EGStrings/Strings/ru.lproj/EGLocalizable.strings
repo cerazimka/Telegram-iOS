@@ -294,3 +294,31 @@
 "Settings.NY.Style.snow" = "Снег";
 "Settings.NY.Style.lightning" = "Молнии";
 "Settings.NY.Notice" = "Доступны только на ограниченное время!";
+
+/* Plugins */
+"Plugins.Enable" = "Включить движок плагинов";
+"Plugins.Search" = "Поиск плагинов";
+"Plugins.Empty" = "Нет установленных плагинов";
+"Plugins.NoResults" = "Ничего не найдено";
+"Plugins.Installed" = "Установленные";
+"Plugins.Install" = "Установить плагин";
+"Plugins.Install.Title" = "Установить плагин";
+"Plugins.Install.Description" = "Выберите файл .egplugin для установки.";
+"Plugins.Install.Confirm" = "Установить";
+"Plugins.Cancel" = "Отмена";
+"Plugins.Delete.Title" = "Удалить плагин";
+"Plugins.Delete.Message" = "Плагин будет удалён.";
+"Plugins.Delete.Confirm" = "Удалить";
+"Plugins.Info.Title" = "Движок плагинов";
+"Plugins.Engine.Header" = "Движок";
+"Plugins.DevMode" = "Режим разработчика";
+"Plugins.CompactView" = "Компактный вид";
+"Plugins.SafeMode.Header" = "Безопасный режим";
+"Plugins.SafeMode.Toggle" = "Безопасный режим";
+"Plugins.SafeMode.Title" = "Безопасный режим";
+"Plugins.SafeMode.Description" = "Безопасный режим отключает все плагины. Используйте, если плагин вызывает проблемы.";
+"Plugins.SafeMode.Notice" = "Все плагины отключены в безопасном режиме.";
+"Plugins.SafeMode.Disable" = "Отключить безопасный режим";
+"Plugins.Links.Header" = "Ресурсы";
+"Plugins.Links.SDK" = "Документация SDK";
+"Plugins.Links.GitHub" = "Исходный код";
