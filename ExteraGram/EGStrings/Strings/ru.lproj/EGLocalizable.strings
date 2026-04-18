@@ -296,7 +296,7 @@
 "Settings.NY.Notice" = "Доступны только на ограниченное время!";
 
 /* Plugins */
-"Plugins.Enable" = "Включить движок плагинов";
+"Plugins.Enable" = "Включить систему плагинов";
 "Plugins.Search" = "Поиск плагинов";
 "Plugins.Empty" = "Нет установленных плагинов";
 "Plugins.NoResults" = "Ничего не найдено";

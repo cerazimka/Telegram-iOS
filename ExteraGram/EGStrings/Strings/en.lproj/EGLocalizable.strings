@@ -301,7 +301,7 @@
 "Settings.NY.Notice" = "Available for a limited time only!";
 
 /* Plugins */
-"Plugins.Enable" = "Enable Plugin Engine";
+"Plugins.Enable" = "Enable Plugin System";
 "Plugins.Search" = "Search plugins";
 "Plugins.Empty" = "No plugins installed";
 "Plugins.NoResults" = "No results";
