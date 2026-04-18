@@ -41,7 +41,7 @@ private struct EGMainMenuView: View {
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.top, navigationBarHeight + 20)
+                .padding(.top, navigationBarHeight + 12)
                 .padding(.bottom, 20)
                 .listRowInsets(EdgeInsets())
             }
