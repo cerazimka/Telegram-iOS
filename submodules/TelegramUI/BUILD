@@ -24,6 +24,7 @@ egdeps = [
     "//exteraGram/EGProUI:EGProUI",
     "//exteraGram/EGKeychainBackupManager:EGKeychainBackupManager",
     "//exteraGram/EGGHSettings:EGGHSettings",
+    "//exteraGram/EGStatus:EGStatus",
     # "//exteraGram/EGContentAnalysis:EGContentAnalysis"
 ]
 

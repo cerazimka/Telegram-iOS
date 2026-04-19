@@ -7,6 +7,7 @@ import EGAPIWebSettings
 import EGLogging
 import EGStrings
 import EGSimpleSettings
+import EGStatus
 import UIKit
 import SwiftSignalKit
 import Display

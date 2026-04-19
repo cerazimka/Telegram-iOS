@@ -1,5 +1,6 @@
 // MARK: exteraGram
 import EGSimpleSettings
+import EGStatus
 //
 import Foundation
 import UIKit
