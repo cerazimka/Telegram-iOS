@@ -75,6 +75,230 @@ extension BoostSubject {
     }
 }
 
+private final class LevelHeaderComponent: CombinedComponent {
+    let theme: PresentationTheme
+    let text: String
+
+    init(theme: PresentationTheme, text: String) {
+        self.theme = theme
+        self.text = text
+    }
+
+    static func ==(lhs: LevelHeaderComponent, rhs: LevelHeaderComponent) -> Bool {
+        if lhs.theme !== rhs.theme { return false }
+        if lhs.text != rhs.text { return false }
+        return true
+    }
+
+    static var body: Body {
+        let background = Child(RoundedRectangle.self)
+        let text = Child(MultilineTextComponent.self)
+        let leftLine = Child(Rectangle.self)
+        let rightLine = Child(Rectangle.self)
+
+        return { context in
+            let component = context.component
+            let outerInset: CGFloat = 28.0
+            let innerInset: CGFloat = 9.0
+            let height: CGFloat = 50.0
+            let backgroundHeight: CGFloat = 34.0
+            let text = text.update(
+                component: MultilineTextComponent(
+                    text: .plain(NSAttributedString(string: component.text, font: Font.semibold(15.0), textColor: .white)),
+                    horizontalAlignment: .center
+                ),
+                availableSize: context.availableSize,
+                transition: .immediate
+            )
+            let backgroundWidth: CGFloat = floor(text.size.width + 21.0)
+            let background = background.update(
+                component: RoundedRectangle(colors: [UIColor(rgb: 0x9076ff), UIColor(rgb: 0xbc6de8)], cornerRadius: backgroundHeight / 2.0, gradientDirection: .horizontal),
+                availableSize: CGSize(width: backgroundWidth, height: backgroundHeight),
+                transition: .immediate
+            )
+            context.add(background.position(CGPoint(x: context.availableSize.width / 2.0, y: height / 2.0)))
+            context.add(text.position(CGPoint(x: context.availableSize.width / 2.0, y: height / 2.0)))
+            let remainingWidth = (context.availableSize.width - background.size.width) / 2.0
+            let lineSize = remainingWidth - outerInset - innerInset
+            let lineWidth = 1.0 - UIScreenPixel
+            let leftLine = leftLine.update(
+                component: Rectangle(color: component.theme.actionSheet.secondaryTextColor.withMultipliedAlpha(0.5)),
+                availableSize: CGSize(width: lineSize, height: lineWidth),
+                transition: .immediate
+            )
+            context.add(leftLine.position(CGPoint(x: outerInset + lineSize / 2.0, y: height / 2.0)))
+            let rightLine = rightLine.update(
+                component: Rectangle(color: component.theme.actionSheet.secondaryTextColor.withMultipliedAlpha(0.5)),
+                availableSize: CGSize(width: lineSize, height: lineWidth),
+                transition: .immediate
+            )
+            context.add(rightLine.position(CGPoint(x: context.availableSize.width - outerInset - lineSize / 2.0, y: height / 2.0)))
+            return CGSize(width: context.availableSize.width, height: height)
+        }
+    }
+}
+
+private final class LevelPerkComponent: CombinedComponent {
+    let theme: PresentationTheme
+    let iconName: String
+    let text: String
+
+    init(theme: PresentationTheme, iconName: String, text: String) {
+        self.theme = theme
+        self.iconName = iconName
+        self.text = text
+    }
+
+    static func ==(lhs: LevelPerkComponent, rhs: LevelPerkComponent) -> Bool {
+        if lhs.theme !== rhs.theme { return false }
+        if lhs.iconName != rhs.iconName { return false }
+        if lhs.text != rhs.text { return false }
+        return true
+    }
+
+    static var body: Body {
+        let icon = Child(BundleIconComponent.self)
+        let text = Child(MultilineTextComponent.self)
+
+        return { context in
+            let component = context.component
+            let outerInset: CGFloat = 28.0
+            let height: CGFloat = 44.0
+            let icon = icon.update(
+                component: BundleIconComponent(name: component.iconName, tintColor: component.theme.actionSheet.controlAccentColor),
+                availableSize: context.availableSize,
+                transition: .immediate
+            )
+            context.add(icon.position(CGPoint(x: outerInset + icon.size.width / 2.0, y: height / 2.0)))
+            let text = text.update(
+                component: MultilineTextComponent(
+                    text: .plain(NSAttributedString(string: component.text, font: Font.semibold(15.0), textColor: component.theme.actionSheet.primaryTextColor)),
+                    horizontalAlignment: .center
+                ),
+                availableSize: CGSize(width: context.availableSize.width, height: context.availableSize.height),
+                transition: .immediate
+            )
+            context.add(text.position(CGPoint(x: outerInset * 2.0 + 18.0 + text.size.width / 2.0, y: height / 2.0)))
+            return CGSize(width: context.availableSize.width, height: height)
+        }
+    }
+}
+
+private final class LevelSectionComponent: CombinedComponent {
+    enum Perk: Equatable {
+        case story(Int32)
+        case reaction(Int32)
+        case nameColor(Int32)
+        case profileColor(Int32)
+        case profileIcon
+        case linkColor(Int32)
+        case linkIcon
+        case emojiStatus
+        case wallpaper(Int32)
+        case customWallpaper
+        case audioTranscription
+        case emojiPack
+        case noAds
+        case wearGift
+        case autoTranslate
+
+        func title(strings: PresentationStrings, isGroup: Bool) -> String {
+            switch self {
+            case let .story(value): return strings.ChannelBoost_Table_StoriesPerDay(value)
+            case let .reaction(value): return strings.ChannelBoost_Table_CustomReactions(value)
+            case let .nameColor(value): return strings.ChannelBoost_Table_NameColor(value)
+            case let .profileColor(value): return isGroup ? strings.ChannelBoost_Table_Group_ProfileColor(value) : strings.ChannelBoost_Table_ProfileColor(value)
+            case .profileIcon: return isGroup ? strings.ChannelBoost_Table_Group_ProfileLogo : strings.ChannelBoost_Table_ProfileLogo
+            case let .linkColor(value): return strings.ChannelBoost_Table_StyleForHeaders(value)
+            case .linkIcon: return strings.ChannelBoost_Table_HeadersLogo
+            case .emojiStatus: return strings.ChannelBoost_Table_EmojiStatus
+            case let .wallpaper(value): return isGroup ? strings.ChannelBoost_Table_Group_Wallpaper(value) : strings.ChannelBoost_Table_Wallpaper(value)
+            case .customWallpaper: return isGroup ? strings.ChannelBoost_Table_Group_CustomWallpaper : strings.ChannelBoost_Table_CustomWallpaper
+            case .audioTranscription: return strings.GroupBoost_Table_Group_VoiceToText
+            case .emojiPack: return strings.GroupBoost_Table_Group_EmojiPack
+            case .noAds: return strings.ChannelBoost_Table_NoAds
+            case .wearGift: return strings.ChannelBoost_Table_WearGift
+            case .autoTranslate: return strings.ChannelBoost_Table_AutoTranslate
+            }
+        }
+
+        var iconName: String {
+            switch self {
+            case .story: return "Premium/BoostPerk/Story"
+            case .reaction: return "Premium/BoostPerk/Reaction"
+            case .nameColor: return "Premium/BoostPerk/NameColor"
+            case .profileColor: return "Premium/BoostPerk/CoverColor"
+            case .profileIcon: return "Premium/BoostPerk/CoverLogo"
+            case .linkColor: return "Premium/BoostPerk/LinkColor"
+            case .linkIcon: return "Premium/BoostPerk/LinkLogo"
+            case .emojiStatus: return "Premium/BoostPerk/EmojiStatus"
+            case .wallpaper: return "Premium/BoostPerk/Wallpaper"
+            case .customWallpaper: return "Premium/BoostPerk/CustomWallpaper"
+            case .audioTranscription: return "Premium/BoostPerk/AudioTranscription"
+            case .emojiPack: return "Premium/BoostPerk/EmojiPack"
+            case .noAds: return "Premium/BoostPerk/NoAds"
+            case .wearGift: return "Premium/BoostPerk/NoAds"
+            case .autoTranslate: return "Chat/Title Panels/Translate"
+            }
+        }
+    }
+
+    let theme: PresentationTheme
+    let strings: PresentationStrings
+    let level: Int32
+    let isFirst: Bool
+    let perks: [Perk]
+    let isGroup: Bool
+
+    init(theme: PresentationTheme, strings: PresentationStrings, level: Int32, isFirst: Bool, perks: [Perk], isGroup: Bool) {
+        self.theme = theme
+        self.strings = strings
+        self.level = level
+        self.isFirst = isFirst
+        self.perks = perks
+        self.isGroup = isGroup
+    }
+
+    static func ==(lhs: LevelSectionComponent, rhs: LevelSectionComponent) -> Bool {
+        if lhs.theme !== rhs.theme { return false }
+        if lhs.level != rhs.level { return false }
+        if lhs.isFirst != rhs.isFirst { return false }
+        if lhs.perks != rhs.perks { return false }
+        if lhs.isGroup != rhs.isGroup { return false }
+        return true
+    }
+
+    static var body: Body {
+        let header = Child(LevelHeaderComponent.self)
+        let list = Child(List<Empty>.self)
+
+        return { context in
+            let component = context.component
+            let header = header.update(
+                component: LevelHeaderComponent(
+                    theme: component.theme,
+                    text: component.isFirst ? component.strings.ChannelBoost_Table_LevelUnlocks(component.level) : component.strings.ChannelBoost_Table_Level(component.level)
+                ),
+                availableSize: context.availableSize,
+                transition: .immediate
+            )
+            context.add(header.position(CGPoint(x: context.availableSize.width / 2.0, y: header.size.height / 2.0)))
+            let items: [AnyComponentWithIdentity<Empty>] = component.perks.enumerated().map { index, value in
+                AnyComponentWithIdentity(id: index, component: AnyComponent(
+                    LevelPerkComponent(theme: component.theme, iconName: value.iconName, text: value.title(strings: component.strings, isGroup: component.isGroup))
+                ))
+            }
+            let list = list.update(
+                component: List(items),
+                availableSize: CGSize(width: context.availableSize.width, height: 10000.0),
+                transition: context.transition
+            )
+            context.add(list.position(CGPoint(x: context.availableSize.width / 2.0, y: header.size.height + list.size.height / 2.0)))
+            return CGSize(width: context.availableSize.width, height: header.size.height + list.size.height)
+        }
+    }
+}
+
 private final class SheetContent: CombinedComponent {
     typealias EnvironmentType = (Empty, ScrollChildEnvironment)
     
