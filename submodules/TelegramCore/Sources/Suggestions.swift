@@ -228,7 +228,7 @@ func _internal_dismissPeerSpecificServerProvidedSuggestion(account: Account, pee
 }
 
 
-// MARK: ExteraGram
+// MARK: exteraGram
 private var dismissedSGSuggestionsPromise = ValuePromise<Set<String>>(Set())
 private var dismissedSGSuggestions: Set<String> = Set() {
     didSet {

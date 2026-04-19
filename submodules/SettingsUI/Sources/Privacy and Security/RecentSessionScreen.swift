@@ -262,7 +262,7 @@ private final class RecentSessionSheetContent: CombinedComponent {
                 appVersion = appVersion.replacingOccurrences(of: "APPSTORE", with: "").replacingOccurrences(of: "BETA", with: "Beta").trimmingTrailingSpaces()
                 applicationTitle = strings.AuthSessions_View_Application
                 applicationString = "\(session.appName) \(appVersion)"
-                ipString = session.ip // MARK: ExteraGram
+                ipString = session.ip // MARK: exteraGram
                 locationString = session.country
                 
                 buttonString = !session.isCurrent ? strings.AuthSessions_View_TerminateSession : nil
@@ -289,7 +289,7 @@ private final class RecentSessionSheetContent: CombinedComponent {
                 buttonString = strings.AuthSessions_View_Logout
             }
 
-            // MARK: ExteraGram
+            // MARK: exteraGram
             let egApiIdString: String?
             if case let .session(session) = component.subject {
                 egApiIdString = EGRecentSessionApiId.string(for: session)
@@ -365,7 +365,7 @@ private final class RecentSessionSheetContent: CombinedComponent {
                 ))
             )
 
-            // MARK: ExteraGram
+            // MARK: exteraGram
             if let egApiIdString {
                 clientSectionItems.append(egRecentSessionApiIdItem(apiIdString: egApiIdString, theme: theme, presentationData: presentationData, strings: strings, controller: state.controller))
             }

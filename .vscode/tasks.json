@@ -18,7 +18,7 @@
       "command": "./scripts/lldb_build.sh",
       "options": {
         "env": {
-          "BAZEL_LABEL_TO_RUN": "//Telegram:ExteraGram",
+          "BAZEL_LABEL_TO_RUN": "//Telegram:exteraGram",
           "BAZEL_EXTRA_BUILD_FLAGS": ""
         }
       },
@@ -50,7 +50,7 @@
       "command": "./scripts/lldb_launch_and_debug.sh",
       "options": {
         "env": {
-          "BAZEL_LABEL_TO_RUN": "//Telegram:ExteraGram",
+          "BAZEL_LABEL_TO_RUN": "//Telegram:exteraGram",
           "BAZEL_EXTRA_BUILD_FLAGS": "",
           "BAZEL_LAUNCH_ARGS": ""
         }

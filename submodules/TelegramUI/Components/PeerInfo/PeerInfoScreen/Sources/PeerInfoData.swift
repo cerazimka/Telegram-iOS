@@ -428,6 +428,7 @@ final class PeerInfoScreenData {
     let webAppPermissions: WebAppPermissionsState?
     let savedMusicContext: ProfileSavedMusicContext?
     let savedMusicState: ProfileSavedMusicContext.State?
+    let managedByBot: EnginePeer?
     
     let _isContact: Bool
     var forceIsContact: Bool = false
@@ -484,7 +485,8 @@ final class PeerInfoScreenData {
         premiumGiftOptions: [PremiumGiftCodeOption],
         webAppPermissions: WebAppPermissionsState?,
         savedMusicContext: ProfileSavedMusicContext?,
-        savedMusicState: ProfileSavedMusicContext.State?
+        savedMusicState: ProfileSavedMusicContext.State?,
+        managedByBot: EnginePeer?
     ) {
         self.regDate = regDate
         self.channelCreationTimestamp = channelCreationTimestamp
@@ -530,6 +532,7 @@ final class PeerInfoScreenData {
         self.webAppPermissions = webAppPermissions
         self.savedMusicContext = savedMusicContext
         self.savedMusicState = savedMusicState
+        self.managedByBot = managedByBot
     }
 }
 
@@ -607,7 +610,8 @@ private func peerInfoAvailableMediaPanes(context: AccountContext, peerId: PeerId
             (.music, .music),
             (.voiceOrInstantVideo, .voice),
             (.webPage, .links),
-            (.gif, .gifs)
+            (.gif, .gifs),
+            (.polls, .polls)
         ]
     }
     enum PaneState {
@@ -890,7 +894,6 @@ func peerInfoScreenSettingsData(context: AccountContext, peerId: EnginePeer.Id, 
     let botsKey = ValueBoxKey(length: 8)
     botsKey.setInt64(0, value: 0)
     
-    //let iconLoaded = Atomic<[EnginePeer.Id: Bool]>(value: [:])
     let bots = context.engine.data.subscribe(TelegramEngine.EngineData.Item.ItemCache.Item(collectionId: Namespaces.CachedItemCollection.attachMenuBots, id: botsKey))
     |> mapToSignal { entry -> Signal<[AttachMenuBot], NoError> in
         let bots: [AttachMenuBots.Bot] = entry?.get(AttachMenuBots.self)?.bots ?? []
@@ -977,7 +980,7 @@ func peerInfoScreenSettingsData(context: AccountContext, peerId: EnginePeer.Id, 
         
         var enableQRLogin = false
         let appConfiguration = accountPreferences.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self)
-        // MARK: ExteraGram
+        // MARK: exteraGram
         if let appConfiguration, appConfiguration.egWebSettings.global.qrLogin {
             enableQRLogin = true
         }
@@ -1057,7 +1060,8 @@ func peerInfoScreenSettingsData(context: AccountContext, peerId: EnginePeer.Id, 
             premiumGiftOptions: [],
             webAppPermissions: nil,
             savedMusicContext: nil,
-            savedMusicState: nil
+            savedMusicState: nil,
+            managedByBot: nil
         )
     }
 }
@@ -1128,7 +1132,8 @@ func peerInfoScreenData(
                 premiumGiftOptions: [],
                 webAppPermissions: nil,
                 savedMusicContext: nil,
-                savedMusicState: nil
+                savedMusicState: nil,
+                managedByBot: nil
             ))
         case let .user(userPeerId, secretChatId, kind):
             let groupsInCommon: GroupsInCommonContext?
@@ -1549,6 +1554,13 @@ func peerInfoScreenData(
                 
                 let peer = peerView.peers[userPeerId]
                 
+                var managedByBot: EnginePeer?
+                if let cachedData = peerView.cachedData as? CachedUserData, let botManagerId = cachedData.botManagerId {
+                    if let peer = peerView.peers[botManagerId] {
+                        managedByBot = EnginePeer(peer)
+                    }
+                }
+                
                 var globalSettings: TelegramGlobalSettings?
                 if let privacySettings {
                     globalSettings = TelegramGlobalSettings(
@@ -1618,7 +1630,8 @@ func peerInfoScreenData(
                     premiumGiftOptions: premiumGiftOptions,
                     webAppPermissions: webAppPermissions,
                     savedMusicContext: savedMusicContext,
-                    savedMusicState: savedMusicState
+                    savedMusicState: savedMusicState,
+                    managedByBot: managedByBot
                 )
             }
         case .channel:
@@ -1865,7 +1878,8 @@ func peerInfoScreenData(
                     premiumGiftOptions: [],
                     webAppPermissions: nil,
                     savedMusicContext: nil,
-                    savedMusicState: nil
+                    savedMusicState: nil,
+                    managedByBot: nil
                 )
             }
         case let .group(groupId):
@@ -2160,7 +2174,7 @@ func peerInfoScreenData(
                 
                 let appConfiguration: AppConfiguration = preferencesView.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self) ?? .defaultValue
               
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 var channelCreationTimestamp = firstMessage?.timestamp
                 if groupId.namespace == Namespaces.Peer.CloudChannel, let firstMessage {
                     for media in firstMessage.media {
@@ -2219,7 +2233,8 @@ func peerInfoScreenData(
                     premiumGiftOptions: [],
                     webAppPermissions: nil,
                     savedMusicContext: nil,
-                    savedMusicState: nil
+                    savedMusicState: nil,
+                    managedByBot: nil
                 ))
             }
         }
@@ -2491,7 +2506,7 @@ func peerInfoHeaderButtons(peer: Peer?, cachedData: CachedPeerData?, isOpenedFro
                 result.append(.message)
             }
             result.append(.mute)
-            /* /* MARK: ExteraGram */ if case let .broadcast(info) = channel.info, info.flags.contains(.hasMonoforum), !channel.hasPermission(.manageDirect) {
+            /* /* MARK: exteraGram */ if case let .broadcast(info) = channel.info, info.flags.contains(.hasMonoforum), !channel.hasPermission(.manageDirect) {
             } else*/ if hasDiscussion {
                 result.append(.discussion)
             }
@@ -2664,7 +2679,7 @@ private func isPremiumRequiredForStoryPosting(context: AccountContext) -> Signal
 }
 
 
-// MARK: ExteraGram
+// MARK: exteraGram
 private func getFirstMessage(context: AccountContext, peerId: PeerId) -> Signal<Message?, NoError> {
     return context.engine.messages.getMessagesLoadIfNecessary([MessageId(peerId: peerId, namespace: Namespaces.Message.Cloud, id: 1)])
     |> `catch` { _ in

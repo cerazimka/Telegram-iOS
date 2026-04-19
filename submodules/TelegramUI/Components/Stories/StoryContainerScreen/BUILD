@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//ExteraGram/EGStrings:EGStrings",
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings"
+    "//exteraGram/EGStrings:EGStrings",
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings"
 ]
 
 swift_library(
@@ -39,7 +39,6 @@ swift_library(
         "//submodules/TelegramUI/Components/ChatTimerScreen",
         "//submodules/TextFormat",
         "//submodules/PhoneNumberFormat",
-        "//submodules/ComposePollUI",
         "//submodules/TelegramIntents",
         "//submodules/LegacyUI",
         "//submodules/WebSearchUI",

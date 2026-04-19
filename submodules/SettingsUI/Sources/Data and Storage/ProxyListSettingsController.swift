@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGSimpleSettings
 import EGStrings
 
@@ -13,8 +13,8 @@ import MtProtoKit
 import ItemListUI
 import PresentationDataUtils
 import AccountContext
-import UrlEscaping
 import ShareController
+import UrlEscaping
 
 private final class ProxySettingsControllerArguments {
     let toggleLocalDNS: (Bool) -> Void
@@ -264,7 +264,7 @@ private enum ProxySettingsControllerEntry: ItemListNodeEntry {
                     }
                 }, tag: ProxySettingsEntryTag.useProxy)
             case let .localDNSToggle(_, text, value):
-                return ItemListSwitchItem(presentationData: presentationData, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
+                return ItemListSwitchItem(presentationData: presentationData, systemStyle: .glass, title: text, value: value, enabled: true, sectionId: self.section, style: .blocks, updated: { value in
                     arguments.toggleLocalDNS(value)
                 })
             case let .localDNSNotice(_, text):
@@ -303,7 +303,7 @@ private func proxySettingsControllerEntries(theme: PresentationTheme, strings: P
     var entries: [ProxySettingsControllerEntry] = []
 
     entries.append(.enabled(theme, strings.ChatSettings_ConnectionType_UseProxy, proxySettings.enabled, proxySettings.servers.isEmpty))
-    // MARK: ExteraGram
+    // MARK: exteraGram
     entries.append(.localDNSToggle(theme, i18n("ProxySettings.UseSystemDNS", strings.baseLanguageCode), EGSimpleSettings.shared.localDNSForProxyHost))
     entries.append(.localDNSNotice(theme, i18n("ProxySettings.UseSystemDNS.Notice", strings.baseLanguageCode)))
     entries.append(.serversHeader(theme, strings.SocksProxySetup_SavedProxies))
@@ -634,7 +634,7 @@ public func proxySettingsController(accountManager: AccountManager<TelegramAccou
             }
         }
     }
-    // MARK: ExteraGram
+    // MARK: exteraGram
     presentControllerImpl = { [weak controller] c, a in
         controller?.present(c, in: .window(.root), with: a)
     }

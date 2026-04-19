@@ -13,7 +13,7 @@ import AlertUI
 import PresentationDataUtils
 import MediaResources
 import WallpaperResources
-import ShareController
+
 import AccountContext
 import ContextUI
 import UndoUI
@@ -275,7 +275,7 @@ private enum ThemePickerControllerEntry: ItemListNodeEntry {
             case let .editTheme(theme, text):
                 return ItemListPeerActionItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesItemList.editThemeIcon(theme), title: text, sectionId: self.section, height: .generic, editing: false, action: {
                     arguments.editCurrentTheme()
-                })
+                }, tag: ThemeSettingsEntryTag.edit)
             case let .createTheme(theme, text):
                 return ItemListPeerActionItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesItemList.plusIconImage(theme), title: text, sectionId: self.section, height: .generic, editing: false, action: {
                     arguments.createNewTheme()
@@ -623,11 +623,10 @@ public func themePickerController(context: AccountContext, focusOnItemTag: Theme
                 }
                 items.append(.action(ContextMenuActionItem(text: presentationData.strings.Appearance_ShareTheme, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Share"), color: theme.contextMenu.primaryColor) }, action: { c, f in
                     c?.dismiss(completion: {
-                        let shareController = ShareController(context: context, subject: .url("https://t.me/addtheme/\(theme.theme.slug)"), preferredAction: .default)
-                        shareController.actionCompleted = {
+                        let shareController = context.sharedContext.makeShareController(context: context, params: ShareControllerParams(subject: .url("https://t.me/addtheme/\(theme.theme.slug)"), preferredAction: .default, actionCompleted: {
                             let presentationData = context.sharedContext.currentPresentationData.with { $0 }
                             presentControllerImpl?(UndoOverlayController(presentationData: presentationData, content: .linkCopied(title: nil, text: presentationData.strings.Conversation_LinkCopied), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), nil)
-                        }
+                        }))
                         presentControllerImpl?(shareController, nil)
                     })
                 })))
@@ -876,11 +875,10 @@ public func themePickerController(context: AccountContext, focusOnItemTag: Theme
                     }
                     items.append(.action(ContextMenuActionItem(text: presentationData.strings.Appearance_ShareTheme, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Share"), color: theme.contextMenu.primaryColor) }, action: { c, f in
                         c?.dismiss(completion: {
-                            let shareController = ShareController(context: context, subject: .url("https://t.me/addtheme/\(cloudTheme.theme.slug)"), preferredAction: .default)
-                            shareController.actionCompleted = {
+                            let shareController = context.sharedContext.makeShareController(context: context, params: ShareControllerParams(subject: .url("https://t.me/addtheme/\(cloudTheme.theme.slug)"), preferredAction: .default, actionCompleted: {
                                 let presentationData = context.sharedContext.currentPresentationData.with { $0 }
                                 presentControllerImpl?(UndoOverlayController(presentationData: presentationData, content: .linkCopied(title: nil, text: presentationData.strings.Conversation_LinkCopied), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), nil)
-                            }
+                            }))
                             presentControllerImpl?(shareController, nil)
                         })
                     })))
@@ -1294,6 +1292,21 @@ public func themePickerController(context: AccountContext, focusOnItemTag: Theme
             presentCrossfadeControllerImpl?(true)
         })
     }
+    
+    if let focusOnItemTag {
+        var didFocusOnItem = false
+        controller.afterTransactionCompleted = { [weak controller] in
+            if !didFocusOnItem, let controller {
+                controller.forEachItemNode { itemNode in
+                    if let itemNode = itemNode as? ItemListItemNode, let tag = itemNode.tag, tag.isEqual(to: focusOnItemTag) {
+                        didFocusOnItem = true
+                        itemNode.displayHighlight()
+                    }
+                }
+            }
+        }
+    }
+    
     return controller
 }
 

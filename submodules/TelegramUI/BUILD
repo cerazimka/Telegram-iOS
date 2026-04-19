@@ -6,32 +6,32 @@ load(
 )
 
 egdeps = [
-    "//ExteraGram/EGSettingsUI:EGSettingsUI",
-    "//ExteraGram/EGConfig:EGConfig",
-    "//ExteraGram/EGAPIWebSettings:EGAPIWebSettings",
-    "//ExteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier",
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//ExteraGram/SFSafariViewControllerPlus:SFSafariViewControllerPlus",
-    "//ExteraGram/EGLogging:EGLogging",
-    "//ExteraGram/EGStrings:EGStrings",
-    "//ExteraGram/EGActionRequestHandlerSanitizer:EGActionRequestHandlerSanitizer",
-    "//ExteraGram/Wrap:Wrap",
-    "//ExteraGram/EGDeviceToken:EGDeviceToken",
-    "//ExteraGram/EGDebugUI:EGDebugUI",
-    "//ExteraGram/EGInputToolbar:EGInputToolbar",
-    "//ExteraGram/EGIAP:EGIAP",
-    "//ExteraGram/EGPayWall:EGPayWall",
-    "//ExteraGram/EGProUI:EGProUI",
-    "//ExteraGram/EGKeychainBackupManager:EGKeychainBackupManager",
-    "//ExteraGram/EGGHSettings:EGGHSettings",
-    # "//ExteraGram/EGContentAnalysis:EGContentAnalysis"
+    "//exteraGram/EGSettingsUI:EGSettingsUI",
+    "//exteraGram/EGConfig:EGConfig",
+    "//exteraGram/EGAPIWebSettings:EGAPIWebSettings",
+    "//exteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier",
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/SFSafariViewControllerPlus:SFSafariViewControllerPlus",
+    "//exteraGram/EGLogging:EGLogging",
+    "//exteraGram/EGStrings:EGStrings",
+    "//exteraGram/EGActionRequestHandlerSanitizer:EGActionRequestHandlerSanitizer",
+    "//exteraGram/Wrap:Wrap",
+    "//exteraGram/EGDeviceToken:EGDeviceToken",
+    "//exteraGram/EGDebugUI:EGDebugUI",
+    "//exteraGram/EGInputToolbar:EGInputToolbar",
+    "//exteraGram/EGIAP:EGIAP",
+    "//exteraGram/EGPayWall:EGPayWall",
+    "//exteraGram/EGProUI:EGProUI",
+    "//exteraGram/EGKeychainBackupManager:EGKeychainBackupManager",
+    "//exteraGram/EGGHSettings:EGGHSettings",
+    # "//exteraGram/EGContentAnalysis:EGContentAnalysis"
 ]
 
 egsrcs = [
-    "//ExteraGram/EGDBReset:EGDBReset",
-    "//ExteraGram/EGShowMessageJson:EGShowMessageJson",
-    "//ExteraGram/ChatControllerImplExtension:ChatControllerImplExtension",
-    "//ExteraGram/EGSharedAccountContextMigration:EGSharedAccountContextMigration"
+    "//exteraGram/EGDBReset:EGDBReset",
+    "//exteraGram/EGShowMessageJson:EGShowMessageJson",
+    "//exteraGram/ChatControllerImplExtension:ChatControllerImplExtension",
+    "//exteraGram/EGSharedAccountContextMigration:EGSharedAccountContextMigration"
 ]
 
 filegroup(
@@ -141,7 +141,7 @@ swift_library(
         "//submodules/AnimatedStickerNode:AnimatedStickerNode",
         "//submodules/TelegramAnimatedStickerNode:TelegramAnimatedStickerNode",
         "//submodules/ActionSheetPeerItem:ActionSheetPeerItem",
-        "//submodules/ComposePollUI:ComposePollUI",
+        "//submodules/TelegramUI/Components/ComposePollScreen",
         "//submodules/AlertUI:AlertUI",
         "//submodules/PresentationDataUtils:PresentationDataUtils",
         "//submodules/TouchDownGesture:TouchDownGesture",
@@ -314,6 +314,8 @@ swift_library(
         "//submodules/TelegramUI/Components/LottieAnimationCache:LottieAnimationCache",
         "//submodules/TelegramUI/Components/VideoAnimationCache:VideoAnimationCache",
         "//submodules/TelegramUI/Components/MultiAnimationRenderer:MultiAnimationRenderer",
+        "//submodules/TelegramUI/Components/DCTAnimationCacheImpl:DCTAnimationCacheImpl",
+        "//submodules/TelegramUI/Components/DCTMultiAnimationRendererImpl:DCTMultiAnimationRendererImpl",
         "//submodules/TelegramUI/Components/ChatInputPanelContainer:ChatInputPanelContainer",
         "//submodules/TelegramUI/Components/TextNodeWithEntities:TextNodeWithEntities",
         "//submodules/TelegramUI/Components/EmojiSuggestionsComponent:EmojiSuggestionsComponent",
@@ -552,6 +554,8 @@ swift_library(
         "//submodules/TelegramUI/Components/PeerInfo/PeerCopyProtectionInfoScreen",
         "//submodules/TelegramUI/Components/Chat/ChatRankInfoScreen",
         "//submodules/TelegramUI/Components/RankChatPreviewItem",
+        "//submodules/TelegramUI/Components/TextProcessingScreen",
+        "//submodules/TelegramUI/Components/CreateBotScreen",
     ] + select({
         "@build_bazel_rules_apple//apple:ios_arm64": appcenter_targets,
         "//build-system:ios_sim_arm64": [],

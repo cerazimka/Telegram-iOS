@@ -18,7 +18,7 @@ extension PeerInfoScreenNode {
         }
         let context = self.context
         switch subject {
-        // MARK: ExteraGram
+        // MARK: exteraGram
         case let .copy(text):
             let contextMenuController = makeContextMenuController(actions: [ContextMenuAction(content: .text(title: self.presentationData.strings.Conversation_ContextMenuCopy, accessibilityLabel: self.presentationData.strings.Conversation_ContextMenuCopy), action: { [weak self] in
                 UIPasteboard.general.string = text

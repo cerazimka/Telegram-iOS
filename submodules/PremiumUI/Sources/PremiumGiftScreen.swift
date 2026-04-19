@@ -444,6 +444,7 @@ private final class PremiumGiftScreenContentComponent: CombinedComponent {
                 UIColor(rgb: 0x676bff),
                 UIColor(rgb: 0x6172ff),
                 UIColor(rgb: 0x5b79ff),
+                UIColor(rgb: 0x5b79ff),
                 UIColor(rgb: 0x4492ff),
                 UIColor(rgb: 0x429bd5),
                 UIColor(rgb: 0x41a6a5),
@@ -885,7 +886,7 @@ private final class PremiumGiftScreenComponent: CombinedComponent {
         }
         
         func buy() {
-            // MARK: ExteraGram
+            // MARK: exteraGram
             let presentationData = self.context.sharedContext.currentPresentationData.with { $0 }
             let alertController = textAlertController(context: self.context, title: i18n("Common.OpenTelegram", presentationData.strings.baseLanguageCode), text: i18n("Common.UseTelegramForPremium", presentationData.strings.baseLanguageCode), actions: [TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_OK, action: {})])
             self.present(alertController)

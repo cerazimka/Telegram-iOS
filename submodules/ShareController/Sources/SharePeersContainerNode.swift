@@ -328,7 +328,7 @@ final class SharePeersContainerNode: ASDisplayNode, ShareContentContainerNode {
 
         self.contentTitleNode.view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.debugTapGesture(_:))))
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         self.isAccessibilityElement = false
 
         self.contentTitleNode.isAccessibilityElement = true

@@ -1,13 +1,13 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//ExteraGram/EGAPIWebSettings:EGAPIWebSettings",
-    "//ExteraGram/EGAPIToken:EGAPIToken",
-    "//ExteraGram/EGBadges:EGBadges"
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/EGAPIWebSettings:EGAPIWebSettings",
+    "//exteraGram/EGAPIToken:EGAPIToken",
+    "//exteraGram/EGBadges:EGBadges"
 ]
 egsrcs = [
-    "//ExteraGram/EGChatListSimpleSettingsSignal:EGChatListSimpleSettingsSignal",
+    "//exteraGram/EGChatListSimpleSettingsSignal:EGChatListSimpleSettingsSignal",
 ]
 
 swift_library(

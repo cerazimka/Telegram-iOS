@@ -1,7 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
     "//submodules/TextFormat:TextFormat"
 ]
 
@@ -39,6 +39,13 @@ swift_library(
         "//submodules/ShimmerEffect:ShimmerEffect",
         "//submodules/Components/ResizableSheetComponent",
         "//submodules/TelegramUI/Components/GlassBarButtonComponent",
+        "//submodules/TelegramUI/Components/ListSectionComponent",
+        "//submodules/TelegramUI/Components/ListActionItemComponent",
+        "//submodules/TelegramUI/Components/PlainButtonComponent",
+        "//submodules/TelegramUI/Components/ButtonComponent",
+        "//submodules/TextFormat",
+        "//submodules/Pasteboard",
+        "//submodules/TelegramUI/Components/TranslationLanguagesContextMenuContent",
     ],
     visibility = [
         "//visibility:public",

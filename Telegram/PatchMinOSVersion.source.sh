@@ -14,7 +14,7 @@ if [ "$version" == "14.0" ]; then
 	xcrun lipo "$binary_path" -remove armv7 -o "$binary_path" 2>/dev/null || true
 fi
 
-# MARK: ExteraGram
+# MARK: exteraGram
 find "$1" -type f \( -perm +111 -o -name "*.dylib" \) | while read -r bin; do
   if otool -L "$bin" | grep -q "/usr/lib/swift/libswift_Concurrency.dylib"; then
     echo "Patching concurrency backport in: $bin"

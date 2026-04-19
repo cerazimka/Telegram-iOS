@@ -1114,7 +1114,7 @@ public final class WallpaperBackgroundNodeImpl: ASDisplayNode, WallpaperBackgrou
         }
     }
     
-    // MARK: ExteraGram
+    // MARK: exteraGram
     private var NYNode: WallpaperNYNode?
     //
 
@@ -1786,9 +1786,9 @@ public final class WallpaperBackgroundNodeImpl: ASDisplayNode, WallpaperBackgrou
                 
         if isFirstLayout && !self.frame.isEmpty {
             self.updateScale()
-            /* MARK: ExteraGram */ if EGSimpleSettings.shared.isNYEnabled && self.NYNode == nil { let nYNode = WallpaperNYNode(); self.addSubnode(nYNode); self.NYNode = nYNode }
+            /* MARK: exteraGram */ if EGSimpleSettings.shared.isNYEnabled && self.NYNode == nil { let nYNode = WallpaperNYNode(); self.addSubnode(nYNode); self.NYNode = nYNode }
         }
-        /* MARK: ExteraGram */ self.NYNode?.frame = CGRect(origin: CGPoint(), size: size); self.NYNode?.updateLayout(size: size)
+        /* MARK: exteraGram */ self.NYNode?.frame = CGRect(origin: CGPoint(), size: size); self.NYNode?.updateLayout(size: size)
     }
 
     private var isAnimating = false

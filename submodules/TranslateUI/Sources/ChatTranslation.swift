@@ -167,7 +167,7 @@ public func translateMessageIds(context: AccountContext, messageIds: [EngineMess
                         }
                     }
                 }
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 guard forQuickTranslate || message.author?.id != context.account.peerId else {
                     continue
                 }

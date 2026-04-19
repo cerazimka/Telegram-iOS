@@ -369,7 +369,7 @@ final class CameraOutput: NSObject {
                 AVVideoWidthKey: Int(dimensions.width),
                 AVVideoHeightKey: Int(dimensions.height)
             ]
-            // MARK: ExteraGram
+            // MARK: exteraGram
             if EGSimpleSettings.shared.startTelescopeWithRearCam {
                 self.currentPosition = .back
             }

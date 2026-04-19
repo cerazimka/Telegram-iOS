@@ -1,14 +1,14 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//ExteraGram/EGSettingsUI:EGSettingsUI",
-    "//ExteraGram/EGStrings:EGStrings",
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//ExteraGram/EGBadges:EGBadges",
+    "//exteraGram/EGSettingsUI:EGSettingsUI",
+    "//exteraGram/EGStrings:EGStrings",
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/EGBadges:EGBadges",
 
-    "//ExteraGram/EGRegDate:EGRegDate",
-    "//ExteraGram/EGRegDateScheme:EGRegDateScheme",
-    "//ExteraGram/EGDebugUI:EGDebugUI",
+    "//exteraGram/EGRegDate:EGRegDate",
+    "//exteraGram/EGRegDateScheme:EGRegDateScheme",
+    "//exteraGram/EGDebugUI:EGDebugUI",
 ]
 
 

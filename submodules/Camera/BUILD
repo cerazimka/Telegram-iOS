@@ -9,7 +9,7 @@ load("//build-system/bazel-utils:plist_fragment.bzl",
 )
 
 egDeps = [
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings"
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings"
 ]
 
 filegroup(

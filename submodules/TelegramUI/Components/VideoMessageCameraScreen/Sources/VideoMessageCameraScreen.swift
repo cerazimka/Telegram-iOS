@@ -948,7 +948,7 @@ public class VideoMessageCameraScreen: ViewController {
             self.previewContainerView.addSubview(self.previewContainerContentView)
                         
             let isDualCameraEnabled = Camera.isDualCameraSupported(forRoundVideo: true)
-            // MARK: ExteraGram
+            // MARK: exteraGram
             let isFrontPosition = !EGSimpleSettings.shared.startTelescopeWithRearCam
             
             self.mainPreviewView = CameraSimplePreviewView(frame: .zero, main: true, roundVideo: true)

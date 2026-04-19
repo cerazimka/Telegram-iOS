@@ -312,17 +312,17 @@ private func handleInternetUrl(
                             break
                         }
                     }
-                    if settings.defaultWebBrowser == "inApp" { isExceptedDomain = false } // MARK: ExteraGram
+                    if settings.defaultWebBrowser == "inApp" { isExceptedDomain = false } // MARK: exteraGram
 
                     if (settings.defaultWebBrowser == nil && !isExceptedDomain) || isTonSite {
                         let controller = BrowserScreen(context: context, subject: .webPage(url: parsedUrl.absoluteString))
                         navigationController?.pushViewController(controller)
                     } else {
                         if let window = navigationController?.view.window, !isExceptedDomain {
-                            let controller = SFSafariViewControllerPlusDidFinish(url: parsedUrl) // MARK: ExteraGram
+                            let controller = SFSafariViewControllerPlusDidFinish(url: parsedUrl) // MARK: exteraGram
                             controller.preferredBarTintColor = presentationData.theme.rootController.navigationBar.opaqueBackgroundColor
                             controller.preferredControlTintColor = presentationData.theme.rootController.navigationBar.accentTextColor
-                            // MARK: ExteraGram
+                            // MARK: exteraGram
                             if parsedUrl.host?.lowercased() == EG_API_WEBAPP_URL_PARSED.host?.lowercased() {
                                 controller.onDidFinish = {
                                     EGLogger.shared.log("SafariController", "Closed webapp")
@@ -700,6 +700,16 @@ func openExternalUrlImpl(context: AccountContext, urlContext: OpenURLContext, ur
                         }
                     } else {
                         handleResolvedUrl(.sendGift(peerId: nil))
+                    }
+                case "newbot":
+                    if let managerBotName = params["manager"] {
+                        let _ = (context.engine.peers.resolvePeerByName(name: managerBotName, referrer: nil)
+                        |> deliverOnMainQueue).start(next: { result in
+                            guard case let .result(peer) = result, let peer else {
+                                return
+                            }
+                            handleResolvedUrl(.createBot(parentBot: peer.id, username: params["username"], title: params["name"]))
+                        })
                     }
                 default:
                     break

@@ -1,10 +1,10 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//ExteraGram/EGDebugUI:EGDebugUI",
-    "//ExteraGram/EGLogging:EGLogging",
-    "//ExteraGram/EGLoggingComposer:EGLoggingComposer",
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings"
+    "//exteraGram/EGDebugUI:EGDebugUI",
+    "//exteraGram/EGLogging:EGLogging",
+    "//exteraGram/EGLoggingComposer:EGLoggingComposer",
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings"
 ]
 
 swift_library(

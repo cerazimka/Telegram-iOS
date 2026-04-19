@@ -2,7 +2,7 @@
 
 #import <LegacyComponents/TGVideoEditAdjustments.h>
 
-// MARK: ExteraGram
+// MARK: exteraGram
 #import <VideoToolbox/VideoToolbox.h>
 #import <MediaPlayer/MediaPlayer.h>
 //

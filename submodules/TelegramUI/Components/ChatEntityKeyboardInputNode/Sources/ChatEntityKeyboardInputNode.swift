@@ -362,7 +362,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
     
     private let context: AccountContext
     private let stateContext: StateContext?
-    private let entityKeyboardView: ComponentHostView<Empty>
+    private let entityKeyboardView: ComponentView<Empty>
     
     private let defaultToEmojiTab: Bool
     private var stableReorderableGroupOrder: [EntityKeyboardComponent.ReorderCategory: [ItemCollectionId]] = [:]
@@ -371,6 +371,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
     private var hasRecentGifsDisposable: Disposable?
     private let opaqueTopPanelBackground: Bool
     private let useOpaqueTheme: Bool
+    private let displayBottomPanel: Bool
     
     private struct EmojiSearchResult {
         var groups: [EmojiPagerContentComponent.ItemGroup]
@@ -449,7 +450,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
     }
     
     public var canSwitchToTextInputAutomatically: Bool {
-        if let pagerView = self.entityKeyboardView.componentView as? EntityKeyboardComponent.View, let centralId = pagerView.centralId {
+        if let pagerView = self.entityKeyboardView.view as? EntityKeyboardComponent.View, let centralId = pagerView.centralId {
             if centralId == AnyHashable("emoji") {
                 return false
             }
@@ -485,21 +486,22 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
         |> distinctUntilChanged
     }
     
-    public init(context: AccountContext, currentInputData: InputData, updatedInputData: Signal<InputData, NoError>, defaultToEmojiTab: Bool, opaqueTopPanelBackground: Bool = false, useOpaqueTheme: Bool = false, interaction: ChatEntityKeyboardInputNode.Interaction?, chatPeerId: PeerId?, stateContext: StateContext?, forceHasPremium: Bool = false) {
+    public init(context: AccountContext, currentInputData: InputData, updatedInputData: Signal<InputData, NoError>, defaultToEmojiTab: Bool, opaqueTopPanelBackground: Bool = false, useOpaqueTheme: Bool = false, interaction: ChatEntityKeyboardInputNode.Interaction?, chatPeerId: PeerId?, stateContext: StateContext?, forceHasPremium: Bool = false, displayBottomPanel: Bool = true) {
         self.context = context
         self.currentInputData = currentInputData
         self.defaultToEmojiTab = EGSimpleSettings.shared.forceEmojiTab ? true : defaultToEmojiTab
         self.opaqueTopPanelBackground = opaqueTopPanelBackground
         self.useOpaqueTheme = useOpaqueTheme
         self.stateContext = stateContext
+        self.displayBottomPanel = displayBottomPanel
         
         self.interaction = interaction
         
-        self.clippingView = UIView()
+        self.clippingView = SparseContainerView()
         self.clippingView.clipsToBounds = true
         self.clippingView.layer.cornerRadius = keyboardCornerRadius
         
-        self.entityKeyboardView = ComponentHostView<Empty>()
+        self.entityKeyboardView = ComponentView()
         
         super.init()
         
@@ -537,7 +539,6 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
             )
         }
         
-        self.clippingView.addSubview(self.entityKeyboardView)
         self.view.addSubview(self.clippingView)
         
         if let backgroundChromeView = self.backgroundChromeView {
@@ -691,7 +692,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
                             
                             for featuredStickerPack in stickerPacks {
                                 if featuredStickerPack.topItems.contains(where: { $0.file.fileId == file.fileId }) {
-                                    if let pagerView = self.entityKeyboardView.componentView as? EntityKeyboardComponent.View, let emojiInputInteraction = self.emojiInputInteraction {
+                                    if let pagerView = self.entityKeyboardView.view as? EntityKeyboardComponent.View, let emojiInputInteraction = self.emojiInputInteraction {
                                         pagerView.openCustomSearch(content: EmojiSearchContent(
                                             context: self.context,
                                             forceTheme: self.interaction?.forceTheme,
@@ -1325,7 +1326,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
                 ))
             },
             openSearch: { [weak self] in
-                if let strongSelf = self, let pagerView = strongSelf.entityKeyboardView.componentView as? EntityKeyboardComponent.View {
+                if let strongSelf = self, let pagerView = strongSelf.entityKeyboardView.view as? EntityKeyboardComponent.View {
                     pagerView.openSearch()
                 }
             },
@@ -1629,7 +1630,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
             var transition: ComponentTransition = .immediate
             var useAnimation = false
             
-            if let pagerView = strongSelf.entityKeyboardView.componentView as? EntityKeyboardComponent.View, let centralId = pagerView.centralId {
+            if let pagerView = strongSelf.entityKeyboardView.view as? EntityKeyboardComponent.View, let centralId = pagerView.centralId {
                 if centralId == AnyHashable("emoji") {
                     useAnimation = strongSelf.currentInputData.emoji != inputData.emoji
                 } else if centralId == AnyHashable("stickers"),  strongSelf.currentInputData.stickers != nil, inputData.stickers != nil {
@@ -1709,7 +1710,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
                 gifContext.loadMore(token: token)
             },
             openSearch: { [weak self] in
-                if let strongSelf = self, let pagerView = strongSelf.entityKeyboardView.componentView as? EntityKeyboardComponent.View {
+                if let strongSelf = self, let pagerView = strongSelf.entityKeyboardView.view as? EntityKeyboardComponent.View {
                     pagerView.openSearch()
                 }
             },
@@ -1797,8 +1798,13 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
     }
     
     override public func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        if let result = super.hitTest(point, with: event) {
-            return result
+        if self.alpha.isZero || !self.view.isUserInteractionEnabled {
+            return nil
+        }
+        for subview in self.view.subviews.reversed() {
+            if let result = subview.hitTest(self.view.convert(point, to: subview), with: event), result.isUserInteractionEnabled {
+                return result
+            }
         }
         
         if let backgroundView = self.backgroundView, backgroundView.frame.contains(point) {
@@ -2024,7 +2030,12 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
             entityKeyboardSizeFrame.origin.y += self.topBackgroundExtension
         }
         
-        transition.updateFrame(view: self.entityKeyboardView, frame: entityKeyboardSizeFrame)
+        if let entityKeyboardComponentView = self.entityKeyboardView.view {
+            if entityKeyboardComponentView.superview == nil {
+                self.clippingView.addSubview(entityKeyboardComponentView)
+            }
+            transition.updateFrame(view: entityKeyboardComponentView, frame: entityKeyboardSizeFrame)
+        }
         
         transition.updateFrame(view: self.clippingView, frame: clippingFrame)
         
@@ -2163,10 +2174,10 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
             emoji: inputData.emoji.flatMap { emoji in
                 return emoji.withUpdatedItemGroups(panelItemGroups: self.processStableItemGroupList(category: .emoji, itemGroups: emoji.panelItemGroups), contentItemGroups: self.processStableItemGroupList(category: .emoji, itemGroups: emoji.contentItemGroups), itemContentUniqueId: emoji.itemContentUniqueId, emptySearchResults: emoji.emptySearchResults, searchState: emoji.searchState)
             },
-            stickers: inputData.stickers.flatMap { stickers in
+            stickers: !self.displayBottomPanel ? nil : inputData.stickers.flatMap { stickers in
                 return stickers.withUpdatedItemGroups(panelItemGroups: self.processStableItemGroupList(category: .stickers, itemGroups: stickers.panelItemGroups), contentItemGroups: self.processStableItemGroupList(category: .stickers, itemGroups: stickers.contentItemGroups), itemContentUniqueId: stickers.itemContentUniqueId, emptySearchResults: nil, searchState: stickers.searchState)
             },
-            gifs: inputData.gifs,
+            gifs: !self.displayBottomPanel ? nil : inputData.gifs,
             availableGifSearchEmojies: inputData.availableGifSearchEmojies
         )
     }
@@ -2365,7 +2376,7 @@ public final class ChatEntityKeyboardInputNode: ChatInputNode {
     }
     
     public func scrollToGroupEmoji() {
-        if let pagerView = self.entityKeyboardView.componentView as? EntityKeyboardComponent.View {
+        if let pagerView = self.entityKeyboardView.view as? EntityKeyboardComponent.View {
             pagerView.scrollToItemGroup(contentId: "emoji", groupId: "peerSpecific", subgroupId: nil)
         }
     }

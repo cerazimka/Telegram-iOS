@@ -1,11 +1,11 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings"
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings"
 ]
 
 egsrc = [
-    "//ExteraGram/EGEmojiKeyboardDefaultFirst:EGEmojiKeyboardDefaultFirst"
+    "//exteraGram/EGEmojiKeyboardDefaultFirst:EGEmojiKeyboardDefaultFirst"
 ]
 
 swift_library(
@@ -36,6 +36,7 @@ swift_library(
         "//submodules/TelegramUI/Components/LottieAnimationCache:LottieAnimationCache",
         "//submodules/TelegramUI/Components/VideoAnimationCache:VideoAnimationCache",
         "//submodules/TelegramUI/Components/MultiAnimationRenderer:MultiAnimationRenderer",
+        "//submodules/TelegramUI/Components/DCTMultiAnimationRendererImpl:DCTMultiAnimationRendererImpl",
         "//submodules/TelegramUI/Components/EmojiTextAttachmentView:EmojiTextAttachmentView",
         "//submodules/TelegramUI/Components/EmojiStatusComponent:EmojiStatusComponent",
         "//submodules/TelegramUI/Components/LottieComponent",

@@ -128,7 +128,7 @@ func _internal_requestChatContextResults(IQTP: Bool = false, account: Account, b
                 return ChatContextResultCollection(apiResults: result, botId: bot.id, peerId: peerId, query: query, geoPoint: location)
             }
             |> mapError { error -> RequestChatContextResultsError in
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 if IQTP {
                     EGLogger.shared.log("EGIQTP", "Error requesting inline results: \(error.errorDescription ?? "nil")")
                 }

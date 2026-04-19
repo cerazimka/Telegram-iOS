@@ -11,7 +11,7 @@ import MergeLists
 import ItemListUI
 import PresentationDataUtils
 import AccountContext
-import ShareController
+
 import SearchBarNode
 import SearchUI
 import UndoUI
@@ -168,7 +168,7 @@ private final class LocalizationListSearchContainerNode: SearchDisplayController
         self.dimNode = ASDisplayNode()
         self.dimNode.backgroundColor = .clear
         
-        self.listNode = ListView()
+        self.listNode = ListViewImpl()
         self.listNode.accessibilityPageScrolledString = { row, count in
             return presentationData.strings.VoiceOver_ScrollStatus(row, count).string
         }
@@ -380,7 +380,7 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
         self.push = push
         self.focusOnItemTag = focusOnItemTag
 
-        self.listNode = ListView()
+        self.listNode = ListViewImpl()
         self.listNode.keepTopItemOverscrollBackground = ListViewKeepTopItemOverscrollBackground(color: presentationData.theme.list.blocksBackgroundColor, direction: true)
         self.listNode.accessibilityPageScrolledString = { row, count in
             return presentationData.strings.VoiceOver_ScrollStatus(row, count).string
@@ -462,7 +462,7 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
         default:
             break
         }
-        chatTranslationAvailable = true; translateButtonAvailable = true // MARK: ExteraGram
+        chatTranslationAvailable = true; translateButtonAvailable = true // MARK: exteraGram
         let previousState = Atomic<LocalizationListState?>(value: nil)
         let previousEntriesHolder = Atomic<([LanguageListEntry], PresentationTheme, PresentationStrings)?>(value: nil)
         self.listDisposable = combineLatest(
@@ -479,7 +479,7 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
                 return
             }
             
-            // MARK: ExteraGram
+            // MARK: exteraGram
             let isPremium = peer?.isPremium ?? false
                         
             var entries: [LanguageListEntry] = []
@@ -784,7 +784,7 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
                 
                     self?.context.engine.messages.refreshAttachMenuBots()
                     
-                    // MARK: ExteraGram
+                    // MARK: exteraGram
                     // TODO(exteragram): consider moving to downloadAndApplyLocalization for an app-wide strings update
                     if let baseLanguageCode = info.baseLanguageCode {
                         EGLocalizationManager.shared.downloadLocale(baseLanguageCode)
@@ -813,13 +813,12 @@ final class LocalizationListControllerNode: ViewControllerTracingNode {
             guard let strongSelf = self else {
                 return
             }
-            let shareController = ShareController(context: strongSelf.context, subject: .url("https://t.me/setlanguage/\(info.languageCode)"))
-            shareController.actionCompleted = { [weak self] in
+            let shareController = strongSelf.context.sharedContext.makeShareController(context: strongSelf.context, params: ShareControllerParams(subject: .url("https://t.me/setlanguage/\(info.languageCode)"), actionCompleted: { [weak self] in
                 if let strongSelf = self {
                     let presentationData = strongSelf.context.sharedContext.currentPresentationData.with { $0 }
                     strongSelf.present(UndoOverlayController(presentationData: presentationData, content: .linkCopied(title: nil, text: presentationData.strings.Conversation_LinkCopied), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), nil)
                 }
-            }
+            }))
             strongSelf.present(shareController, nil)
         }))
         controller.setItemGroups([

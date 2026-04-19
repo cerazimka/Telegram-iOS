@@ -816,7 +816,7 @@ public func recentSessionsController(context: AccountContext, activeSessionsCont
         guard let appConfiguration = view.values[PreferencesKeys.appConfiguration]?.get(AppConfiguration.self) else {
             return false
         }
-        // MARK: ExteraGram
+        // MARK: exteraGram
         if appConfiguration.egWebSettings.global.qrLogin {
             return true
         }

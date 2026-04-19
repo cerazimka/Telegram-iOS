@@ -1,6 +1,6 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-egdeps = ["//ExteraGram/EGSimpleSettings:EGSimpleSettings"]
+egdeps = ["//exteraGram/EGSimpleSettings:EGSimpleSettings"]
 
 swift_library(
     name = "TelegramStringFormatting",

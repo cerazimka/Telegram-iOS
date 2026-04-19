@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGSimpleSettings
 import TextFormat
 import TranslateUI
@@ -88,7 +88,7 @@ func chatMessageDisplaySendMessageOptions(selfController: ChatControllerImpl, no
             return
         }
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         let outgoingMessageTranslateToLang = EGSimpleSettings.shared.outgoingLanguageTranslation[EGSimpleSettings.makeOutgoingLanguageTranslationKey(accountId: selfController.context.account.peerId.id._internalGetInt64Value(), peerId: peer.id.id._internalGetInt64Value())] ?? selfController.contentData?.state.predictedChatLanguage
                 
         let egTranslationContext: (outgoingMessageTranslateToLang: String?, translate: (() -> Void)?, changeTranslationLanguage: (() -> ())?) = (outgoingMessageTranslateToLang: outgoingMessageTranslateToLang, translate: { [weak selfController] in
@@ -192,7 +192,7 @@ func chatMessageDisplaySendMessageOptions(selfController: ChatControllerImpl, no
                 )),
                 hasEntityKeyboard: hasEntityKeyboard,
                 gesture: gesture,
-                sourceSendButton: node,
+                sourceSendButton: node.view,
                 textInputView: textInputView,
                 emojiViewProvider: selfController.chatDisplayNode.textInputPanelNode?.emojiViewProvider,
                 wallpaperBackgroundNode: selfController.chatDisplayNode.backgroundNode,
@@ -289,7 +289,7 @@ func chatMessageDisplaySendMessageOptions(selfController: ChatControllerImpl, no
                 )),
                 hasEntityKeyboard: hasEntityKeyboard,
                 gesture: gesture,
-                sourceSendButton: node,
+                sourceSendButton: node.view,
                 textInputView: textInputView,
                 emojiViewProvider: selfController.chatDisplayNode.textInputPanelNode?.emojiViewProvider,
                 wallpaperBackgroundNode: selfController.chatDisplayNode.backgroundNode,

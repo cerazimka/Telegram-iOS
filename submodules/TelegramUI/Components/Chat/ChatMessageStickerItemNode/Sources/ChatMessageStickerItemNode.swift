@@ -53,7 +53,7 @@ public class ChatMessageStickerItemNode: ChatMessageItemView {
     private let fetchDisposable = MetaDisposable()
     
     private var suggestedPostInfoNode: ChatMessageSuggestedPostInfoNode?
-    // MARK: ExteraGram
+    // MARK: exteraGram
     public var sizeCoefficient: Float = 1.0
     
     private var viaBotNode: TextNode?
@@ -708,7 +708,7 @@ public class ChatMessageStickerItemNode: ChatMessageItemView {
             var replyMessage: Message?
             var replyForward: QuotedReplyMessageAttribute?
             var replyQuote: (quote: EngineMessageReplyQuote, isQuote: Bool)?
-            var replyTodoItemId: Int32?
+            var replyInnerSubject: EngineMessageReplyInnerSubject?
             var replyStory: StoryId?
             for attribute in item.message.attributes {
                 if let attribute = attribute as? InlineBotMessageAttribute {
@@ -737,7 +737,7 @@ public class ChatMessageStickerItemNode: ChatMessageItemView {
                         replyMessage = item.message.associatedMessages[replyAttribute.messageId]
                     }
                     replyQuote = replyAttribute.quote.flatMap { ($0, replyAttribute.isQuote) }
-                    replyTodoItemId = replyAttribute.todoItemId
+                    replyInnerSubject = replyAttribute.innerSubject
                 } else if let attribute = attribute as? QuotedReplyMessageAttribute {
                     replyForward = attribute
                 } else if let attribute = attribute as? ReplyStoryAttribute {
@@ -777,7 +777,7 @@ public class ChatMessageStickerItemNode: ChatMessageItemView {
                     message: replyMessage,
                     replyForward: replyForward,
                     quote: replyQuote,
-                    todoItemId: replyTodoItemId,
+                    innerSubject: replyInnerSubject,
                     story: replyStory,
                     isSummarized: false,
                     parentMessage: item.message,

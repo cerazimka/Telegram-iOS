@@ -66,7 +66,9 @@ public final class PeerSelectionControllerParams {
     public let hasTypeHeaders: Bool
     public let selectForumThreads: Bool
     public let hasCreation: Bool
+    public let immediatelySwitchToContacts: Bool
     public let immediatelyActivateMultipleSelection: Bool
+    public let suggestedPeers: [EnginePeer]
     
     public init(
         context: AccountContext,
@@ -89,7 +91,9 @@ public final class PeerSelectionControllerParams {
         hasTypeHeaders: Bool = false,
         selectForumThreads: Bool = false,
         hasCreation: Bool = false,
-        immediatelyActivateMultipleSelection: Bool = false
+        immediatelySwitchToContacts: Bool = false,
+        immediatelyActivateMultipleSelection: Bool = false,
+        suggestedPeers: [EnginePeer] = []
     ) {
         self.context = context
         self.forceHideNames = forceHideNames
@@ -111,7 +115,9 @@ public final class PeerSelectionControllerParams {
         self.hasTypeHeaders = hasTypeHeaders
         self.selectForumThreads = selectForumThreads
         self.hasCreation = hasCreation
+        self.immediatelySwitchToContacts = immediatelySwitchToContacts
         self.immediatelyActivateMultipleSelection = immediatelyActivateMultipleSelection
+        self.suggestedPeers = suggestedPeers
     }
 }
 

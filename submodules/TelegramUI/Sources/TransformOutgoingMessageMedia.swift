@@ -170,14 +170,14 @@ public func transformOutgoingMessageMedia(postbox: Postbox, network: Network, me
                             defer {
                                 TempBox.shared.dispose(tempFile)
                             }
-                            // MARK: ExteraGram
+                            // MARK: exteraGram
                             if let fullImage = UIImage(contentsOfFile: data.path), let smallestImage = generateScaledImage(image: fullImage, size: smallestSize, scale: 1.0), let smallestData = compressImageToJPEG(smallestImage, quality: Float(EGSimpleSettings.shared.outgoingPhotoQuality) / 100.0, tempFilePath: tempFile.path) {
                                 var representations = image.representations
                                 
                                 let thumbnailResource = LocalFileMediaResource(fileId: Int64.random(in: Int64.min ... Int64.max))
                                 postbox.mediaBox.storeResourceData(thumbnailResource.id, data: smallestData)
                                 representations.append(TelegramMediaImageRepresentation(dimensions: PixelDimensions(smallestSize), resource: thumbnailResource, progressiveSizes: [], immediateThumbnailData: nil, hasVideo: false, isPersonal: false))
-                                let updatedImage = TelegramMediaImage(imageId: image.imageId, representations: representations, immediateThumbnailData: image.immediateThumbnailData, reference: image.reference, partialReference: image.partialReference, flags: [])
+                                let updatedImage = TelegramMediaImage(imageId: image.imageId, representations: representations, immediateThumbnailData: image.immediateThumbnailData, reference: image.reference, partialReference: image.partialReference, flags: [], video: image.video)
                                 return .single(media.withUpdatedMedia(updatedImage))
                             }
                         }

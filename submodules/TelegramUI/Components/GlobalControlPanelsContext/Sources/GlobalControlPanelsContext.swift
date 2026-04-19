@@ -347,7 +347,7 @@ public final class GlobalControlPanelsContext {
                     let (accountPeer, birthday) = data
                     
 
-                    // MARK: ExteraGram
+                    // MARK: exteraGram
                     if let egSuggestionsData = egSuggestionsData, let dictionary = try? JSONSerialization.jsonObject(with: egSuggestionsData, options: []), let egSuggestions = dictionary as? [[String: Any]], let egSuggestion = egSuggestions.first, let egSuggestionId = egSuggestion["id"] as? String {
                         if let egSuggestionType = egSuggestion["type"] as? String, egSuggestionType == "EG_URL", let egSuggestionTitle = egSuggestion["title"] as? String, let egSuggestionUrl = egSuggestion["url"] as? String {
                             return .single(.egUrl(id: egSuggestionId, title: egSuggestionTitle, text: egSuggestion["text"] as? String, url: egSuggestionUrl, needAuth: egSuggestion["need_auth"] as? Bool ?? false, permanent: egSuggestion["permanent"] as? Bool ?? false))
@@ -412,11 +412,11 @@ public final class GlobalControlPanelsContext {
                     } else if suggestions.contains(.gracePremium) {
                         return .single(.premiumGrace)
                     } else if suggestions.contains(.xmasPremiumGift) {
-                        // MARK: ExteraGram
+                        // MARK: exteraGram
                         if ({ return true }()) { return .single(nil) }
                         return .single(.xmasPremiumGift)
                     } else if suggestions.contains(.annualPremium) || suggestions.contains(.upgradePremium) || suggestions.contains(.restorePremium), let inAppPurchaseManager = context.inAppPurchaseManager {
-                        // MARK: ExteraGram
+                        // MARK: exteraGram
                         if ({ return true }()) { return .single(nil) }
                         return inAppPurchaseManager.availableProducts
                         |> map { products -> ChatListNotice? in

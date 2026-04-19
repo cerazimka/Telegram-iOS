@@ -26,6 +26,6 @@
     "swift.sourcekit-lsp.serverPath": "${workspaceFolder}/build-input/sourcekit-lsp",
 
 
-    /* MARK: ExteraGram */
+    /* MARK: exteraGram */
     "editor.wordWrap": "on"
 }

@@ -363,7 +363,7 @@ final class GiftOptionsScreenComponent: Component {
                         mainController.present(controller, in: .current)
                         return
                     }
-                    if gift.flags.contains(.requiresPremium) && !component.context.isPremium {
+                    if gift.flags.contains(.requiresPremium) && !component.context.isPremium && !((gift.availability?.resale ?? 0) > 0) {
                         let controller = component.context.sharedContext.makePremiumIntroController(context: component.context, source: .premiumGift(gift.file), forceDark: false, dismissed: nil)
                         mainController.push(controller)
                         return
@@ -1381,7 +1381,7 @@ final class GiftOptionsScreenComponent: Component {
             }
             let hasAnyGifts = hasGenericGifts || hasTransferGifts
             
-            if isSelfGift || isChannelGift || isPremiumDisabled || { return true }() /* MARK: ExteraGram */  {
+            if isSelfGift || isChannelGift || isPremiumDisabled || { return true }() /* MARK: exteraGram */  {
                 if !self.premiumItems.isEmpty {
                     for (_, itemView) in self.premiumItems {
                         itemView.view?.removeFromSuperview()

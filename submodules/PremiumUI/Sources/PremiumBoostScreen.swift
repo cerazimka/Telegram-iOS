@@ -235,7 +235,7 @@ public func PremiumBoostScreen(
                                 title: presentationData.strings.ChannelBoost_MoreBoosts_Title,
                                 text: presentationData.strings.ChannelBoost_MoreBoosts_Text(peer.compactDisplayTitle, "\(premiumConfiguration.boostsPerGiftCount)").string,
                                 actions: [
-                                    // MARK: ExteraGram
+                                    // MARK: exteraGram
                                     /*TextAlertAction(type: .defaultAction, title: presentationData.strings.ChannelBoost_MoreBoosts_Gift, action: {
                                         dismissImpl?()
                                         

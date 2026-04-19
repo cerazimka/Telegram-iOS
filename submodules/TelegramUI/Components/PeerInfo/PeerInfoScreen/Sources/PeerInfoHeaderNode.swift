@@ -141,7 +141,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
     let titleExpandedStatusIconView: ComponentHostView<Empty>
     var titleExpandedStatusIconSize: CGSize?
 
-    // ExteraGram badge (animated emoji from the "exteraBadges" sticker pack)
+    // exteraGram badge (animated emoji from the "exteraBadges" sticker pack)
     let titleBadgeIconView: ComponentHostView<Empty>
     var badgeIconSize: CGSize?
     let titleExpandedBadgeIconView: ComponentHostView<Empty>
@@ -260,7 +260,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
         self.titleExpandedStatusIconView = ComponentHostView<Empty>()
         self.titleNode.stateNode(forKey: TitleNodeStateExpanded)?.view.addSubview(self.titleExpandedStatusIconView)
 
-        // ExteraGram badge
+        // exteraGram badge
         self.titleBadgeIconView = ComponentHostView<Empty>()
         self.titleNode.stateNode(forKey: TitleNodeStateRegular)?.view.addSubview(self.titleBadgeIconView)
 
@@ -1151,7 +1151,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             self.titleExpandedVerifiedIconSize = expandedIconSize
         }
 
-        // ExteraGram badge — animated emoji from the "exteraBadges" sticker pack.
+        // exteraGram badge — animated emoji from the "exteraBadges" sticker pack.
         do {
             let egBadgeDocumentId: Int64?
             if let peer = peer {
@@ -1292,7 +1292,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             if title.replacingOccurrences(of: "\u{fe0e}", with: "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 title = "" //"\u{00A0}"
             }
-            // MARK: ExteraGram
+            // MARK: exteraGram
             if title.isEmpty {
                 if let peer = peer as? TelegramUser, let phone = peer.phone, !self.hidePhoneInSettings {
                     title = formatPhoneNumber(context: self.context, number: phone)
@@ -1308,7 +1308,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             smallTitleAttributes = MultiScaleTextState.Attributes(font: Font.medium(28.0), color: .white, shadowColor: titleShadowColor)
             
             if self.isSettings, let user = peer as? TelegramUser {
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 var formattedPhone = formatPhoneNumber(context: self.context, number: user.phone ?? "")
                 if !formattedPhone.isEmpty && self.hidePhoneInSettings {
                     formattedPhone = ""
@@ -1664,7 +1664,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
             }
         }
 
-        // ExteraGram badge positioning
+        // exteraGram badge positioning
         if let badgeIconSize = self.badgeIconSize, let titleExpandedBadgeIconSize = self.titleExpandedBadgeIconSize, badgeIconSize.width > 0.0 {
             let offset = (badgeIconSize.width + 4.0) / 2.0
 
@@ -2444,7 +2444,7 @@ final class PeerInfoHeaderNode: ASDisplayNode {
                 buttonIcon = .message
             case .discussion:
                 buttonText = presentationData.strings.PeerInfo_ButtonDiscuss
-                buttonIcon = .discussion // MARK: ExteraGram
+                buttonIcon = .discussion // MARK: exteraGram
             case .call:
                 buttonText = presentationData.strings.PeerInfo_ButtonCall
                 buttonIcon = .call

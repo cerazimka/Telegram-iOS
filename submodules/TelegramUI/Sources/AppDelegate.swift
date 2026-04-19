@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGAPIToken
 
 import EGActionRequestHandlerSanitizer
@@ -65,7 +65,7 @@ private let handleVoipNotifications = false
 
 private var testIsLaunched = false
 
-// MARK: ExteraGram - Startup diagnostics
+// MARK: exteraGram - Startup diagnostics
 private final class EGStartupDiagnostics {
     static let shared = EGStartupDiagnostics()
     private var milestones: [String] = []
@@ -394,10 +394,10 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         precondition(!testIsLaunched)
         testIsLaunched = true
 
-        // MARK: ExteraGram - crash catcher
+        // MARK: exteraGram - crash catcher
         EGCrashCatcher.install()
 
-        // MARK: ExteraGram - startup diagnostic (writes to clipboard + Documents if stuck > 10s)
+        // MARK: exteraGram - startup diagnostic (writes to clipboard + Documents if stuck > 10s)
         EGStartupDiagnostics.shared.start()
 
         let _ = voipTokenPromise.get().start(next: { token in
@@ -631,82 +631,96 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
         }
         
-        let networkArguments = NetworkInitializationArguments(apiId: apiId, apiHash: apiHash, languagesCategory: languagesCategory, appVersion: appVersion, voipMaxLayer: PresentationCallManagerImpl.voipMaxLayer, voipVersions: PresentationCallManagerImpl.voipVersions(includeExperimental: true, includeReference: false).map { version, supportsVideo -> CallSessionManagerImplementationVersion in
-            CallSessionManagerImplementationVersion(version: version, supportsVideo: supportsVideo)
-        }, appData: self.regularDeviceToken.get()
-        |> map { token in
-            let tokenEnvironment: String
-            #if DEBUG
-            tokenEnvironment = "sandbox"
-            #else
-            tokenEnvironment = "production"
-            #endif
-            
-            let data = buildConfig.bundleData(withAppToken: token, tokenType: "apns", tokenEnvironment: tokenEnvironment, signatureDict: signatureDict)
-            if let data = data, let _ = String(data: data, encoding: .utf8) {
-            } else {
-                Logger.shared.log("data", "can't deserialize")
-            }
-            return data
-        }, externalRequestVerificationStream: self.firebaseRequestVerificationSecretStream.get(), externalRecaptchaRequestVerification: { method, siteKey in
-            return Signal { subscriber in
-                let recaptchaClient: Promise<RecaptchaClient>
-                if let current = self.recaptchaClientsBySiteKey[siteKey] {
-                    recaptchaClient = current
-                } else {
-                    recaptchaClient = Promise<RecaptchaClient>()
-                    self.recaptchaClientsBySiteKey[siteKey] = recaptchaClient
-                    
-                    Recaptcha.fetchClient(withSiteKey: siteKey) { client, error in
-                        Queue.mainQueue().async {
-                            guard let client else {
-                                Logger.shared.log("App \(self.episodeId)", "RecaptchaClient creation error: \(String(describing: error)).")
-                                return
-                            }
-                            recaptchaClient.set(.single(client))
-                        }
-                    }
-                }
+        let networkArguments = NetworkInitializationArguments(
+            apiId: apiId,
+            apiHash: apiHash,
+            languagesCategory: languagesCategory,
+            appVersion: appVersion,
+            voipMaxLayer: PresentationCallManagerImpl.voipMaxLayer,
+            voipVersions: PresentationCallManagerImpl.voipVersions(includeExperimental: true, includeReference: false).map { version, supportsVideo -> CallSessionManagerImplementationVersion in
+                CallSessionManagerImplementationVersion(version: version, supportsVideo: supportsVideo)
+            },
+            appData: self.regularDeviceToken.get() |> map { token in
+                let tokenEnvironment: String
+                #if DEBUG
+                tokenEnvironment = "sandbox"
+                #else
+                tokenEnvironment = "production"
+                #endif
                 
-                return (recaptchaClient.get()
-                |> take(1)
-                |> mapToSignal { recaptchaClient -> Signal<String?, NoError> in
-                    return Signal { subscriber in
-                        var recaptchaAction: RecaptchaAction?
-                        switch method {
-                        case "signup":
-                            recaptchaAction = RecaptchaAction.signup
-                        default:
-                            break
-                        }
+                let data = buildConfig.bundleData(withAppToken: token, tokenType: "apns", tokenEnvironment: tokenEnvironment, signatureDict: signatureDict)
+                if let data = data, let _ = String(data: data, encoding: .utf8) {
+                } else {
+                    Logger.shared.log("data", "can't deserialize")
+                }
+                return data
+            },
+            externalRequestVerificationStream: self.firebaseRequestVerificationSecretStream.get(),
+            externalRecaptchaRequestVerification: { method, siteKey in
+                return Signal<String?, NoError> { subscriber in
+                    let recaptchaClient: Promise<RecaptchaClient>
+                    if let current = self.recaptchaClientsBySiteKey[siteKey] {
+                        recaptchaClient = current
+                    } else {
+                        recaptchaClient = Promise<RecaptchaClient>()
+                        self.recaptchaClientsBySiteKey[siteKey] = recaptchaClient
                         
-                        guard let recaptchaAction else {
-                            subscriber.putNext(nil)
-                            subscriber.putCompletion()
-                            
-                            return EmptyDisposable
-                        }
-                        recaptchaClient.execute(withAction: recaptchaAction) { token, error in
-                            if let token {
-                                subscriber.putNext(token)
-                                Logger.shared.log("App \(self.episodeId)", "RecaptchaClient executed successfully")
-                            } else {
-                                subscriber.putNext(nil)
-                                Logger.shared.log("App \(self.episodeId)", "RecaptchaClient execute error: \(String(describing: error))")
+                        Recaptcha.fetchClient(withSiteKey: siteKey) { client, error in
+                            Queue.mainQueue().async {
+                                guard let client else {
+                                    Logger.shared.log("App \(self.episodeId)", "RecaptchaClient creation error: \(String(describing: error)).")
+                                    return
+                                }
+                                recaptchaClient.set(.single(client))
                             }
-                            subscriber.putCompletion()
-                        }
-                        
-                        return ActionDisposable {
                         }
                     }
-                    |> runOn(Queue.mainQueue())
-                }).startStandalone(next: subscriber.putNext, error: subscriber.putError, completed: subscriber.putCompletion)
-            }
-            |> runOn(Queue.mainQueue())
-        }, autolockDeadine: autolockDeadine, encryptionProvider: OpenSSLEncryptionProvider(), deviceModelName: nil, useBetaFeatures: !buildConfig.isAppStoreBuild, isICloudEnabled: buildConfig.isICloudEnabled)
+                    
+                    return (recaptchaClient.get()
+                    |> take(1)
+                    |> mapToSignal { recaptchaClient -> Signal<String?, NoError> in
+                        return Signal { subscriber in
+                            var recaptchaAction: RecaptchaAction?
+                            switch method {
+                            case "signup":
+                                recaptchaAction = RecaptchaAction.signup
+                            default:
+                                break
+                            }
+                            
+                            guard let recaptchaAction else {
+                                subscriber.putNext(nil)
+                                subscriber.putCompletion()
+                                
+                                return EmptyDisposable
+                            }
+                            recaptchaClient.execute(withAction: recaptchaAction) { token, error in
+                                if let token {
+                                    subscriber.putNext(token)
+                                    Logger.shared.log("App \(self.episodeId)", "RecaptchaClient executed successfully")
+                                } else {
+                                    subscriber.putNext(nil)
+                                    Logger.shared.log("App \(self.episodeId)", "RecaptchaClient execute error: \(String(describing: error))")
+                                }
+                                subscriber.putCompletion()
+                            }
+                            
+                            return ActionDisposable {
+                            }
+                        }
+                        |> runOn(Queue.mainQueue())
+                    }).startStandalone(next: subscriber.putNext, error: subscriber.putError, completed: subscriber.putCompletion)
+                }
+                |> runOn(Queue.mainQueue())
+            },
+            autolockDeadine: autolockDeadine,
+            encryptionProvider: OpenSSLEncryptionProvider(),
+            deviceModelName: nil,
+            useBetaFeatures: !buildConfig.isAppStoreBuild,
+            isICloudEnabled: buildConfig.isICloudEnabled
+        )
         
-        // MARK: ExteraGram — fall back to local Documents when app group isn't provisioned
+        // MARK: exteraGram — fall back to local Documents when app group isn't provisioned
         // (personal certificates via Feather that haven't registered group.app.exteragram.ios)
         let appGroupUrl: URL
         if let url = maybeAppGroupUrl {
@@ -746,7 +760,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             rootPath = rootPathForBasePath(appGroupUrl.path)
         }
         if !isUITest {
-            // MARK: ExteraGram
+            // MARK: exteraGram
             if UserDefaults.standard.bool(forKey: "sg_db_hard_reset") {
                 self.window?.makeKeyAndVisible()
                 egHardReset(dataPath: rootPath, present: self.mainWindow?.presentNative)
@@ -860,7 +874,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         
         self.window?.makeKeyAndVisible()
 
-        // MARK: ExteraGram - show crash report from previous session
+        // MARK: exteraGram - show crash report from previous session
         EGCrashCatcher.checkAndReport(in: self.window)
 
         var hasActiveCalls: Signal<Bool, NoError> = .single(false)
@@ -1025,7 +1039,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 icons.append(PresentationAppIcon(name: "PremiumBlack", imageName: "PremiumBlack", isPremium: true))
                 
                 
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 icons = [
                     PresentationAppIcon(name: "EGDefault", imageName: "EGDefault", isDefault: true),
                     PresentationAppIcon(name: "EGBlack", imageName: "EGBlack"),
@@ -1287,7 +1301,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                 application.endBackgroundTask(id)
             }, backgroundTimeRemaining: { application.backgroundTimeRemaining }, acquireIdleExtension: {
                 return applicationBindings.pushIdleTimerExtension()
-            }, activeAccounts: sharedContext.activeAccountContexts |> map { ($0.0?.account, $0.1.map { ($0.0, $0.1.account) }) }, liveLocationPolling: liveLocationPolling, watchTasks: watchTasks /* MARK: ExteraGram */, inForeground: applicationBindings.applicationInForeground, hasActiveAudioSession: self.hasActiveAudioSession.get(), notificationManager: notificationManager, mediaManager: sharedContext.mediaManager, callManager: sharedContext.callManager, accountUserInterfaceInUse: { id in
+            }, activeAccounts: sharedContext.activeAccountContexts |> map { ($0.0?.account, $0.1.map { ($0.0, $0.1.account) }) }, liveLocationPolling: liveLocationPolling, watchTasks: watchTasks /* MARK: exteraGram */, inForeground: applicationBindings.applicationInForeground, hasActiveAudioSession: self.hasActiveAudioSession.get(), notificationManager: notificationManager, mediaManager: sharedContext.mediaManager, callManager: sharedContext.callManager, accountUserInterfaceInUse: { id in
                 return sharedContext.accountUserInterfaceInUse(id)
             }, presentationData: {
                 return sharedContext.currentPresentationData.with({ $0 })
@@ -1424,7 +1438,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             var network: Network?
             if let context = context {
                 network = context.context.account.network
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 egDBResetIfNeeded(databasePath: context.context.sharedContext.accountManager.basePath + "/db", present: self.mainWindow?.presentNative)
             }
             
@@ -1474,7 +1488,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     
                     self.resetIntentsIfNeeded(context: context.context)
                     
-                    // MARK: ExteraGram
+                    // MARK: exteraGram
                     updateSGWebSettingsInteractivelly(context: context.context)
                     updateSGGHSettingsInteractivelly(context: context.context)
                     let _ = (context.context.sharedContext.presentationData.start(next: { presentationData in
@@ -2133,7 +2147,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
              |> take(1)
              |> deliverOnMainQueue).start(next: { activeAccounts in
                 for (_, context, _) in activeAccounts.accounts {
-                    // MARK: ExteraGram
+                    // MARK: exteraGram
                     if !egTasksLaunched {
                         updateSGWebSettingsInteractivelly(context: context)
                         updateSGGHSettingsInteractivelly(context: context)
@@ -3030,7 +3044,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                         if let threadId {
                             replyToMessageId = MessageId(peerId: peerId, namespace: Namespaces.Message.Cloud, id: Int32(clamping: threadId))
                         }
-                        return enqueueMessages(account: account, peerId: peerId, messages: [EnqueueMessage.message(text: text, attributes: [], inlineStickers: [:], mediaReference: nil, threadId: nil, replyToMessageId: replyToMessageId.flatMap { EngineMessageReplySubject(messageId: $0, quote: nil, todoItemId: nil) }, replyToStoryId: nil, localGroupingKey: nil, correlationId: nil, bubbleUpEmojiOrStickersets: [])])
+                        return enqueueMessages(account: account, peerId: peerId, messages: [EnqueueMessage.message(text: text, attributes: [], inlineStickers: [:], mediaReference: nil, threadId: nil, replyToMessageId: replyToMessageId.flatMap { EngineMessageReplySubject(messageId: $0, quote: nil, innerSubject: nil) }, replyToStoryId: nil, localGroupingKey: nil, correlationId: nil, bubbleUpEmojiOrStickersets: [])])
                         |> map { messageIds -> MessageId? in
                             if messageIds.isEmpty {
                                 return nil
@@ -3471,5 +3485,181 @@ final class UpdateSettings: Codable, Equatable {
     
     static func ==(lhs: UpdateSettings, rhs: UpdateSettings) -> Bool {
         return lhs.url == rhs.url
+    }
+}
+
+// MARK: Swiftgram
+@available(iOS 13.0, *)
+extension AppDelegate {
+
+    func setupIAP() {
+        NotificationCenter.default.addObserver(forName: .SGIAPHelperPurchaseNotification, object: nil, queue: nil) { [weak self] notification in
+            SGLogger.shared.log("SGIAP", "Got SGIAPHelperPurchaseNotification")
+            guard let strongSelf = self else { return }
+            if let transactions = notification.object as? [SKPaymentTransaction] {
+                let _ = (strongSelf.context.get()
+                |> take(1)
+                |> deliverOnMainQueue).start(next: { [weak strongSelf] context in
+                    guard let veryStrongSelf = strongSelf else {
+                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        let defaultPaymentQueue = SKPaymentQueue.default()
+                        for transaction in transactions {
+                            defaultPaymentQueue.finishTransaction(transaction)
+                        }
+                        return
+                    }
+                    guard let context = context else {
+                        SGLogger.shared.log("SGIAP", "Empty app context (how?)")
+                        
+                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        let defaultPaymentQueue = SKPaymentQueue.default()
+                        for transaction in transactions {
+                            defaultPaymentQueue.finishTransaction(transaction)
+                        }
+                        return
+                    }
+                    SGLogger.shared.log("SGIAP", "Got context for SGIAPHelperPurchaseNotification")
+                    let _ = Task {
+                        await veryStrongSelf.sendReceiptForVerification(primaryContext: context.context)
+                        await veryStrongSelf.fetchSGStatus(primaryContext: context.context)
+                        
+                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        let defaultPaymentQueue = SKPaymentQueue.default()
+                        for transaction in transactions {
+                            defaultPaymentQueue.finishTransaction(transaction)
+                        }
+                    }
+                })
+            } else {
+                SGLogger.shared.log("SGIAP", "Wrong object in SGIAPHelperPurchaseNotification")
+                #if DEBUG
+                preconditionFailure("Wrong object in SGIAPHelperPurchaseNotification")
+                #endif
+            }
+        }
+    }
+    
+    func getPrimaryContext(anyContext context: AccountContext, fallbackToCurrent: Bool = false) async -> AccountContext {
+        var primaryUserId: Int64 = Int64(SGSimpleSettings.shared.primaryUserId) ?? 0
+        if primaryUserId == 0 {
+            primaryUserId = context.account.peerId.id._internalGetInt64Value()
+        }
+
+        var primaryContext = try? await getContextForUserId(context: context, userId: primaryUserId).awaitable()
+        if let primaryContext = primaryContext {
+            SGLogger.shared.log("SGIAP", "Got primary context for user id: \(primaryContext.account.peerId.id._internalGetInt64Value())")
+            return primaryContext
+        } else {
+            primaryContext = context
+            let newPrimaryUserId = context.account.peerId.id._internalGetInt64Value()
+            SGLogger.shared.log("SGIAP", "Primary context for user id \(primaryUserId) is nil! Falling back to current context with user id: \(newPrimaryUserId)")
+            return context
+        }
+    }
+    
+    func sendReceiptForVerification(primaryContext: AccountContext) async {
+        guard let receiptData = getPurchaceReceiptData() else {
+            return
+        }
+        
+        let encodedReceiptData = receiptData.base64EncodedData(options: [])
+
+        var deviceToken: String?
+        var apiToken: String?
+        do {
+            async let deviceTokenTask = getDeviceToken().awaitable()
+            async let apiTokenTask = getSGApiToken(context: primaryContext).awaitable()
+            
+            (deviceToken, apiToken) = try await (deviceTokenTask, apiTokenTask)
+        } catch {
+            SGLogger.shared.log("SGIAP", "Error getting device token or API token: \(error)")
+            return
+        }
+
+        if let deviceToken, let apiToken {
+            do {
+                let _ = try await postSGReceipt(token: apiToken,
+                                                deviceToken: deviceToken,
+                                                encodedReceiptData: encodedReceiptData).awaitable()
+            } catch let error as SignalCompleted {
+                let _ = error
+            } catch {
+                SGLogger.shared.log("SGIAP", "Error: \(error)")
+            }
+        }
+    }
+    
+    func fetchSGStatus(primaryContext: AccountContext) async {
+        // TODO(swiftgram): Stuck on getting shouldKeepConnection
+        // Perhaps, we can drop on some timeout?
+//        let currentShouldKeepConnection = await (primaryContext.account.network.shouldKeepConnection.get() |> take(1) |> deliverOnMainQueue).awaitable()
+        guard !primaryContext.account.testingEnvironment else {
+            return
+        }
+        let currentShouldKeepConnection = false
+        let userId = primaryContext.account.peerId.id._internalGetInt64Value()
+//        SGLogger.shared.log("SGIAP", "User id \(userId) currently keeps connection: \(currentShouldKeepConnection)")
+        if !currentShouldKeepConnection {
+            SGLogger.shared.log("SGIAP", "Asking user id \(userId) to keep connection: true")
+            primaryContext.account.network.shouldKeepConnection.set(.single(true))
+        }
+        // MARK: Swiftgram
+        let sgIqtpQueryString = makeIqtpQuery("s")
+        //
+        let iqtpResponse = try? await sgIqtpQuery(engine: primaryContext.engine, query: sgIqtpQueryString).awaitable()
+        guard let iqtpResponse = iqtpResponse else {
+            SGLogger.shared.log("SGIAP", "IQTP response is nil!")
+//            if !currentShouldKeepConnection {
+//                SGLogger.shared.log("SGIAP", "Setting user id \(userId) keep connection back to false")
+//                primaryContext.account.network.shouldKeepConnection.set(.single(false))
+//            }
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
+            }
+            return
+        }
+        SGLogger.shared.log("SGIAP", "Got IQTP response: \(iqtpResponse)")
+        let _ = try? await updateSGStatusInteractively(accountManager: primaryContext.sharedContext.accountManager, { value in
+            var value = value
+
+            let newStatus: Int64
+            if let status = Int64(iqtpResponse.value) {
+                newStatus = status
+            } else {
+                SGLogger.shared.log("SGIAP", "Can't parse IQTP response into status!")
+                newStatus = value.status // unparseable
+            }
+            
+            let userId = primaryContext.account.peerId.id._internalGetInt64Value()
+            if value.status != newStatus {
+                SGLogger.shared.log("SGIAP", "Updating \(userId) status \(value.status) -> \(newStatus)")
+                if newStatus > 1 {
+                    let stringUserId = String(userId)
+                    if SGSimpleSettings.shared.primaryUserId != stringUserId {
+                        SGLogger.shared.log("SGIAP", "Setting new primary user id: \(userId)")
+                        SGSimpleSettings.shared.primaryUserId = stringUserId
+                    }
+                } else {
+                    SGLogger.shared.log("SGIAP", "Status expired")
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.Expired"])
+                    }
+                }
+                value.status = newStatus
+            } else {
+                SGLogger.shared.log("SGIAP", "Status \(value.status) for \(userId) hasn't changed")
+                if newStatus < 2 {
+                    DispatchQueue.main.async {
+                        NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
+                    }
+                }
+            }
+            return value
+        }).awaitable()
+
+//        if !currentShouldKeepConnection {
+//            SGLogger.shared.log("SGIAP", "Setting user id \(userId) keep connection back to false")
+//            primaryContext.account.network.shouldKeepConnection.set(.single(false))
+//        }
     }
 }

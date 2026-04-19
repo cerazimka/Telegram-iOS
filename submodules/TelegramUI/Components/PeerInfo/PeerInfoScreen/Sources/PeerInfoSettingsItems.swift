@@ -81,7 +81,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
         }))
     }
     
-    // MARK: ExteraGram
+    // MARK: exteraGram
     if showProfileId {
         var idText = ""
         
@@ -171,7 +171,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
 //                interaction.openSettings(.addAccount)
 //            }))
         }
-        // MARK: ExteraGram
+        // MARK: exteraGram
         items[.accounts]!.append(PeerInfoScreenActionItem(id: 1000, text: presentationData.strings.Settings_AddAccount, icon: PresentationResourcesItemList.plusIconImage(presentationData.theme), action: {
             interaction.openSettings(.addAccount)
         }))
@@ -199,7 +199,7 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
     }
     
     // let locale = presentationData.strings.baseLanguageCode
-    // MARK: ExteraGram
+    // MARK: exteraGram
     let hasNewSGFeatures = {
         return false
     }
@@ -222,9 +222,12 @@ func settingsItems(showProfileId: Bool, data: PeerInfoScreenData?, context: Acco
                 let fileReference: FileMediaReference = .attachBot(peer: peer, media: icon)
                 iconSignal = instantPageImageFile(account: context.account, userLocation: .other, fileReference: fileReference, fetched: true)
                 |> map { generator -> UIImage? in
-                    let size = CGSize(width: 29.0, height: 29.0)
+                    let size = CGSize(width: 30.0, height: 30.0)
                     let context = generator(TransformImageArguments(corners: ImageCorners(), imageSize: size, boundingSize: size, intrinsicInsets: .zero))
-                    return context?.generateImage()
+                    if let iconImage = context?.generateImage() {
+                        return renderAttachAppIcon(iconImage: iconImage)
+                    }
+                    return nil
                 }
                 let _ = freeMediaFileInteractiveFetched(account: context.account, userLocation: .other, fileReference: fileReference).startStandalone()
             } else {

@@ -223,15 +223,15 @@ extension PeerInfoScreenNode {
                 guard let strongSelf = self else {
                     return
                 }
-                var maximumAvailableAccounts: Int = maximumExteraGramNumberOfAccounts
+                var maximumAvailableAccounts: Int = maximumexteraGramNumberOfAccounts
                 if accountAndPeer?.1.isPremium == true && !strongSelf.context.account.testingEnvironment {
-                    maximumAvailableAccounts = maximumExteraGramNumberOfAccounts
+                    maximumAvailableAccounts = maximumexteraGramNumberOfAccounts
                 }
                 var count: Int = 1
                 for (accountContext, peer, _) in accountsAndPeers {
                     if !accountContext.account.testingEnvironment {
                         if peer.isPremium {
-                            maximumAvailableAccounts = maximumExteraGramNumberOfAccounts
+                            maximumAvailableAccounts = maximumexteraGramNumberOfAccounts
                         }
                         count += 1
                     }
@@ -251,7 +251,7 @@ extension PeerInfoScreenNode {
                         navigationController.pushViewController(controller)
                     }
                 } else {
-                    // MARK: ExteraGram
+                    // MARK: exteraGram
                     if count + 1 > maximumSafeNumberOfAccounts {
                         let presentationData = strongSelf.context.sharedContext.currentPresentationData.with { $0 }
                         let alertController = textAlertController(context: strongSelf.context, updatedPresentationData: strongSelf.controller?.updatedPresentationData, title: presentationData.strings.ChatList_DeleteSavedMessagesConfirmationTitle, text: i18n("Auth.AccountBackupReminder", presentationData.strings.baseLanguageCode), actions: [

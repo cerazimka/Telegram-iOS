@@ -75,7 +75,7 @@ static _ASDisplayViewMethodOverrides GetASDisplayViewMethodOverrides(Class c)
 {
   BOOL _inHitTest;
   BOOL _inPointInside;
-#pragma mark - ExteraGram
+#pragma mark - exteraGram
 #if DEBUG
   NSString *_as_debugAccessibilityLabel;
 #endif
@@ -156,7 +156,7 @@ static _ASDisplayViewMethodOverrides GetASDisplayViewMethodOverrides(Class c)
 
 #pragma mark - UIView Overrides
 
-#pragma mark - ExteraGram
+#pragma mark - exteraGram
 #if DEBUG
 - (NSString *)accessibilityLabel
 {

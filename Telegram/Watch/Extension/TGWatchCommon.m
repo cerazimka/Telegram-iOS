@@ -199,8 +199,8 @@ NSString *TGLocalizedInternal(NSString *s)
     return s;
 }
 
-// MARK: ExteraGram
+// MARK: exteraGram
 NSString *TGLocalized(NSString *s) {
     NSString *result = TGLocalizedInternal(s);
-    return [result stringByReplacingOccurrencesOfString:@"Telegram" withString:@"ExteraGram"];
+    return [result stringByReplacingOccurrencesOfString:@"Telegram" withString:@"exteraGram"];
 }

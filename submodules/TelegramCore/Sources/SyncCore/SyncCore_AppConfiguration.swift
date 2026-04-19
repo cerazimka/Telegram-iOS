@@ -4,7 +4,7 @@ import EGWebSettingsScheme
 import EGGHSettingsScheme
 
 public struct AppConfiguration: Codable, Equatable {
-    // MARK: ExteraGram
+    // MARK: exteraGram
     public var egWebSettings: EGWebSettings
     public var egGHSettings: EGGHSettings
     

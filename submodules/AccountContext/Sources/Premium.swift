@@ -44,6 +44,7 @@ public enum PremiumIntroSource {
     case messageEffects
     case todo
     case copyProtection
+    case aiTools
     case auth(String)
     case premiumGift(TelegramMediaFile)
 }
@@ -85,6 +86,7 @@ public enum PremiumDemoSubject {
     case messageEffects
     case todo
     case copyProtection
+    case aiTools
     
     case businessLocation
     case businessHours
@@ -278,7 +280,7 @@ public struct PremiumConfiguration {
                 isPremiumDisabled: data["premium_purchase_blocked"] as? Bool ?? defaultValue.isPremiumDisabled,
                 areStarsDisabled: data["stars_purchase_blocked"] as? Bool ?? defaultValue.areStarsDisabled,
                 subscriptionManagementUrl: data["premium_manage_subscription_url"] as? String ?? "",
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 showPremiumGiftInAttachMenu: false, // data["premium_gift_attach_menu_icon"] as? Bool ?? defaultValue.showPremiumGiftInAttachMenu,
                 showPremiumGiftInTextField: false, // data["premium_gift_text_field_icon"] as? Bool ?? defaultValue.showPremiumGiftInTextField
                 giveawayGiftsPurchaseAvailable: false, // data["giveaway_gifts_purchase_available"] as? Bool ?? defaultValue.giveawayGiftsPurchaseAvailable

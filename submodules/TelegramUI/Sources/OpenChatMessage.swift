@@ -1,4 +1,6 @@
 import Foundation
+import MediaPlayer
+import AVFAudio
 import EGSimpleSettings
 import Display
 import AsyncDisplayKit
@@ -10,6 +12,7 @@ import Lottie
 import TelegramUIPreferences
 import TelegramPresentationData
 import AccountContext
+import ShareController
 import GalleryUI
 import InstantPageUI
 import LocationUI
@@ -19,7 +22,6 @@ import PeerInfoUI
 import SettingsUI
 import AlertUI
 import PresentationDataUtils
-import ShareController
 import UndoUI
 import WebsiteType
 import GalleryData
@@ -130,7 +132,7 @@ func openChatMessageImpl(_ params: OpenChatMessageParams) -> Bool {
         return true
     }
     
-    if let mediaData = chatMessageGalleryControllerData(context: params.context, chatLocation: params.chatLocation, chatFilterTag: params.chatFilterTag, chatLocationContextHolder: params.chatLocationContextHolder, message: params.message, mediaIndex: params.mediaIndex, navigationController: params.navigationController, standalone: params.standalone, reverseMessageGalleryOrder: params.reverseMessageGalleryOrder, mode: params.mode, source: params.gallerySource, synchronousLoad: false, actionInteraction: params.actionInteraction) {
+    if let mediaData = chatMessageGalleryControllerData(context: params.context, chatLocation: params.chatLocation, chatFilterTag: params.chatFilterTag, chatLocationContextHolder: params.chatLocationContextHolder, message: params.message, mediaSubject: params.mediaSubject, navigationController: params.navigationController, standalone: params.standalone, reverseMessageGalleryOrder: params.reverseMessageGalleryOrder, mode: params.mode, source: params.gallerySource, synchronousLoad: false, actionInteraction: params.actionInteraction) {
         switch mediaData {
             case let .url(url):
                 params.openUrl(url)
@@ -234,7 +236,7 @@ func openChatMessageImpl(_ params: OpenChatMessageParams) -> Bool {
                 params.dismissInput()
                 let presentationData = params.context.sharedContext.currentPresentationData.with { $0 }
                 if immediateShare {
-                    let controller = ShareController(context: params.context, subject: .media(.standalone(media: file), nil), immediateExternalShare: true)
+                    let controller = params.context.sharedContext.makeShareController(context: params.context, params: ShareControllerParams(subject: .media(.standalone(media: file), nil), immediateExternalShare: true))
                     params.present(controller, nil, .window(.root))
                 } else if let rootController = params.navigationController?.view.window?.rootViewController {
                     let proceed = {
@@ -319,6 +321,45 @@ func openChatMessageImpl(_ params: OpenChatMessageParams) -> Bool {
                     playerType = (file.isVoice || file.isInstantVideo) ? .voice : .file
                 }
                 params.context.sharedContext.mediaManager.setPlaylist((params.context, PeerMessagesMediaPlaylist(context: params.context, location: location, chatLocationContextHolder: params.chatLocationContextHolder)), type: playerType, control: control)
+            
+                if case .voice = playerType {
+                    let _ = (params.context.sharedContext.mediaManager.audioSession.didActivateWithZeroVolume() |> map { _ -> Bool in
+                        return true
+                    } |> take(1) |> timeout(1.0, queue: .mainQueue(), alternate: .single(false)) |> deliverOnMainQueue).startStandalone(next: { value in
+                        if value {
+                            let presentationData = params.context.sharedContext.currentPresentationData.with { $0 }
+                            //TODO:localize
+                            let toastController = UndoOverlayController(presentationData: presentationData, content: .info(title: nil, text: "Device is muted.", timeout: 4.0, customUndoText: nil), elevatedLayout: false, animateInAsReplacement: false, action: { _ in
+                                return true
+                            })
+                            params.present(toastController, nil, .current)
+                            let isNotMuted: Signal<Bool, NoError> = Signal { subscriber in
+                                subscriber.putNext(AVAudioSession.sharedInstance().outputVolume > 0.01)
+                                subscriber.putCompletion()
+                                return EmptyDisposable
+                            }
+                            let _ = isNotMuted
+                            
+                            let volumeView = MPVolumeView()
+                            if let slider = volumeView.subviews.first(where: { $0 is UISlider }) as? UISlider {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    let value = AVAudioSession.sharedInstance().outputVolume
+                                    slider.setValue(AVAudioSession.sharedInstance().outputVolume + 0.01, animated: false)
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
+                                        slider.setValue(value, animated: false)
+                                    }
+                                }
+                            }
+                            
+                            let _ = (isNotMuted |> filter({ $0 }) |> delay(0.1, queue: .mainQueue()) |> restart |> take(1) |> timeout(5.0, queue: .mainQueue(), alternate: .single(false)) |> deliverOnMainQueue).startStandalone(next: { [weak toastController] value in
+                                if value {
+                                    toastController?.dismiss()
+                                }
+                            })
+                        }
+                    })
+                }
+            
                 return true
             case let .story(storyController):
                 params.dismissInput()

@@ -13,7 +13,7 @@ import AccountContext
 import AppBundle
 import PromptUI
 import SafariServices
-import ShareController
+
 import UndoUI
 import LottieComponent
 import MultilineTextComponent
@@ -441,26 +441,17 @@ final class BrowserWebContent: UIView, BrowserContent, WKNavigationDelegate, WKU
                         return
                     }
                     var dismissImpl: (() -> Void)?
-                    let controller = AuthConfirmationScreen(context: self.context, requestSubject: subject, subject: result, completion: { [weak self] accountContext, accountPeer, authResult in
+                    let controller = AuthConfirmationScreen(context: self.context, requestSubject: subject, subject: result, completion: { [weak self] accountContext, accountPeer, authResult, disposable in
                         guard let self else {
                             return
                         }
                         switch authResult {
                         case let .accept(allowWriteAccess, sharePhoneNumber, matchCode):
-                            let signal: Signal<MessageActionUrlAuthResult, MessageActionUrlAuthError>
-                            if accountContext === context {
-                                signal = accountContext.engine.messages.acceptMessageActionUrlAuth(subject: subject, allowWriteAccess: allowWriteAccess, sharePhoneNumber: sharePhoneNumber, matchCode: matchCode)
-                            } else {
-                                accountContext.account.shouldBeServiceTaskMaster.set(.single(.now))
-                                signal = accountContext.engine.messages.requestMessageActionUrlAuth(subject: subject)
-                                |> castError(MessageActionUrlAuthError.self)
-                                |> mapToSignal { result in
-                                    return accountContext.engine.messages.acceptMessageActionUrlAuth(subject: subject, allowWriteAccess: allowWriteAccess, sharePhoneNumber: sharePhoneNumber, matchCode: matchCode)
-                                } |> afterDisposed {
-                                    accountContext.account.shouldBeServiceTaskMaster.set(.single(.never))
-                                }
+                            let signal = accountContext.engine.messages.acceptMessageActionUrlAuth(subject: subject, allowWriteAccess: allowWriteAccess, sharePhoneNumber: sharePhoneNumber, matchCode: matchCode)
+                            |> afterDisposed {
+                                disposable.dispose()
                             }
-                            
+                                                        
                             let _ = (signal
                             |> deliverOnMainQueue).start(next: { authResult in
                                 dismissImpl?()
@@ -1589,10 +1580,9 @@ final class BrowserWebContent: UIView, BrowserContent, WKNavigationDelegate, WKU
     
     private func share(url: String) {
         let presentationData = self.context.sharedContext.currentPresentationData.with { $0 }
-        let shareController = ShareController(context: self.context, subject: .url(url))
-        shareController.actionCompleted = { [weak self] in
+        let shareController = self.context.sharedContext.makeShareController(context: self.context, params: ShareControllerParams(subject: .url(url), actionCompleted: { [weak self] in
             self?.present(UndoOverlayController(presentationData: presentationData, content: .linkCopied(title: nil, text: presentationData.strings.Conversation_LinkCopied), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), nil)
-        }
+        }))
         self.present(shareController, nil)
     }
     

@@ -17,6 +17,10 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
     if chatPresentationInterfaceState.isNotAccessible {
         return (nil, nil)
     }
+
+    if chatPresentationInterfaceState.focusedPollAddOptionMessageId != nil {
+        return (nil, nil)
+    }
     
     if case .messageOptions = chatPresentationInterfaceState.subject {
         return (nil, nil)
@@ -349,7 +353,7 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
                 if chatPresentationInterfaceState.interfaceState.editMessage != nil, channel.hasPermission(.editAllMessages) {
                     displayInputTextPanel = true
                 } else if !channel.hasPermission(.sendSomething) || !isMember {
-                    // MARK: ExteraGram
+                    // MARK: exteraGram
                     if isMember && forceHideChannelButton {
                         return (nil, nil)
                     }
@@ -464,6 +468,10 @@ func inputPanelForChatPresentationIntefaceState(_ chatPresentationInterfaceState
                 let panel = ChatTextInputPanelNode(context: context, presentationInterfaceState: chatPresentationInterfaceState, presentationContext: nil, presentController: { [weak interfaceInteraction] controller in
                     interfaceInteraction?.presentController(controller, nil)
                 })
+                if let data = context.currentAppConfiguration.with({ $0 }).data, let value = data["ios_disable_ai_chat"] as? Double, value == 1.0 {
+                } else if let peerId = chatPresentationInterfaceState.chatLocation.peerId, peerId.namespace != Namespaces.Peer.SecretChat {
+                    panel.isAIEnabled = true
+                }
                 panel.textInputAccessoryPanel = textInputAccessoryPanel
                 panel.textInputContextPanel = textInputContextPanel
                 panel.chatControllerInteraction = chatControllerInteraction

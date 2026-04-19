@@ -68,6 +68,24 @@ public final class TelegramGlobalPostSearchState: Codable, Equatable {
     }
 }
 
+public struct TelegramMessageReadMetric {
+    public let id: Int64
+    public let messageId: EngineMessage.Id
+    public let timeInViewMs: Int
+    public let activeTimeInViewMs: Int
+    public let heightToViewportRatio: Double
+    public let seenRangeRatio: Double
+    
+    public init(id: Int64, messageId: EngineMessage.Id, timeInViewMs: Int, activeTimeInViewMs: Int, heightToViewportRatio: Double, seenRangeRatio: Double) {
+        self.id = id
+        self.messageId = messageId
+        self.timeInViewMs = timeInViewMs
+        self.activeTimeInViewMs = activeTimeInViewMs
+        self.heightToViewportRatio = heightToViewportRatio
+        self.seenRangeRatio = seenRangeRatio
+    }
+}
+
 public extension TelegramEngine {
     final class Messages {
         private let account: Account
@@ -246,6 +264,14 @@ public extension TelegramEngine {
             return _internal_requestClosePoll(postbox: self.account.postbox, network: self.account.network, stateManager: self.account.stateManager, messageId: messageId)
         }
 
+        public func addPollOption(messageId: MessageId, text: String, entities: [MessageTextEntity] = [], mediaReference: AnyMediaReference? = nil) -> Signal<Never, AddPollOptionError> {
+            return _internal_addPollOption(account: self.account, messageId: messageId, text: text, entities: entities, mediaReference: mediaReference)
+        }
+        
+        public func deletePollOption(messageId: MessageId, opaqueIdentifier: Data) -> Signal<Never, DeletePollOptionError> {
+            return _internal_deletePollOption(account: self.account, messageId: messageId, opaqueIdentifier: opaqueIdentifier)
+        }
+
         public func pollResults(messageId: MessageId, poll: TelegramMediaPoll) -> PollResultsContext {
             return PollResultsContext(account: self.account, messageId: messageId, poll: poll)
         }
@@ -283,7 +309,23 @@ public extension TelegramEngine {
                     return .single(result)
                 case let .result(messageId):
                     if messageId == nil {
-                        let _ = clearPeerUnseenReactionsInteractively(account: account, peerId: peerId, threadId: threadId).start()
+                        let _ = clearPeerUnseenReactionsAndPollVotesInteractively(account: account, peerId: peerId, threadId: threadId).start()
+                    }
+                    return .single(result)
+                }
+            }
+        }
+        
+        public func earliestUnseenPollVoteMessage(peerId: PeerId, threadId: Int64?) -> Signal<EarliestUnseenPersonalMentionMessageResult, NoError> {
+            let account = self.account
+            return _internal_earliestUnseenPollVoteMessage(account: self.account, peerId: peerId, threadId: threadId)
+            |> mapToSignal { result -> Signal<EarliestUnseenPersonalMentionMessageResult, NoError> in
+                switch result {
+                case .loading:
+                    return .single(result)
+                case let .result(messageId):
+                    if messageId == nil {
+                        let _ = clearPeerUnseenReactionsAndPollVotesInteractively(account: account, peerId: peerId, threadId: threadId).start()
                     }
                     return .single(result)
                 }
@@ -615,13 +657,18 @@ public extension TelegramEngine {
             return egWrappedTranslateMultiple(texts: texts,toLang: toLang, default: _internal_translateTexts(network: self.account.network, texts: texts, toLang: toLang))
         }
 
-        // MARK: ExteraGram
+        // MARK: exteraGram
         public func translateMessagesViaText(messagesDict: [EngineMessage.Id: String], fromLang: String?, toLang: String, generateEntitiesFunction: @escaping (String) -> [MessageTextEntity], enableLocalIfPossible: Bool) -> Signal<Never, TranslationError> {
             return _internal_translateMessagesViaText(account: self.account, messagesDict: messagesDict, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible, generateEntitiesFunction: generateEntitiesFunction)
         }
         
-        public func translateMessages(messageIds: [EngineMessage.Id], fromLang: String?, toLang: String, enableLocalIfPossible: Bool) -> Signal<Never, TranslationError> {
-            return _internal_translateMessages(account: self.account, messageIds: messageIds, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible)
+        public func translateMessages(messageIds: [EngineMessage.Id], fromLang: String?, toLang: String, enableLocalIfPossible: Bool, tone: TranslationTone = .neutral) -> Signal<Never, TranslationError> {
+            return _internal_translateMessages(account: self.account, messageIds: messageIds, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible, tone: tone)
+        }
+
+        // MARK: Swiftgram
+        public func translateMessagesViaText(messagesDict: [EngineMessage.Id: String], fromLang: String?, toLang: String, generateEntitiesFunction: @escaping (String) -> [MessageTextEntity], enableLocalIfPossible: Bool) -> Signal<Never, TranslationError> {
+            return _internal_translateMessagesViaText(account: self.account, messagesDict: messagesDict, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible, generateEntitiesFunction: generateEntitiesFunction)
         }
         
         public func togglePeerMessagesTranslationHidden(peerId: EnginePeer.Id, hidden: Bool) -> Signal<Never, NoError> {
@@ -1426,6 +1473,7 @@ public extension TelegramEngine {
                                     isMy: item.isMy,
                                     myReaction: item.myReaction,
                                     forwardInfo: item.forwardInfo,
+                                    music: item.music,
                                     authorId: item.authorId,
                                     folderIds: item.folderIds
                                 ))
@@ -1441,8 +1489,8 @@ public extension TelegramEngine {
             }
         }
         
-        public func uploadStory(target: Stories.PendingTarget, media: EngineStoryInputMedia, mediaAreas: [MediaArea], text: String, entities: [MessageTextEntity], pin: Bool, privacy: EngineStoryPrivacy, isForwardingDisabled: Bool, period: Int, randomId: Int64, forwardInfo: Stories.PendingForwardInfo?, folders: [Int64], uploadInfo: StoryUploadInfo? = nil) -> Signal<Int32, NoError> {
-            return _internal_uploadStory(account: self.account, target: target, media: media, mediaAreas: mediaAreas, text: text, entities: entities, pin: pin, privacy: privacy, isForwardingDisabled: isForwardingDisabled, period: period, randomId: randomId, forwardInfo: forwardInfo, folders: folders, uploadInfo: uploadInfo)
+        public func uploadStory(target: Stories.PendingTarget, media: EngineStoryInputMedia, mediaAreas: [MediaArea], text: String, entities: [MessageTextEntity], pin: Bool, privacy: EngineStoryPrivacy, isForwardingDisabled: Bool, period: Int, randomId: Int64, forwardInfo: Stories.PendingForwardInfo?, folders: [Int64],  music: TelegramMediaFile?, uploadInfo: StoryUploadInfo? = nil) -> Signal<Int32, NoError> {
+            return _internal_uploadStory(account: self.account, target: target, media: media, mediaAreas: mediaAreas, text: text, entities: entities, pin: pin, privacy: privacy, isForwardingDisabled: isForwardingDisabled, period: period, randomId: randomId, forwardInfo: forwardInfo, folders: folders, music: music, uploadInfo: uploadInfo)
         }
         
         public func beginStoryLivestream(peerId: EnginePeer.Id, rtmp: Bool, privacy: EngineStoryPrivacy, isForwardingDisabled: Bool, messagesEnabled: Bool, sendPaidMessageStars: Int64?) -> Signal<EngineStoryItem?, NoError> {
@@ -1509,7 +1557,7 @@ public extension TelegramEngine {
         }
         
         public func markStoryAsSeen(peerId: EnginePeer.Id, id: Int32, asPinned: Bool) -> Signal<Never, NoError> {
-            // MARK: ExteraGram
+            // MARK: exteraGram
             if EGSimpleSettings.shared.isStealthModeEnabled {
                 return .never()
             }
@@ -1704,6 +1752,77 @@ public extension TelegramEngine {
         public func groupCallMessages(appConfig: AppConfiguration, callId: Int64, reference: InternalGroupCallReference, e2eContext: ConferenceCallE2EContext?, messageLifetime: Int32, isLiveStream: Bool) -> GroupCallMessagesContext {
             return GroupCallMessagesContext(account: self.account, appConfig: appConfig, callId: callId, reference: reference, e2eContext: e2eContext, messageLifetime: messageLifetime, isLiveStream: isLiveStream)
         }
+        
+        public func reportPeerReadMetrics(peerId: EnginePeer.Id, metrics: [TelegramMessageReadMetric]) -> Signal<Never, NoError> {
+            return self.account.postbox.transaction { transaction -> Api.InputPeer? in
+                return transaction.getPeer(peerId).flatMap(apiInputPeer)
+            }
+            |> mapToSignal { inputPeer -> Signal<Never, NoError> in
+                guard let inputPeer else {
+                    return .complete()
+                }
+                return self.account.network.request(Api.functions.messages.reportReadMetrics(
+                    peer: inputPeer,
+                    metrics: metrics.map { metric in
+                        return Api.InputMessageReadMetric.inputMessageReadMetric(Api.InputMessageReadMetric.Cons_inputMessageReadMetric(
+                            msgId: metric.messageId.id,
+                            viewId: metric.id,
+                            timeInViewMs: Int32(metric.timeInViewMs),
+                            activeTimeInViewMs: Int32(metric.activeTimeInViewMs),
+                            heightToViewportRatioPermille: Int32((metric.heightToViewportRatio * 1000.0).rounded()),
+                            seenRangeRatioPermille: Int32((metric.seenRangeRatio * 1000.0).rounded())
+                        ))
+                    }
+                ))
+                |> `catch` { _ -> Signal<Api.Bool, NoError> in
+                    return .single(.boolFalse)
+                }
+                |> ignoreValues
+            }
+        }
+        
+        public func reportMusicListened(file: FileMediaReference, duration: Int) -> Signal<Never, NoError> {
+            guard let resource = file.media.resource as? CloudDocumentMediaResource, let reference = file.resourceReference(file.media.resource) as? TelegramCloudMediaResourceWithFileReference else {
+                return .complete()
+            }
+            return self.account.network.request(Api.functions.messages.reportMusicListen(id: .inputDocument(Api.InputDocument.Cons_inputDocument(
+                id: resource.fileId,
+                accessHash: resource.accessHash,
+                fileReference: Buffer(data: reference.fileReference ?? Data())
+            )), listenedDuration: Int32(clamping: duration)))
+            |> `catch` { _ -> Signal<Api.Bool, NoError> in
+                return .single(.boolFalse)
+            }
+            |> ignoreValues
+        }
+        
+        public func composeAIMessageStyles() -> Signal<[TelegramComposeAIMessageMode.Style], NoError> {
+            return _internal_composeAIMessageStyles(account: self.account)
+        }
+        
+        public func composeAIMessage(text: TextWithEntities, mode: TelegramComposeAIMessageMode) -> Signal<TelegramAIComposeMessageResult, TelegramAIComposeMessageError> {
+            return _internal_composeAIMessage(account: self.account, text: text, mode: mode)
+        }
+        
+        public func requestMiniAppButton(peerId: EnginePeer.Id, requestId: String) -> Signal<ReplyMarkupButton?, NoError> {
+            let account = self.account
+            return self.account.postbox.transaction { transaction -> Api.InputUser? in
+                return transaction.getPeer(peerId).flatMap(apiInputUser)
+            }
+            |> mapToSignal { inputUser -> Signal<ReplyMarkupButton?, NoError> in
+                guard let inputUser else {
+                    return .single(nil)
+                }
+                return account.network.request(Api.functions.bots.getRequestedWebViewButton(bot: inputUser, webappReqId: requestId))
+                |> map { result -> ReplyMarkupButton in
+                    return ReplyMarkupButton(apiButton: result)
+                }
+                |> map(Optional.init)
+                |> `catch` { _ -> Signal<ReplyMarkupButton?, NoError> in
+                    return .single(nil)
+                }
+            }
+        }
     }
 }
 
@@ -1768,7 +1887,7 @@ func _internal_monoforumPerformSuggestedPostAction(account: Account, id: EngineM
 
 
 
-// MARK: ExteraGram
+// MARK: exteraGram
 private func egWrappedTranslateSingle(
     text: String,
     toLang: String,

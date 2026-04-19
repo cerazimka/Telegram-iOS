@@ -533,7 +533,7 @@ public final class ChatListContainerNode: ASDisplayNode, ASGestureRecognizerDele
         
         self.applyItemNodeAsCurrent(id: .all, itemNode: itemNode)
         
-        let panRecognizer = InteractiveTransitionGestureRecognizer(target: self, action: #selector(self.panGesture(_:)), allowedDirections: { [weak self] _ in // MARK: ExteraGram
+        let panRecognizer = InteractiveTransitionGestureRecognizer(target: self, action: #selector(self.panGesture(_:)), allowedDirections: { [weak self] _ in // MARK: exteraGram
             guard let self, self.availableFilters.count > 1 || (self.controller?.isStoryPostingAvailable == true && !(self.context.sharedContext.callManager?.hasActiveCall ?? false) && !EGSimpleSettings.shared.disableSwipeToRecordStory) else {
                 return []
             }
@@ -585,7 +585,7 @@ public final class ChatListContainerNode: ASDisplayNode, ASGestureRecognizerDele
     }
     
     @objc private func panGesture(_ recognizer: UIPanGestureRecognizer) {
-        // MARK: ExteraGram
+        // MARK: exteraGram
         var _availableFilters = self.availableFilters
         if EGSimpleSettings.shared.allChatsHidden {
             _availableFilters.removeAll { $0 == .all }
@@ -1180,7 +1180,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
     var cancelEditing: (() -> Void)?
     var dismissSearch: (() -> Void)?
     
-    let debugListView = ListView()
+    let debugListView = ListViewImpl()
     
     init(context: AccountContext, location: ChatListControllerLocation, previewing: Bool, controlsHistoryPreload: Bool, presentationData: PresentationData, animationCache: AnimationCache, animationRenderer: MultiAnimationRenderer, controller: ChatListControllerImpl) {
         self.context = context
@@ -1476,19 +1476,23 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
             )
         }
         if let mediaPlayback = self.controller?.globalControlPanelsContextState?.mediaPlayback {
-            panels.append(HeaderPanelContainerComponent.Panel(
-                key: "media",
-                orderIndex: 1,
-                component: AnyComponent(MediaPlaybackHeaderPanelComponent(
-                    context: self.context,
-                    theme: self.presentationData.theme,
-                    strings: self.presentationData.strings,
-                    data: mediaPlayback,
-                    controller: { [weak self] in
-                        return self?.controller
-                    }
-                )))
-            )
+            if let playlistLocation = mediaPlayback.playlistLocation as? PeerMessagesPlaylistLocation, case let .custom(_, _, _, _, hidePanel) = playlistLocation, hidePanel {
+                
+            } else {
+                panels.append(HeaderPanelContainerComponent.Panel(
+                    key: "media",
+                    orderIndex: 1,
+                    component: AnyComponent(MediaPlaybackHeaderPanelComponent(
+                        context: self.context,
+                        theme: self.presentationData.theme,
+                        strings: self.presentationData.strings,
+                        data: mediaPlayback,
+                        controller: { [weak self] in
+                            return self?.controller
+                        }
+                    )))
+                )
+            }
         }
         if let liveLocation = self.controller?.globalControlPanelsContextState?.liveLocation {
             panels.append(HeaderPanelContainerComponent.Panel(
@@ -1507,7 +1511,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
         }
         
         var navigationHeaderPanels: AnyComponent<Empty>?
-        var tabs: AnyComponent<Empty>? // MARK: ExteraGram
+        var tabs: AnyComponent<Empty>? // MARK: exteraGram
         if self.controller?.tabContainerData != nil || !panels.isEmpty {
             if let tabContainerData = self.controller?.tabContainerData, tabContainerData.0.count > 1 {
                 let selectedTab: HorizontalTabsComponent.Tab.Id
@@ -1631,7 +1635,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
                 
             navigationHeaderPanels = AnyComponent(HeaderPanelContainerComponent(
                 theme: self.presentationData.theme,
-                tabs: (self.controller?.tabContainerData?.1 ?? false) ? nil : tabs, // MARK: ExteraGram
+                tabs: (self.controller?.tabContainerData?.1 ?? false) ? nil : tabs, // MARK: exteraGram
                 panels: panels
             ))
         }
@@ -1823,7 +1827,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
         
         self.containerLayout = (layout, navigationBarHeight, visualNavigationHeight, cleanNavigationBarHeight, storiesInset)
 
-        // MARK: ExteraGram
+        // MARK: exteraGram
         let egComponentTransition = ComponentTransition(transition)
         let egDisplayTabsAtBottom = self.controller?.tabContainerData?.1 ?? false
         let egShouldDisplayBottomFolders = egDisplayTabsAtBottom && self.isSearchDisplayControllerActive == nil
@@ -1892,7 +1896,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
             })
         }
 
-        // MARK: ExteraGram
+        // MARK: exteraGram
         if egShouldDisplayBottomFolders && egFoldersSize.height > 0.0 {
             insets.bottom += egFoldersSize.height + 16.0 + 8.0
         }
@@ -1961,7 +1965,7 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
             navigationBarComponentView.applyCurrentScroll(transition: ComponentTransition(transition))
         }
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         if let egFoldersView = self.egFoldersView.view as? HeaderPanelContainerComponent.View {
             if egShouldDisplayBottomFolders && egFoldersSize.height > 0.0 {
                 if egFoldersView.superview == nil {
@@ -2010,7 +2014,21 @@ final class ChatListControllerNode: ASDisplayNode, ASGestureRecognizerDelegate {
             //filter.insert(.excludeRecent)
         }
         
-        let contentNode = ChatListSearchContainerNode(context: self.context, animationCache: self.animationCache, animationRenderer: self.animationRenderer, filter: filter, requestPeerType: nil, location: effectiveLocation, displaySearchFilters: displaySearchFilters, hasDownloads: hasDownloads, initialFilter: initialFilter, openPeer: { [weak self] peer, _, threadId, dismissSearch in
+        var folder: (Int32, String)?
+        if let folders = self.controller?.tabContainerData?.0 {
+            switch self.effectiveContainerNode.currentItemFilter {
+            case .all:
+                break
+            case let .filter(id):
+                if let value = folders.first(where: { $0.id == .filter(id) }) {
+                    if case let .filter(_, text, _) = value {
+                        folder = (id, text.text)
+                    }
+                }
+            }
+        }
+        
+        let contentNode = ChatListSearchContainerNode(context: self.context, animationCache: self.animationCache, animationRenderer: self.animationRenderer, filter: filter, requestPeerType: nil, location: effectiveLocation, folder: folder, displaySearchFilters: displaySearchFilters, hasDownloads: hasDownloads, initialFilter: initialFilter, openPeer: { [weak self] peer, _, threadId, dismissSearch in
             self?.requestOpenPeerFromSearch?(peer, threadId, dismissSearch)
         }, openDisabledPeer: { _, _, _ in
         }, openRecentPeerOptions: { [weak self] peer in

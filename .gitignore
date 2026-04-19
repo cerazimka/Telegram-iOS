@@ -1,7 +1,7 @@
 submodules/**/.build/*
 exteragram-scripts
-ExteraGram/Playground/custom_bazel_path.bzl
-ExteraGram/Playground/codesigning
+exteraGram/Playground/custom_bazel_path.bzl
+exteraGram/Playground/codesigning
 buildServer.json
 
 fastlane/README.md

@@ -55,7 +55,7 @@ public final class ChatMessageWebpageBubbleContentNode: ChatMessageBubbleContent
                         return
                     } else {
                         if content.embedUrl == nil && (content.title != nil || content.text != nil) && content.story == nil {
-                            // MARK: ExteraGram
+                            // MARK: exteraGram
                             var shouldOpenUrl = false
                             if let file = content.file {
                                 if file.isVideo {
@@ -158,6 +158,11 @@ public final class ChatMessageWebpageBubbleContentNode: ChatMessageBubbleContent
         }
         self.contentNode.defaultContentAction = { [weak self] in
             guard let self, let item = self.item, let webPage = self.webPage, case let .Loaded(content) = webPage.content else {
+                return ChatMessageBubbleContentTapAction(content: .none)
+            }
+            
+            let incoming = item.message.effectivelyIncoming(item.context.account.peerId)
+            if incoming && item.associatedData.isSuspiciousPeer {
                 return ChatMessageBubbleContentTapAction(content: .none)
             }
             
@@ -514,6 +519,10 @@ public final class ChatMessageWebpageBubbleContentNode: ChatMessageBubbleContent
                                 actionTitle = hasEnded ? item.presentationData.strings.Chat_Auction_ViewResults : item.presentationData.strings.Chat_Auction_Join
                                 actionIcon = !hasEnded ? .bid : nil
                             }
+                        case "telegram_channel_direct":
+                            actionTitle = item.presentationData.strings.Chat_ContactChannel
+                        case "telegram_newbot":
+                            actionTitle = item.presentationData.strings.Chat_CreateBotLink
                         default:
                             break
                     }

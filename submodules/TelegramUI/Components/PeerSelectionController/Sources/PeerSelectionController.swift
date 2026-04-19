@@ -26,6 +26,7 @@ public final class PeerSelectionControllerImpl: ViewController, PeerSelectionCon
     private let filter: ChatListNodePeersFilter
     private let forumPeerId: (id: EnginePeer.Id, isMonoforum: Bool)?
     private let selectForumThreads: Bool
+    private let suggestedPeers: [EnginePeer]
     
     private let attemptSelection: ((EnginePeer, Int64?, ChatListDisabledPeerReason) -> Void)?
     private let createNewGroup: (() -> Void)?
@@ -69,6 +70,7 @@ public final class PeerSelectionControllerImpl: ViewController, PeerSelectionCon
     private let requestPeerType: [ReplyMarkupButtonRequestPeerType]?
     let multipleSelectionLimit: Int32?
     private let hasCreation: Bool
+    let immediatelySwitchToContacts: Bool
     let immediatelyActivateMultipleSelection: Bool
     
     override public var _presentedInModal: Bool {
@@ -112,8 +114,10 @@ public final class PeerSelectionControllerImpl: ViewController, PeerSelectionCon
         self.selectForumThreads = params.selectForumThreads
         self.requestPeerType = params.requestPeerType
         self.hasCreation = params.hasCreation
+        self.immediatelySwitchToContacts = params.immediatelySwitchToContacts
         self.immediatelyActivateMultipleSelection = params.immediatelyActivateMultipleSelection
         self.multipleSelectionLimit = params.multipleSelectionLimit
+        self.suggestedPeers = params.suggestedPeers
         
         super.init(navigationBarPresentationData: NavigationBarPresentationData(presentationData: self.presentationData, style: .glass))
         
@@ -136,6 +140,8 @@ public final class PeerSelectionControllerImpl: ViewController, PeerSelectionCon
                     self.customTitle = self.presentationData.strings.RequestPeer_ChooseGroupTitle
                 case .channel:
                     self.customTitle = self.presentationData.strings.RequestPeer_ChooseChannelTitle
+                case .createBot:
+                    break
                 }
             } else {
                 self.customTitle = self.presentationData.strings.ChatImport_Title

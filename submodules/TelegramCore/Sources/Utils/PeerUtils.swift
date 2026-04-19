@@ -29,7 +29,7 @@ public extension Peer {
             break
         }
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         let chatId = self.id.id._internalGetInt64Value()
         if contentSettings.appConfiguration.egWebSettings.global.forceReasons.contains(chatId) {
             return "Unavailable in exteraGram due to App Store Guidelines"
@@ -310,7 +310,7 @@ public extension Peer {
     }
     
     var nameColor: PeerColor? {
-        if EGSimpleSettings.shared.accountColorsSaturation == 0 { // MARK: ExteraGram
+        if EGSimpleSettings.shared.accountColorsSaturation == 0 { // MARK: exteraGram
             return nil
         }
         switch self {

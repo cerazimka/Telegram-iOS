@@ -14,7 +14,7 @@ import StickerPackPreviewUI
 import ItemListStickerPackItem
 import ItemListPeerActionItem
 import UndoUI
-import ShareController
+
 import WebPBinding
 import ReactionImageComponent
 import FeaturedStickersScreen
@@ -403,7 +403,7 @@ private indirect enum InstalledStickerPacksEntry: ItemListNodeEntry {
                     arguments.toggleLargeEmoji(value)
                 }, tag: InstalledStickerPacksEntryTag.largeEmoji)
             case let .trending(theme, text, count):
-                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: UIImage(bundleImageName: "Settings/Menu/Trending")?.precomposed(), title: text, label: count == 0 ? "" : "\(count)", labelStyle: .badge(theme.list.itemAccentColor), sectionId: self.section, style: .blocks, action: {
+                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.trendingSticker, title: text, label: count == 0 ? "" : "\(count)", labelStyle: .badge(theme.list.itemAccentColor), sectionId: self.section, style: .blocks, action: {
                     arguments.openFeatured()
                 })
             case let .masks(_, text):
@@ -411,15 +411,15 @@ private indirect enum InstalledStickerPacksEntry: ItemListNodeEntry {
                     arguments.openMasks()
                 })
             case let .emoji(_, text, count):
-                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: UIImage(bundleImageName: "Settings/Menu/Emoji")?.precomposed(), title: text, label: count == 0 ? "" : "\(count)", sectionId: self.section, style: .blocks, action: {
+                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.emoji, title: text, label: count == 0 ? "" : "\(count)", sectionId: self.section, style: .blocks, action: {
                     arguments.openEmoji()
                 })
             case let .quickReaction(title, reaction, availableReactions):
-                return ItemListReactionItem(context: arguments.context, presentationData: presentationData, systemStyle: .glass, icon: UIImage(bundleImageName: "Settings/Menu/Reactions")?.precomposed(), title: title, arrowStyle: .arrow, reaction: reaction, availableReactions: availableReactions, sectionId: self.section, style: .blocks, action: {
+                return ItemListReactionItem(context: arguments.context, presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.reactions, title: title, arrowStyle: .arrow, reaction: reaction, availableReactions: availableReactions, sectionId: self.section, style: .blocks, action: {
                     arguments.openQuickReaction()
                 })
             case let .archived(_, text, count, archived):
-                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: UIImage(bundleImageName: "Settings/Menu/Archived")?.precomposed(), title: text, label: count == 0 ? "" : "\(count)", sectionId: self.section, style: .blocks, action: {
+                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.archivedSticker, title: text, label: count == 0 ? "" : "\(count)", sectionId: self.section, style: .blocks, action: {
                     arguments.openArchived(archived)
                 })
             case let .packOrder(_, text, value):
@@ -1063,7 +1063,7 @@ public func installedStickerPacksController(context: AccountContext, mode: Insta
                         }
                     }
                     let text = packNames.map { "https://t.me/addstickers/\($0)" }.joined(separator: "\n")
-                    let shareController = ShareController(context: context, subject: .text(text), externalShare: true)
+                    let shareController = context.sharedContext.makeShareController(context: context, params: ShareControllerParams(subject: .text(text), externalShare: true))
                     presentControllerImpl?(shareController, nil)
                 })])
             } else {

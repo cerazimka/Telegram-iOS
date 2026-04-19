@@ -1,14 +1,14 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//ExteraGram/EGStrings:EGStrings",
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//ExteraGram/EGBadges:EGBadges",
+    "//exteraGram/EGStrings:EGStrings",
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/EGBadges:EGBadges",
     "//submodules/TranslateUI:TranslateUI"
 ]
 
 egsrc = [
-    "//ExteraGram/EGDoubleTapMessageAction:EGDoubleTapMessageAction"
+    "//exteraGram/EGDoubleTapMessageAction:EGDoubleTapMessageAction"
 ]
 
 swift_library(

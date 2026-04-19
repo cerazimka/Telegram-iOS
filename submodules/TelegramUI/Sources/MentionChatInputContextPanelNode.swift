@@ -80,7 +80,7 @@ final class MentionChatInputContextPanelNode: ChatInputContextPanelNode {
         self.backgroundView = GlassBackgroundView()
         self.backgroundView.layer.anchorPoint = CGPoint()
         
-        self.listView = ListView()
+        self.listView = ListViewImpl()
         self.listView.isOpaque = false
         self.listView.stackFromBottom = true
         self.listView.limitHitTestToNodes = true
@@ -163,7 +163,7 @@ final class MentionChatInputContextPanelNode: ChatInputContextPanelNode {
                                 let inputText = NSMutableAttributedString(attributedString: textInputState.inputText)
                                 
                                 if let addressName = peer.addressName, !addressName.isEmpty {
-                                    // MARK: ExteraGram
+                                    // MARK: exteraGram
                                     let replacementText = addressName + (mentionNext ? " @" : " ")
                                     
                                     inputText.replaceCharacters(in: range, with: replacementText)
@@ -174,7 +174,7 @@ final class MentionChatInputContextPanelNode: ChatInputContextPanelNode {
                                 } else if !peer.compactDisplayTitle.isEmpty {
                                     let replacementText = NSMutableAttributedString()
                                     replacementText.append(NSAttributedString(string: peer.compactDisplayTitle, attributes: [ChatTextInputAttributes.textMention: ChatTextInputTextMentionAttribute(peerId: peer.id)]))
-                                    // MARK: ExteraGram
+                                    // MARK: exteraGram
                                     replacementText.append(NSAttributedString(string: mentionNext ? " @" : " "))
                                     
                                     let updatedRange = NSRange(location: range.location - 1, length: range.length + 1)

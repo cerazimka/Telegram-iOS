@@ -1,17 +1,17 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//ExteraGram/SwiftSoup:SwiftSoup",
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//ExteraGram/EGTranslationLangFix:EGTranslationLangFix",
-    "//ExteraGram/EGWebSettingsScheme:EGWebSettingsScheme",
-    "//ExteraGram/EGGHSettingsScheme:EGGHSettingsScheme",
-    "//ExteraGram/EGConfig:EGConfig",
-    "//ExteraGram/EGLogging:EGLogging",
+    "//exteraGram/SwiftSoup:SwiftSoup",
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/EGTranslationLangFix:EGTranslationLangFix",
+    "//exteraGram/EGWebSettingsScheme:EGWebSettingsScheme",
+    "//exteraGram/EGGHSettingsScheme:EGGHSettingsScheme",
+    "//exteraGram/EGConfig:EGConfig",
+    "//exteraGram/EGLogging:EGLogging",
 ]
 
 egsrc = [
-    "//ExteraGram/EGIQTP:EGIQTP",
+    "//exteraGram/EGIQTP:EGIQTP",
 ]
 
 swift_library(

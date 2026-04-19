@@ -2160,10 +2160,10 @@ private func privacySearchableItems(context: AccountContext, privacySettings: Ac
         present(.push, dataPrivacyController(context: context, focusOnItemTag: itemTag))
     }
     
-    let presentBlockUser: (AccountContext, (SettingsSearchableItemPresentation, ViewController?) -> Void) -> Void = { context, present in
+    let presentBlockUser: (AccountContext, (SettingsSearchableItemPresentation, ViewController?) -> Void, Bool) -> Void = { context, present, switchToContacts in
         let blockedPeersContext = BlockedPeersContext(account: context.account, subject: .blocked)
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
-        let controller = context.sharedContext.makePeerSelectionController(PeerSelectionControllerParams(context: context, filter: [.onlyPrivateChats, .excludeSavedMessages, .removeSearchHeader, .excludeRecent, .doNotSearchMessages], title: presentationData.strings.BlockedUsers_SelectUserTitle))
+        let controller = context.sharedContext.makePeerSelectionController(PeerSelectionControllerParams(context: context, filter: [.onlyPrivateChats, .excludeSavedMessages, .removeSearchHeader, .excludeRecent, .doNotSearchMessages], title: presentationData.strings.BlockedUsers_SelectUserTitle, immediatelySwitchToContacts: switchToContacts))
         controller.peerSelected = { [weak controller] peer, _ in
             let peerId = peer.id
             
@@ -2242,7 +2242,7 @@ private func privacySearchableItems(context: AccountContext, privacySettings: Ac
             breadcrumbs: [strings.Settings_PrivacySettings, strings.Settings_BlockedUsers],
             isVisible: false,
             present: { context, _, present in
-                presentBlockUser(context, present)
+                presentBlockUser(context, present, false)
             }
         )
     )
@@ -2253,7 +2253,7 @@ private func privacySearchableItems(context: AccountContext, privacySettings: Ac
             breadcrumbs: [strings.Settings_PrivacySettings, strings.Settings_BlockedUsers],
             isVisible: false,
             present: { context, _, present in
-                presentBlockUser(context, present)
+                presentBlockUser(context, present, false)
             }
         )
     )
@@ -2264,7 +2264,7 @@ private func privacySearchableItems(context: AccountContext, privacySettings: Ac
             breadcrumbs: [strings.Settings_PrivacySettings, strings.Settings_BlockedUsers],
             isVisible: false,
             present: { context, _, present in
-                presentBlockUser(context, present)
+                presentBlockUser(context, present, true)
             }
         )
     )
@@ -3329,7 +3329,7 @@ private func dataSearchableItems(context: AccountContext) -> [SettingsSearchable
             }
         ),
         SettingsSearchableItem(
-            id: "data/max-cache",
+            id: "data/storage/max-cache",
             icon: icon,
             breadcrumbs: [strings.Settings_ChatSettings, strings.ChatSettings_Cache],
             isVisible: false,
@@ -3988,7 +3988,7 @@ private func appearanceSearchableItems(context: AccountContext) -> [SettingsSear
             icon: icon,
             breadcrumbs: [strings.Settings_Appearance, strings.Themes_Title],
             present: { context, _, present in
-                let controller = themePickerController(context: context)
+                let controller = themePickerController(context: context, focusOnItemTag: .edit)
                 present(.push, controller)
             }
         ),
@@ -4312,7 +4312,7 @@ func settingsSearchableItems(
     webSessionsContext: Signal<WebSessionsContext?, NoError> = .single(nil)
 ) -> Signal<[SettingsSearchableItem], NoError> {
 
-    // MARK: ExteraGram
+    // MARK: exteraGram
     let watchAppInstalled = (context.watchManager?.watchAppInstalled ?? .single(false))
     |> take(1)
     //
@@ -4401,7 +4401,7 @@ func settingsSearchableItems(
     }
     
     return combineLatest(
-        watchAppInstalled, // MARK: ExteraGram
+        watchAppInstalled, // MARK: exteraGram
         canAddAccount,
         localizations,
         notificationSettings,
@@ -4416,7 +4416,7 @@ func settingsSearchableItems(
     )
     |> deliverOnMainQueue
     |> map {
-        watchAppInstalled, // MARK: ExteraGram
+        watchAppInstalled, // MARK: exteraGram
         canAddAccount,
         localizations,
         notificationSettings,
@@ -4485,7 +4485,7 @@ func settingsSearchableItems(
         
         let storiesItems = myProfileSearchableItems(context: context)
         allItems.append(contentsOf: storiesItems)
-        // MARK: ExteraGram
+        // MARK: exteraGram
         if watchAppInstalled {
             let watch = SettingsSearchableItem(id: "watch", title: strings.Settings_AppleWatch, alternate: synonyms(strings.SettingsSearch_Synonyms_Watch), icon: .watch, breadcrumbs: [], present: { context, _, present in
                 present(.push, watchSettingsController(context: context))
@@ -4621,6 +4621,7 @@ func searchSettingsItems(items: [SettingsSearchableItem], query: String) -> [Set
 }
 
 public func handleSettingsPathUrl(context: AccountContext, path: String, navigationController: NavigationController) {
+    var notificationExceptionsList: Signal<NotificationExceptionsList?, NoError> = .single(nil)
     var activeSessionsContext: Signal<ActiveSessionsContext?, NoError> = .single(nil)
     var webSessionsContext: Signal<WebSessionsContext?, NoError> = .single(nil)
     
@@ -4628,10 +4629,18 @@ public func handleSettingsPathUrl(context: AccountContext, path: String, navigat
         activeSessionsContext = .single(context.engine.privacy.activeSessions())
     } else if path.hasPrefix("privacy/active-websites") {
         webSessionsContext = .single(context.engine.privacy.webSessions())
+    } else if path.hasPrefix("notifications") {
+        if let rootController = context.sharedContext.mainWindow?.viewController as? TelegramRootControllerInterface, let current = rootController.getNotificationExceptions() {
+            notificationExceptionsList = current.get()
+        } else {
+            notificationExceptionsList = context.engine.peers.notificationExceptionsList()
+            |> map(Optional.init)
+        }
     }
 
     let _ = (settingsSearchableItems(
         context: context,
+        notificationExceptionsList: notificationExceptionsList,
         activeSessionsContext: activeSessionsContext,
         webSessionsContext: webSessionsContext
     )

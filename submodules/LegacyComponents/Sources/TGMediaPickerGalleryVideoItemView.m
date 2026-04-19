@@ -517,7 +517,7 @@
             strongSelf->_sendAsTelescope = baseAdjustments.sendAsTelescope;
             [strongSelf _mutePlayer:baseAdjustments.sendAsGif];
             
-            if (baseAdjustments.sendAsGif || ([strongSelf itemIsLivePhoto]))
+            if (baseAdjustments.sendAsGif)
                 [strongSelf setPlayButtonHidden:true animated:false];
             
             [strongSelf->_entitiesView setupWithEntitiesData:adjustments.paintingData.entitiesData];
@@ -1579,7 +1579,7 @@
                 [parentView addSubview:_tooltipContainerView];
                 
                 NSMutableArray *actions = [[NSMutableArray alloc] init];
-                NSString *text = [self itemIsLivePhoto] ? TGLocalized(@"MediaPicker.LivePhotoDescription") : TGLocalized(@"MediaPicker.VideoMuteDescription");
+                NSString *text = TGLocalized(@"MediaPicker.VideoMuteDescription");
                 [actions addObject:@{@"title":text}];
                 _tooltipContainerView.menuView.forceArrowOnTop = false;
                 _tooltipContainerView.menuView.multiline = true;
@@ -1635,7 +1635,7 @@
                 // Define the URL
                 NSURL *url = [NSURL URLWithString:@"sg://resolve?domain=TelescopyBot&start=sgconvertdemo"];
                 // Create UIAlertController
-                UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Convert in @TelescopyBot" message:@"by ExteraGram" preferredStyle:UIAlertControllerStyleAlert];
+                UIAlertController *alertController = [UIAlertController alertControllerWithTitle:@"Convert in @TelescopyBot" message:@"by exteraGram" preferredStyle:UIAlertControllerStyleAlert];
                 // Add an OK action with a handler to open the URL and then dismiss the parent view controller
                 UIAlertAction *okAction = [UIAlertAction actionWithTitle:TGLocalized(@"WebApp.OpenBot") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
                     // Check if the URL can be opened

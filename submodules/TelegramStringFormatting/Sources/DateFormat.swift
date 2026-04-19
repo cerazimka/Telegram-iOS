@@ -157,7 +157,7 @@ public func roundDateToDays(_ timestamp: Int32) -> Int32 {
 
 
 
-// MARK: ExteraGram
+// MARK: exteraGram
 public func stringForDateWithoutDay(date: Date, timeZone: TimeZone? = TimeZone(secondsFromGMT: 0), strings: PresentationStrings) -> String {
     let formatter = DateFormatter()
     formatter.timeStyle = .none

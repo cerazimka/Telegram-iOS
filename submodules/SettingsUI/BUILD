@@ -2,12 +2,12 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
     "//submodules/BuildConfig:BuildConfig",
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//ExteraGram/EGStrings:EGStrings"
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/EGStrings:EGStrings"
 ]
 
 egsrc = [
-    "//ExteraGram/EGRecentSessionApiId:EGRecentSessionApiId",
+    "//exteraGram/EGRecentSessionApiId:EGRecentSessionApiId",
 ]
 
 swift_library(

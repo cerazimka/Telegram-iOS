@@ -33,7 +33,7 @@ public class PeerNameColors: Equatable {
         private let _main: UIColor
         private let _secondary: UIColor?
         private let _tertiary: UIColor?
-        // MARK: ExteraGram
+        // MARK: exteraGram
         public var main: UIColor {
             let currentSaturation = EGSimpleSettings.shared.accountColorsSaturation
             if currentSaturation == 0 {
@@ -391,7 +391,7 @@ public extension PeerCollectibleColor {
     }
 }
 
-// MARK: ExteraGram
+// MARK: exteraGram
 extension UIColor {
     func withReducedSaturation(_ factor: CGFloat) -> UIColor {
         var hue: CGFloat = 0

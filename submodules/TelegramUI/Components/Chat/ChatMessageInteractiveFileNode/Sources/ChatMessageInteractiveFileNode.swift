@@ -362,7 +362,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
         let premiumConfiguration = PremiumConfiguration.with(appConfiguration: arguments.context.currentAppConfiguration.with { $0 })
         
         let transcriptionText = self.forcedAudioTranscriptionText ?? transcribedText(message: message)
-        // MARK: ExteraGram
+        // MARK: exteraGram
         if transcriptionText == nil && false {
             if premiumConfiguration.audioTransciptionTrialCount > 0 {
                 if !arguments.associatedData.isPremium {
@@ -775,7 +775,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                     displayTranscribe = false
                 } else if arguments.message.id.peerId.namespace != Namespaces.Peer.SecretChat && !isViewOnceMessage && !arguments.presentationData.isPreview {
                     let premiumConfiguration = PremiumConfiguration.with(appConfiguration: arguments.context.currentAppConfiguration.with { $0 })
-                    // MARK: ExteraGram
+                    // MARK: exteraGram
                     if arguments.associatedData.isPremium || true {
                         displayTranscribe = true
                     } else if premiumConfiguration.audioTransciptionTrialCount > 0 {
@@ -807,7 +807,7 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                 }
                 
                 let currentTime = Int32(Date().timeIntervalSince1970)
-                if transcribedText == nil, let cooldownUntilTime = arguments.associatedData.audioTranscriptionTrial.cooldownUntilTime, cooldownUntilTime > currentTime, { return false }() /* MARK: ExteraGram */ {
+                if transcribedText == nil, let cooldownUntilTime = arguments.associatedData.audioTranscriptionTrial.cooldownUntilTime, cooldownUntilTime > currentTime, { return false }() /* MARK: exteraGram */ {
                     updatedAudioTranscriptionState = .locked
                 }
                 
@@ -2053,17 +2053,17 @@ public final class ChatMessageInteractiveFileNode: ASDisplayNode {
                     knobColor = item.presentationData.theme.theme.chat.message.outgoing.textSelectionKnobColor
                 }
                 
-                let textSelectionNode = TextSelectionNode(theme: TextSelectionTheme(selection: selectionColor, knob: knobColor, isDark: item.presentationData.theme.theme.overallDarkAppearance), strings: item.presentationData.strings, textNode: self.textNode, updateIsActive: { [weak self] value in
+                let textSelectionNode = TextSelectionNode(theme: TextSelectionTheme(selection: selectionColor, knob: knobColor, isDark: item.presentationData.theme.theme.overallDarkAppearance), strings: item.presentationData.strings, textNodeOrView: .node(self.textNode), updateIsActive: { [weak self] value in
                     self?.updateIsTextSelectionActive?(value)
                 }, present: { [weak self] c, a in
                     self?.arguments?.controllerInteraction.presentGlobalOverlayController(c, a)
-                }, rootNode: { [weak rootNode] in
-                    return rootNode
+                }, rootView: { [weak rootNode] in
+                    return rootNode?.view
                 }, performAction: { [weak self] text, action in
                     guard let strongSelf = self, let item = strongSelf.arguments else {
                         return
                     }
-                    item.controllerInteraction.performTextSelectionAction(item.message, true, text, action)
+                    item.controllerInteraction.performTextSelectionAction(item.message, true, text, nil, action)
                 })
                 textSelectionNode.enableQuote = false
                 self.textSelectionNode = textSelectionNode

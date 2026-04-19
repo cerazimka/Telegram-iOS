@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGSimpleSettings
 import Foundation
 import UIKit

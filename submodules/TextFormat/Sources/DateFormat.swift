@@ -141,7 +141,7 @@ public func stringForMessageTimestamp(timestamp: Int32, dateTimeFormat: Presenta
         gmtime_r(&t, &timeinfo)
     }
     var withSeconds = withSeconds
-    // MARK: ExteraGram
+    // MARK: exteraGram
     if EGSimpleSettings.shared.secondsInMessages { withSeconds = true }
     //
     return stringForShortTimestamp(hours: timeinfo.tm_hour, minutes: timeinfo.tm_min, seconds: withSeconds ? timeinfo.tm_sec : nil, dateTimeFormat: dateTimeFormat)

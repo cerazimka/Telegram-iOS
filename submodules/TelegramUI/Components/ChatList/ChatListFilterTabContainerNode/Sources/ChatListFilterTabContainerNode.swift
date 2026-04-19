@@ -335,7 +335,7 @@ private final class ItemNode: ASDisplayNode {
     }
     
     func updateLayout(height: CGFloat, transition: ContainedViewLayoutTransition) -> (width: CGFloat, shortWidth: CGFloat) {
-        // MARK: ExteraGram
+        // MARK: exteraGram
         var height = height
         if EGSimpleSettings.shared.hideTabBar {
             height = 46.0
@@ -386,7 +386,7 @@ private final class ItemNode: ASDisplayNode {
     }
     
     func updateArea(size: CGSize, sideInset: CGFloat, useShortTitle: Bool, transition: ContainedViewLayoutTransition) {
-        // MARK: ExteraGram
+        // MARK: exteraGram
         var size = size
         if EGSimpleSettings.shared.hideTabBar {
             size.height = 46.0
@@ -545,7 +545,7 @@ public final class ChatListFilterTabContainerNode: ASDisplayNode {
         }
     }
     
-    // MARK: ExteraGram
+    // MARK: exteraGram
     public let inline: Bool
     private var backgroundNode: NavigationBackgroundNode? = nil
     
@@ -562,7 +562,7 @@ public final class ChatListFilterTabContainerNode: ASDisplayNode {
         self.selectedBackgroundNode.displaysAsynchronously = false
         self.selectedBackgroundNode.displayWithoutProcessing = true
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         self.inline = inline
         if self.inline {
             let presentationData = context.sharedContext.currentPresentationData.with { $0 }

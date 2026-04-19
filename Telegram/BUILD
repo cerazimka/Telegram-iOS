@@ -17,7 +17,7 @@ load(
     "ios_test_runner",
 )
 
-# MARK: ExteraGram
+# MARK: exteraGram
 load("@build_bazel_rules_apple//apple:watchos.bzl",
     "watchos_application",
     "watchos_extension",
@@ -147,14 +147,14 @@ genrule(
         "GeneratedPresentationStrings/Sources/PresentationStrings.m",
         "GeneratedPresentationStrings/Resources/PresentationStrings.data",
     ],
-    # MARK: ExteraGram
+    # MARK: exteraGram
     visibility = [
         "//visibility:public",
     ],
 )
 
 minimum_os_version = "13.0"
-minimum_watchos_version="7.0" # MARK: ExteraGram
+minimum_watchos_version="7.0" # MARK: exteraGram
 
 notificationServiceExtensionVersion = "v1"
 
@@ -263,20 +263,20 @@ filegroup(
     name = "AppStringResources",
     srcs = [
         "Telegram-iOS/en.lproj/Localizable.strings",
-        "//ExteraGram/EGStrings:EGLocalizableStrings",
+        "//exteraGram/EGStrings:EGLocalizableStrings",
     ] + [
         "{}.lproj/Localizable.strings".format(language) for language in empty_languages
     ],
-    # MARK: ExteraGram
+    # MARK: exteraGram
     visibility = ["//visibility:public",],
 )
 
-# MARK: ExteraGram
+# MARK: exteraGram
 filegroup(
     name = "WatchAppStringResources",
     srcs = glob([
         "Telegram-iOS/*.lproj/Localizable.strings",
-    ], exclude = ["Telegram-iOS/*.lproj/**/.*"]) + ["//ExteraGram/EGStrings:EGLocalizableStrings"],
+    ], exclude = ["Telegram-iOS/*.lproj/**/.*"]) + ["//exteraGram/EGStrings:EGLocalizableStrings"],
 )
 
 filegroup(
@@ -307,7 +307,7 @@ filegroup(
     ], exclude = ["Telegram-iOS/DefaultAppIcon.xcassets/**/.*"]),
 )
 
-# MARK: ExteraGram alternative icons
+# MARK: exteraGram alternative icons
 alternate_icon_folders = [
     "EGDefault",
     "EGBlack",
@@ -328,7 +328,7 @@ alternate_icon_folders = [
     "EGDay"
 ]
 
-composer_icon_folders = ["ExteraGram"]
+composer_icon_folders = ["exteraGram"]
 
 [
     filegroup(
@@ -363,7 +363,7 @@ objc_library(
     ],
 )
 
-EGRESOURCES = ["//ExteraGram/EGSettingsUI:EGUIAssets", "//ExteraGram/EGPayWall:EGPayWallAssets", "//ExteraGram/EGAppBadgeAssets:EGAppBadgeAssets", "//ExteraGram/EGNY:EGNYAssets"]
+EGRESOURCES = ["//exteraGram/EGSettingsUI:EGUIAssets", "//exteraGram/EGPayWall:EGPayWallAssets", "//exteraGram/EGAppBadgeAssets:EGAppBadgeAssets", "//exteraGram/EGNY:EGNYAssets"]
 
 swift_library(
     name = "Lib",
@@ -401,7 +401,8 @@ plist_fragment(
     """
     <key>CFBundleVersion</key>
     <string>{buildNumber}</string>
-    """
+    """,
+    defaults = {"buildNumber": "1"},
 )
 
 plist_fragment(
@@ -500,7 +501,7 @@ official_carplay_fragment = """
 <key>com.apple.developer.carplay-messaging</key>
 <true/>
 """
-carplay_fragment = official_carplay_fragment if telegram_bundle_id in official_bundle_ids else ""
+carplay_fragment = official_carplay_fragment # MARK: Swiftgram if telegram_bundle_id in official_bundle_ids else ""
 
 icloud_fragment = "" if not telegram_enable_icloud else """
 <key>com.apple.developer.icloud-services</key>
@@ -513,7 +514,7 @@ icloud_fragment = "" if not telegram_enable_icloud else """
     <string>iCloud.{telegram_bundle_id}</string>
 </array>
 <key>com.apple.developer.ubiquity-kvstore-identifier</key>
-<string>{telegram_team_id}.*</string>
+<string>{telegram_team_id}.{telegram_bundle_id}</string>
 <key>com.apple.developer.icloud-container-environment</key>
 <string>{telegram_icloud_environment}</string>
 """.format(
@@ -561,7 +562,7 @@ official_communication_notifications_fragment = """
 <key>com.apple.developer.usernotifications.communication</key>
 <true/>
 """
-communication_notifications_fragment = official_communication_notifications_fragment if telegram_bundle_id in official_bundle_ids else ""
+communication_notifications_fragment = official_communication_notifications_fragment # if telegram_bundle_id in official_bundle_ids else ""
 
 official_notification_filtering_fragment = """
 <key>com.apple.developer.usernotifications.filtering</key>
@@ -602,7 +603,7 @@ plist_fragment(
     ])
 )
 
-# MARK: ExteraGram
+# MARK: exteraGram
 filegroup(
     name = "TelegramWatchExtensionResources",
     srcs = glob([
@@ -658,16 +659,24 @@ objc_library(
         "CoreGraphics",
     ],
 )
-#
 
-plist_fragment(
+genrule(
     name = "VersionInfoPlist",
-    extension = "plist",
-    template =
-    """
+    srcs = ["//:versions.json"],
+    outs = ["VersionInfoPlist.plist"],
+    cmd = """
+        version=$$(python3 -c "import json; print(json.load(open('$(location //:versions.json)'))['app'])")
+        cat > $@ <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
     <key>CFBundleShortVersionString</key>
-    <string>{telegramVersion}</string>
-    """
+    <string>$$version</string>
+</dict>
+</plist>
+PLIST
+    """,
 )
 
 plist_fragment(
@@ -692,7 +701,7 @@ plist_fragment(
     """
 )
 
-# MARK: ExteraGram
+# MARK: exteraGram
 plist_fragment(
     name = "WatchAppCompanionInfoPlist",
     extension = "plist",
@@ -1003,7 +1012,7 @@ genrule(
     cmd_bash =
 """
     echo 'for f in $$1/*.framework; do binary_name=`echo $$(basename $$f) | sed -e "s/\\\\.framework//"`; strip -ST $$f/$$binary_name; done;' > $(location StripFramework.sh)
-    # MARK: ExteraGram
+    # MARK: exteraGram
     echo 'find "$$1" -type f \\( -perm +111 -o -name "*.dylib" \\) | while read -r bin; do \
         if otool -L "$$bin" | grep -q "/usr/lib/swift/libswift_Concurrency.dylib"; then \
             echo "Patching concurrency backport in: $$bin"; \
@@ -1539,7 +1548,7 @@ ios_extension(
     ],
 )
 
-# MARK: ExteraGram
+# MARK: exteraGram
 # TODO(exteragram): Localize CFBundleDisplayName
 plist_fragment(
     name = "EGActionRequestHandlerInfoPlist",
@@ -2064,8 +2073,8 @@ ios_application(
     strings = [
         ":AppStringResources",
     ],
-    # MARK: ExteraGram
-    settings_bundle = "//ExteraGram/EGSettingsBundle:EGSettingsBundle",
+    # MARK: exteraGram
+    settings_bundle = "//exteraGram/EGSettingsBundle:EGSettingsBundle",
     extensions = select({
         ":disableExtensionsSetting": [],
         "//conditions:default": [
@@ -2078,7 +2087,7 @@ ios_application(
             ":BroadcastUploadExtension",
         ],
     }),
-    watch_application = ":TelegramWatchApp", # MARK: ExteraGram
+    watch_application = ":TelegramWatchApp", # MARK: exteraGram
     deps = [
         ":Main",
         ":Lib",
@@ -2129,7 +2138,7 @@ swift_library(
 ios_ui_test_suite(
     name = "iOSAppUITestSuite",
     bundle_id = "org.telegram.Telegram-iOS-uitests",
-    minimum_os_version = "13.0",
+    minimum_os_version = minimum_os_version,
     runners = [
         ":iPhone-17__26.2",
     ],

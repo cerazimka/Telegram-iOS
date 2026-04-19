@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGSimpleSettings
 
 import Foundation
@@ -393,7 +393,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     strongSelf.chatListDisplayNode.willScrollToTop()
                     strongSelf.chatListDisplayNode.effectiveContainerNode.currentItemNode.scrollToPosition(.top(adjustForTempInset: false))
                 case let .known(offset):
-                    // MARK: ExteraGram
+                    // MARK: exteraGram
                     let egAllChatsHiddden = EGSimpleSettings.shared.allChatsHidden
                     var mainContainerNode_availableFilters = strongSelf.chatListDisplayNode.mainContainerNode.availableFilters
                     if egAllChatsHiddden {
@@ -404,7 +404,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                     if offset <= ChatListNavigationBar.searchScrollHeight + 1.0 && strongSelf.chatListDisplayNode.inlineStackContainerNode != nil {
                         strongSelf.setInlineChatList(location: nil)
                     } else if offset <= ChatListNavigationBar.searchScrollHeight + 1.0 && !isFirstFilter {
-                        // MARK: ExteraGram
+                        // MARK: exteraGram
                         var effectiveContainerNode_availableFilters = strongSelf.chatListDisplayNode.mainContainerNode.availableFilters
                         if egAllChatsHiddden {
                             effectiveContainerNode_availableFilters.removeAll { $0 == .all }
@@ -746,7 +746,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 if let navigationBarView = strongSelf.chatListDisplayNode.navigationBarView.view as? ChatListNavigationBar.View, let headerPanelsView = navigationBarView.headerPanels as? HeaderPanelContainerComponent.View, let tabsView = headerPanelsView.tabs as? HorizontalTabsComponent.View {
                     tabsView.updateTabSwitchFraction(fraction: fraction, isDragging: strongSelf.chatListDisplayNode.mainContainerNode.isSwitchingCurrentItemFilterByDragging, transition: ComponentTransition(transition))
                 }
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 let switchingToFilterId: Int32
                 switch (filter) {
                     case let .filter(filterId):
@@ -1819,7 +1819,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         self.chatListDisplayNode.requestAddContact = { [weak self] phoneNumber in
             if let strongSelf = self {
                 strongSelf.view.endEditing(true)
-                strongSelf.context.sharedContext.openAddContact(context: strongSelf.context, firstName: "", lastName: "", phoneNumber: phoneNumber, label: defaultContactLabel, present: { [weak self] controller, arguments in
+                strongSelf.context.sharedContext.openAddContact(context: strongSelf.context, peer: nil, firstName: "", lastName: "", phoneNumber: phoneNumber, label: defaultContactLabel, present: { [weak self] controller, arguments in
                     self?.present(controller, in: .window(.root), with: arguments)
                 }, pushController: { [weak self] controller in
                     (self?.navigationController as? NavigationController)?.pushViewController(controller)
@@ -2144,7 +2144,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
             if self.previewing {
                 self.storiesReady.set(.single(true))
             } else {
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 let hideStoriesSignal = egSimpleSettingsBoolSignal(.hideStories, defaultValue: false)
                 
                 self.storySubscriptionsDisposable = (combineLatest(self.context.engine.messages.storySubscriptions(isHidden: self.location == .chatList(groupId: .archive)), hideStoriesSignal)
@@ -3962,7 +3962,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         let filterItems = chatListFilterItems(context: self.context)
         var notifiedFirstUpdate = false
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         let experimentalUISettingsKey: ValueBoxKey = ApplicationSpecificSharedDataKeys.experimentalUISettings
         let displayTabsAtBottomSignal = self.context.sharedContext.accountManager.sharedData(keys: Set([experimentalUISettingsKey]))
         |> map { sharedData -> Bool in
@@ -4022,7 +4022,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                 case let .filter(id, _, _, _):
                     firstItemEntryId = .filter(id)
             }
-            // MARK: ExteraGram
+            // MARK: exteraGram
             if !strongSelf.initializedFilters && EGSimpleSettings.shared.rememberLastFolder {
                 if let lastFolder = EGSimpleSettings.shared.lastAccountFolders["\(strongSelf.context.account.peerId.id._internalGetInt64Value())"]{
                     firstItemEntryId = lastFolder == -1 ? .all : .filter(lastFolder)
@@ -5313,7 +5313,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
                                     return
                                 }
                                 var canEditRank = false
-                                if let channel = peer as? TelegramChannel, channel.hasPermission(.editRank) {
+                                if let channel = peer as? TelegramChannel, case .group = channel.info, channel.hasPermission(.editRank) {
                                     canEditRank = true
                                 } else if let group = peer as? TelegramGroup, !group.hasBannedPermission(.banEditRank) {
                                     canEditRank = true
@@ -6772,7 +6772,7 @@ private final class ChatListLocationContext {
             return lhs == rhs
         })
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         let hideStoriesSignal = egSimpleSettingsBoolSignal(.hideStories, defaultValue: false)
         
         let passcode = context.sharedContext.accountManager.accessChallengeData()
@@ -7224,7 +7224,7 @@ private final class ChatListLocationContext {
                     self.storyButton = nil
                 }
                 
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 if EGSimpleSettings.shared.hideTabBar {
                     self.settingsButton = AnyComponentWithIdentity(id: "settings", component: AnyComponent(NavigationButtonComponent(
                         content: .more,
@@ -7272,9 +7272,6 @@ private final class ChatListLocationContext {
                 titleContent = NetworkStatusTitle(text: presentationData.strings.State_WaitingForNetwork, activity: true, hasProxy: false, connectsViaProxy: connectsViaProxy, isPasscodeSet: isRoot && isPasscodeSet, isManuallyLocked: isRoot && isManuallyLocked, peerStatus: peerStatus)
             case let .connecting(proxy):
                 let text = presentationData.strings.State_Connecting
-                /*if let layout = strongSelf.validLayout, proxy != nil && layout.metrics.widthClass != .regular && layout.size.width > 320.0 {*/
-                    //text = self.presentationData.strings.State_ConnectingToProxy
-                //}
                 if let proxy = proxy, proxy.hasConnectionIssues {
                     checkProxy = true
                 }
@@ -7488,7 +7485,7 @@ private final class AdsInfoContextReferenceContentSource: ContextReferenceConten
     }
 }
 
-// MARK: ExteraGram
+// MARK: exteraGram
 extension ChatListControllerImpl {
 
     @objc fileprivate func settingsPressed() {

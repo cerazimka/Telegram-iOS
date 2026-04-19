@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egDeps = [
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//ExteraGram/EGInputToolbar:EGInputToolbar"
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/EGInputToolbar:EGInputToolbar"
 ]
 
 

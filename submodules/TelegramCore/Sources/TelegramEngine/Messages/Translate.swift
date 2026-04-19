@@ -20,9 +20,11 @@ public enum TranslationError {
     case tryAlternative
 }
 
-func _internal_translate(network: Network, text: String, toLang: String, entities: [MessageTextEntity] = []) -> Signal<(String, [MessageTextEntity])?, TranslationError> {
-    var flags: Int32 = 0
-    flags |= (1 << 1)
+public enum TranslationTone: String {
+    case neutral
+    case casual
+    case formal
+}
 
     return network.request(Api.functions.messages.translateText(flags: flags, peer: nil, id: nil, text: [.textWithEntities(.init(text: text, entities: apiEntitiesFromMessageTextEntities(entities, associatedPeers: SimpleDictionary())))], toLang: egTranslationLangFix(toLang)))
     |> mapError { error -> TranslationError in
@@ -56,16 +58,62 @@ func _internal_translate(network: Network, text: String, toLang: String, entitie
     }
 }
 
-func _internal_translateTexts(network: Network, texts: [(String, [MessageTextEntity])], toLang: String) -> Signal<[(String, [MessageTextEntity])], TranslationError> {
+func _internal_composeMessageWithAI(network: Network, text: String, entities: [MessageTextEntity], proofread: Bool = false, translateToLang: String? = nil, changeTone: String? = nil, emojify: Bool = false) -> Signal<(String, [MessageTextEntity]), TranslationError> {
+    var flags: Int32 = 0
+    if proofread {
+        flags |= (1 << 0)
+    }
+    if translateToLang != nil {
+        flags |= (1 << 1)
+    }
+    if changeTone != nil {
+        flags |= (1 << 2)
+    }
+    if emojify {
+        flags |= (1 << 3)
+    }
+
+    let apiText: Api.TextWithEntities = .textWithEntities(.init(text: text, entities: apiEntitiesFromMessageTextEntities(entities, associatedPeers: SimpleDictionary())))
+
+    return network.request(Api.functions.messages.composeMessageWithAI(flags: flags, text: apiText, translateToLang: translateToLang, changeTone: changeTone))
+    |> mapError { error -> TranslationError in
+        if error.errorDescription.hasPrefix("FLOOD_WAIT") {
+            return .limitExceeded
+        } else if error.errorDescription == "INPUT_TEXT_EMPTY" {
+            return .textIsEmpty
+        } else if error.errorDescription == "INPUT_TEXT_TOO_LONG" {
+            return .textTooLong
+        } else if error.errorDescription.hasPrefix("AICOMPOSE_FLOOD_PREMIUM ") {
+            return .limitExceeded
+        } else {
+            return .generic
+        }
+    }
+    |> map { result -> (String, [MessageTextEntity]) in
+        switch result {
+        case let .composedMessageWithAI(data):
+            switch data.resultText {
+            case let .textWithEntities(textData):
+                return (textData.text, messageTextEntitiesFromApiEntities(textData.entities))
+            }
+        }
+    }
+}
+
+func _internal_translateTexts(network: Network, texts: [(String, [MessageTextEntity])], toLang: String, tone: TranslationTone = .neutral) -> Signal<[(String, [MessageTextEntity])], TranslationError> {
     var flags: Int32 = 0
     flags |= (1 << 1)
+    
+    if tone != .neutral {
+        flags |= (1 << 2)
+    }
     
     var apiTexts: [Api.TextWithEntities] = []
     for text in texts {
         apiTexts.append(.textWithEntities(.init(text: text.0, entities: apiEntitiesFromMessageTextEntities(text.1, associatedPeers: SimpleDictionary()))))
     }
 
-    return network.request(Api.functions.messages.translateText(flags: flags, peer: nil, id: nil, text: apiTexts, toLang: toLang))
+    return network.request(Api.functions.messages.translateText(flags: flags, peer: nil, id: nil, text: apiTexts, toLang: toLang, tone: tone.rawValue))
     |> mapError { error -> TranslationError in
         if error.errorDescription.hasPrefix("FLOOD_WAIT") {
             return .limitExceeded
@@ -97,10 +145,10 @@ func _internal_translateTexts(network: Network, texts: [(String, [MessageTextEnt
     }
 }
 
-func _internal_translateMessages(account: Account, messageIds: [EngineMessage.Id], fromLang: String?, toLang: String, enableLocalIfPossible: Bool) -> Signal<Never, TranslationError> {
+func _internal_translateMessages(account: Account, messageIds: [EngineMessage.Id], fromLang: String?, toLang: String, enableLocalIfPossible: Bool, tone: TranslationTone = .neutral) -> Signal<Never, TranslationError> {
     var signals: [Signal<Void, TranslationError>] = []
     for (peerId, messageIds) in messagesIdsGroupedByPeerId(messageIds) {
-        signals.append(_internal_translateMessagesByPeerId(account: account, peerId: peerId, messageIds: messageIds, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible))
+        signals.append(_internal_translateMessagesByPeerId(account: account, peerId: peerId, messageIds: messageIds, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible, tone: tone))
     }
     return combineLatest(signals)
     |> ignoreValues
@@ -112,7 +160,7 @@ public protocol ExperimentalInternalTranslationService: AnyObject {
 
 public var engineExperimentalInternalTranslationService: ExperimentalInternalTranslationService?
 
-private func _internal_translateMessagesByPeerId(account: Account, peerId: EnginePeer.Id, messageIds: [EngineMessage.Id], fromLang: String?, toLang: String, enableLocalIfPossible: Bool) -> Signal<Void, TranslationError> {
+private func _internal_translateMessagesByPeerId(account: Account, peerId: EnginePeer.Id, messageIds: [EngineMessage.Id], fromLang: String?, toLang: String, enableLocalIfPossible: Bool, tone: TranslationTone = .neutral) -> Signal<Void, TranslationError> {
     return account.postbox.transaction { transaction -> (Api.InputPeer?, [Message]) in
         return (transaction.getPeer(peerId).flatMap(apiInputPeer), messageIds.compactMap({ transaction.getMessage($0) }))
     }
@@ -154,9 +202,12 @@ private func _internal_translateMessagesByPeerId(account: Account, peerId: Engin
         
         var flags: Int32 = 0
         flags |= (1 << 0)
-        
+        if tone != .neutral {
+            flags |= (1 << 2)
+        }
+
         let id: [Int32] = messageIds.map { $0.id }
-        
+
         let msgs: Signal<Api.messages.TranslatedText?, TranslationError>
         if id.isEmpty {
             msgs = .single(nil)

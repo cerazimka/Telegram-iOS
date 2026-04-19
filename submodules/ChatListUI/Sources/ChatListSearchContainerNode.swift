@@ -27,7 +27,6 @@ import AppBundle
 import GalleryData
 import InstantPageUI
 import ChatInterfaceState
-import ShareController
 import UndoUI
 import TextFormat
 import Postbox
@@ -44,6 +43,7 @@ import ComponentDisplayAdapters
 
 private enum ChatListTokenId: Int32 {
     case archive
+    case folder
     case forum
     case filter
     case peer
@@ -103,6 +103,7 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
     private let peersFilter: ChatListNodePeersFilter
     private let requestPeerType: [ReplyMarkupButtonRequestPeerType]?
     private var location: ChatListControllerLocation
+    private var folder: (Int32, String)?
     private let displaySearchFilters: Bool
     private let hasDownloads: Bool
     private var interaction: ChatListSearchInteraction?
@@ -166,7 +167,7 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
     private var recentAppsDisposable: Disposable?
     private var refreshedGlobalPostSearchStateDisposable: Disposable?
     
-    public init(context: AccountContext, animationCache: AnimationCache, animationRenderer: MultiAnimationRenderer, updatedPresentationData: (initial: PresentationData, signal: Signal<PresentationData, NoError>)? = nil, filter: ChatListNodePeersFilter, requestPeerType: [ReplyMarkupButtonRequestPeerType]?, location: ChatListControllerLocation, displaySearchFilters: Bool, hasDownloads: Bool, initialFilter: ChatListSearchFilter = .chats, openPeer originalOpenPeer: @escaping (EnginePeer, EnginePeer?, Int64?, Bool) -> Void, openDisabledPeer: @escaping (EnginePeer, Int64?, ChatListDisabledPeerReason) -> Void, openRecentPeerOptions: @escaping (EnginePeer) -> Void, openMessage originalOpenMessage: @escaping (EnginePeer, Int64?, EngineMessage.Id, Bool) -> Void, addContact: ((String) -> Void)?, peerContextAction: ((EnginePeer, ChatListSearchContextActionSource, ASDisplayNode, ContextGesture?, CGPoint?) -> Void)?, present: @escaping (ViewController, Any?) -> Void, presentInGlobalOverlay: @escaping (ViewController, Any?) -> Void, navigationController: NavigationController?, parentController: @escaping () -> ViewController?) {
+    public init(context: AccountContext, animationCache: AnimationCache, animationRenderer: MultiAnimationRenderer, updatedPresentationData: (initial: PresentationData, signal: Signal<PresentationData, NoError>)? = nil, filter: ChatListNodePeersFilter, requestPeerType: [ReplyMarkupButtonRequestPeerType]?, location: ChatListControllerLocation, folder: (Int32, String)?, displaySearchFilters: Bool, hasDownloads: Bool, initialFilter: ChatListSearchFilter = .chats, openPeer originalOpenPeer: @escaping (EnginePeer, EnginePeer?, Int64?, Bool) -> Void, openDisabledPeer: @escaping (EnginePeer, Int64?, ChatListDisabledPeerReason) -> Void, openRecentPeerOptions: @escaping (EnginePeer) -> Void, openMessage originalOpenMessage: @escaping (EnginePeer, Int64?, EngineMessage.Id, Bool) -> Void, addContact: ((String) -> Void)?, peerContextAction: ((EnginePeer, ChatListSearchContextActionSource, ASDisplayNode, ContextGesture?, CGPoint?) -> Void)?, present: @escaping (ViewController, Any?) -> Void, presentInGlobalOverlay: @escaping (ViewController, Any?) -> Void, navigationController: NavigationController?, parentController: @escaping () -> ViewController?) {
         var initialFilter = initialFilter
         if case .chats = initialFilter, case .forum = location {
             initialFilter = .topics
@@ -176,6 +177,9 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
         self.peersFilter = filter
         self.requestPeerType = requestPeerType
         self.location = location
+        
+        self.folder = folder
+        
         self.displaySearchFilters = displaySearchFilters
         self.hasDownloads = hasDownloads
         self.navigationController = navigationController
@@ -195,6 +199,11 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
         self.paneContainerNode.clipsToBounds = true
         
         super.init()
+        
+        if let folder {
+            self.searchOptionsValue = self.currentSearchOptions.withUpdatedFolder(folder)
+            self.searchOptions.set(.single(self.currentSearchOptions))
+        }
                 
         self.backgroundColor = filter.contains(.excludeRecent) ? nil : self.presentationData.theme.chatList.backgroundColor
         
@@ -589,7 +598,7 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
     }
     
     private var currentSearchOptions: ChatListSearchOptions {
-        return self.searchOptionsValue ?? ChatListSearchOptions(peer: nil, date: nil)
+        return self.searchOptionsValue ?? ChatListSearchOptions(peer: nil, date: nil, folder: nil)
     }
     
     public override func searchTokensUpdated(tokens: [SearchBarToken]) {
@@ -610,12 +619,19 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
         if !tokensIdSet.contains(ChatListTokenId.peer.rawValue) && updatedOptions?.peer != nil {
              updatedOptions = updatedOptions?.withUpdatedPeer(nil)
         }
+        if !tokensIdSet.contains(ChatListTokenId.folder.rawValue) && updatedOptions?.folder != nil {
+             updatedOptions = updatedOptions?.withUpdatedFolder(nil)
+            self.folder = nil
+        }
         self.updateSearchOptions(updatedOptions)
     }
     
     private func updateSearchOptions(_ options: ChatListSearchOptions?, clearQuery: Bool = false) {
         var options = options
         var tokens: [SearchBarToken] = []
+        if let folder = self.folder {
+            tokens.append(SearchBarToken(id: ChatListTokenId.folder.rawValue, icon: nil, iconOffset: 0.0, peer: nil, title: folder.1, permanent: false))
+        }
         if case .chatList(.archive) = self.location {
             tokens.append(SearchBarToken(id: ChatListTokenId.archive.rawValue, icon: UIImage(bundleImageName: "Chat List/Search/Archive"), iconOffset: -1.0, title: self.presentationData.strings.ChatList_Archive, permanent: false))
         } else if case .forum = self.location, let forumPeer = self.forumPeer {
@@ -738,10 +754,13 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
             key = .chats
         }
         self.paneContainerNode.requestSelectPane(key)
-        self.updateSearchOptions(nil)
+        self.updateSearchOptions(self.currentSearchOptions)
         self.searchTextUpdated(text: query ?? "")
         
         var tokens: [SearchBarToken] = []
+        if let folder = self.folder {
+            tokens.append(SearchBarToken(id: ChatListTokenId.folder.rawValue, icon: nil, iconOffset: 0.0, peer: nil, title: folder.1, permanent: false))
+        }
         if case .chatList(.archive) = self.location {
             tokens.append(SearchBarToken(id: ChatListTokenId.archive.rawValue, icon: UIImage(bundleImageName: "Chat List/Search/Archive"), iconOffset: -1.0, title: self.presentationData.strings.ChatList_Archive, permanent: false))
         } else if case .forum = self.location, let forumPeer = self.forumPeer {
@@ -813,6 +832,8 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
         transition.updateFrame(node: self.filterContainerNode, frame: CGRect(origin: CGPoint(x: layout.safeInsets.left + filtersInsets.left, y: layout.size.height - filtersInsets.bottom - 40.0), size: CGSize(width: layout.size.width - (layout.safeInsets.left + filtersInsets.left) * 2.0, height: 40.0)))
         self.updateFilterContainerNode(layout: layout, transition: transition)
         
+        self.filterContainerNode.isHidden = !self.displaySearchFilters
+        
         if isFirstTime {
             self.filterContainerNode.layer.animateAlpha(from: 0.0, to: 1.0, duration: 0.2)
             self.appearanceTimestamp = CACurrentMediaTime()
@@ -859,9 +880,9 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
                     }
                     |> deliverOnMainQueue).startStandalone(next: { messages in
                         if let strongSelf = self, !messages.isEmpty {
-                            let shareController = ShareController(context: strongSelf.context, subject: .messages(messages.sorted(by: { lhs, rhs in
+                            let shareController = strongSelf.context.sharedContext.makeShareController(context: strongSelf.context, params: ShareControllerParams(subject: .messages(messages.sorted(by: { lhs, rhs in
                                 return lhs.index < rhs.index
-                            }).map({ $0._asMessage() })), externalShare: true, immediateExternalShare: true)
+                            }).map({ $0._asMessage() })), externalShare: true, immediateExternalShare: true))
                             strongSelf.dismissInput()
                             strongSelf.present?(shareController, nil)
                         }
@@ -1326,8 +1347,8 @@ public final class ChatListSearchContainerNode: SearchDisplayControllerContentNo
     }
     
     public override func searchTextClearTokens() {
+        self.folder = nil
         self.updateSearchOptions(nil)
-//        self.setQuery?(nil, [], self.searchQueryValue ?? "")
     }
     
     func deleteMessages(messageIds: Set<EngineMessage.Id>?) {

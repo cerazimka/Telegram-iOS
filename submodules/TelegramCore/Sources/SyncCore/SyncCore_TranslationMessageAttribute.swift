@@ -93,7 +93,7 @@ public class TranslationMessageAttribute: MessageAttribute, Equatable {
 
 
 
-// MARK: ExteraGram
+// MARK: exteraGram
 public class QuickTranslationMessageAttribute: MessageAttribute, Equatable {
     public let originalText: String
     public let originalEntities: [MessageTextEntity]

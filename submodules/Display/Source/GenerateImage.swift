@@ -300,13 +300,13 @@ public func generateSmallHorizontalStretchableFilledCircleImage(diameter: CGFloa
 }
 
 
-// MARK: ExteraGram
+// MARK: exteraGram
 public func generateTintedImage(image: UIImage?, color: UIColor, backgroundColor: UIColor? = nil, customSize: CGSize? = nil) -> UIImage? {
     guard let image = image else {
         return nil
     }
     
-    // MARK: ExteraGram
+    // MARK: exteraGram
     var imageSize = image.size
     if let strongCustomSize = customSize {
         imageSize = strongCustomSize

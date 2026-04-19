@@ -13,7 +13,7 @@ import AlertUI
 import PresentationDataUtils
 import MediaResources
 import WallpaperResources
-import ShareController
+
 import AccountContext
 import ContextUI
 import UndoUI
@@ -110,6 +110,7 @@ public enum ThemeSettingsEntryTag: ItemListItemTag {
     case sendWithCmdEnter
     case tapForNextMedia
     case nightMode
+    case edit
     
     public func isEqual(to other: ItemListItemTag) -> Bool {
         if let other = other as? ThemeSettingsEntryTag, self == other {
@@ -633,6 +634,13 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                     controller?.replace(with: c)
                 }
                 pushControllerImpl?(controller)
+            // MARK: Swiftgram
+            } else if icon.isSGPro && context.sharedContext.immediateSGStatus.status < 2 {
+                if let payWallController = context.sharedContext.makeSGPayWallController(context: context) {
+                    presentControllerImpl?(payWallController, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
+                } else {
+                    presentControllerImpl?(context.sharedContext.makeSGUpdateIOSController(), nil)
+                }
             } else {
                 currentAppIconName.set(icon.name)
                 context.sharedContext.applicationBindings.requestSetAlternateIconName(icon.isDefault ? nil : icon.name, { _ in
@@ -775,11 +783,10 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                 }
                 items.append(.action(ContextMenuActionItem(text: presentationData.strings.Appearance_ShareTheme, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Share"), color: theme.contextMenu.primaryColor) }, action: { c, f in
                     c?.dismiss(completion: {
-                        let shareController = ShareController(context: context, subject: .url("https://t.me/addtheme/\(theme.theme.slug)"), preferredAction: .default)
-                        shareController.actionCompleted = {
+                        let shareController = context.sharedContext.makeShareController(context: context, params: ShareControllerParams(subject: .url("https://t.me/addtheme/\(theme.theme.slug)"), preferredAction: .default, actionCompleted: {
                             let presentationData = context.sharedContext.currentPresentationData.with { $0 }
                             presentControllerImpl?(UndoOverlayController(presentationData: presentationData, content: .linkCopied(title: nil, text: presentationData.strings.Conversation_LinkCopied), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), nil)
-                        }
+                        }))
                         presentControllerImpl?(shareController, nil)
                     })
                 })))
@@ -1026,11 +1033,10 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                     }
                     items.append(.action(ContextMenuActionItem(text: presentationData.strings.Appearance_ShareTheme, icon: { theme in generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Share"), color: theme.contextMenu.primaryColor) }, action: { c, f in
                         c?.dismiss(completion: {
-                            let shareController = ShareController(context: context, subject: .url("https://t.me/addtheme/\(cloudTheme.theme.slug)"), preferredAction: .default)
-                            shareController.actionCompleted = {
+                            let shareController = context.sharedContext.makeShareController(context: context, params: ShareControllerParams(subject: .url("https://t.me/addtheme/\(cloudTheme.theme.slug)"), preferredAction: .default, actionCompleted: {
                                 let presentationData = context.sharedContext.currentPresentationData.with { $0 }
                                 presentControllerImpl?(UndoOverlayController(presentationData: presentationData, content: .linkCopied(title: nil, text: presentationData.strings.Conversation_LinkCopied), elevatedLayout: false, animateInAsReplacement: false, action: { _ in return false }), nil)
-                            }
+                            }))
                             presentControllerImpl?(shareController, nil)
                         })
                     })))
@@ -1100,7 +1106,8 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             ApplicationSpecificSharedDataKeys.presentationThemeSettings,
             ApplicationSpecificSharedDataKeys.chatSettings,
             ApplicationSpecificSharedDataKeys.mediaDisplaySettings,
-            SharedDataKeys.chatThemes
+            SharedDataKeys.chatThemes,
+            ApplicationSpecificSharedDataKeys.sgStatus // MARK: Swiftgram
         ]),
         cloudThemes.get(),
         availableAppIcons,

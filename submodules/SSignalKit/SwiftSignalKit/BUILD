@@ -1,7 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egsrc = [
-    "//ExteraGram/EGSwiftSignalKit:EGSwiftSignalKit"
+    "//exteraGram/EGSwiftSignalKit:EGSwiftSignalKit"
 ]
 
 swift_library(

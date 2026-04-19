@@ -268,7 +268,7 @@ final class WebAppWebView: WKWebView {
         })
     }
     
-    // MARK: ExteraGram
+    // MARK: exteraGram
     public private(set) var monkeyClickerActive = false
     
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
@@ -286,7 +286,7 @@ final class WebAppWebView: WKWebView {
     }
 }
 
-// MARK: ExteraGram
+// MARK: exteraGram
 extension WebAppWebView {
     
     public func toggleClicker(enableJS: String, disableJS: String) {

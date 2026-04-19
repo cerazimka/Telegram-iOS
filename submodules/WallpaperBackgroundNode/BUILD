@@ -41,11 +41,11 @@ apple_resource_bundle(
 )
 
 egdeps = [
-    "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
+    "//exteraGram/EGSimpleSettings:EGSimpleSettings",
 ]
 
 egsrcs = [
-    "//ExteraGram/EGNY:EGNY"
+    "//exteraGram/EGNY:EGNY"
 ]
 
 swift_library(

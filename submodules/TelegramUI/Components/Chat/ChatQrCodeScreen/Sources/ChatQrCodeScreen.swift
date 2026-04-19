@@ -24,7 +24,6 @@ import ShimmerEffect
 import WallpaperBackgroundNode
 import QrCode
 import AvatarNode
-import ShareController
 import TelegramStringFormatting
 import PhotoResources
 import TextFormat
@@ -40,6 +39,7 @@ import ComponentFlow
 import GlassBarButtonComponent
 import SheetComponent
 import BundleIconComponent
+import ShareController
 
 private func closeButtonImage(theme: PresentationTheme) -> UIImage? {
     return generateImage(CGSize(width: 30.0, height: 30.0), contextGenerator: { size, context in
@@ -883,7 +883,7 @@ private class ChatQrCodeScreenNode: ViewControllerTracingNode, ASScrollViewDeleg
         self.scanButton.title = presentationData.strings.PeerInfo_QRCode_Scan
         self.scanButton.icon = UIImage(bundleImageName: "Settings/ScanQr")
         
-        self.listNode = ListView()
+        self.listNode = ListViewImpl()
         self.listNode.transform = CATransform3DMakeRotation(-CGFloat.pi / 2.0, 0.0, 0.0, 1.0)
         
         super.init()

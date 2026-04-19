@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGLogging
 import EGLoggingComposer
 import EGSimpleSettings
@@ -163,7 +163,7 @@ private enum DebugControllerEntry: ItemListNodeEntry {
     
     var stableId: Int {
         switch self {
-        // MARK: ExteraGram
+        // MARK: exteraGram
         case .EGDebug:
             return -110
         case .sendSGLogs:
@@ -414,7 +414,7 @@ private enum DebugControllerEntry: ItemListNodeEntry {
                     arguments.presentController(actionSheet, nil)
                 })
             })
-        // MARK: ExteraGram
+        // MARK: exteraGram
         case .sendOneLog, .sendSGLogs:
             var title = "Send Latest Logs (Up to 4 MB)"
             var logCollectionSignal: Signal<[(String, String)], NoError> = Logger.shared.collectLogs()
@@ -1564,7 +1564,7 @@ private func debugControllerEntries(context: AccountContext?, sharedContext: Sha
 
     let isMainApp = sharedContext.applicationBindings.isMainApp
     
-    // MARK: ExteraGram
+    // MARK: exteraGram
     entries.append(.EGDebug(presentationData.theme))
     entries.append(.sendSGLogs(presentationData.theme))
     

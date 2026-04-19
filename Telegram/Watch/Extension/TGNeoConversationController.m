@@ -1231,7 +1231,7 @@ const NSInteger TGNeoConversationControllerInitialRenderCount = 4 * 2;
             [strongSelf sendMessageWithText:text];
         }];
     };
-    // MARK: ExteraGram
+    // MARK: exteraGram
     controller.replyWithoutPresetPressed = ^
     {
         __strong TGNeoConversationController *strongSelf = weakSelf;

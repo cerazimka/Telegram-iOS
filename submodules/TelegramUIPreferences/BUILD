@@ -1,7 +1,7 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egsrcs = [
-    "//ExteraGram/EGStatus:EGStatus"
+    "//exteraGram/EGStatus:EGStatus"
 ]
 
 swift_library(

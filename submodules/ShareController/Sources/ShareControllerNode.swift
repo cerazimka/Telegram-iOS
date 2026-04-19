@@ -774,7 +774,7 @@ final class ShareControllerNode: ViewControllerTracingNode, ASScrollViewDelegate
             self.setActionNodesHidden(false, inputField: true, actions: true, animated: false)
         }
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         // Replace your current accessibility setup with this:
         self.isAccessibilityElement = false
         self.accessibilityViewIsModal = true
@@ -2075,6 +2075,7 @@ private func threadList(accountPeerId: EnginePeer.Id, postbox: Postbox, peerId: 
                     presence: nil,
                     hasUnseenMentions: false,
                     hasUnseenReactions: false,
+                    hasUnseenPollVotes: false,
                     forumTopicData: nil,
                     topForumTopicItems: [],
                     hasFailed: false,
@@ -2150,6 +2151,7 @@ private func threadList(accountPeerId: EnginePeer.Id, postbox: Postbox, peerId: 
                     presence: nil,
                     hasUnseenMentions: false,
                     hasUnseenReactions: false,
+                    hasUnseenPollVotes: false,
                     forumTopicData: nil,
                     topForumTopicItems: [],
                     hasFailed: false,

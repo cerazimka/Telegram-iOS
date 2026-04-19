@@ -253,7 +253,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
         } else {
             currentMaxGlyphCount = nil
         }
-        let previousGlyphCount = self.textNode.textNode.getGlyphCount()
+        let previousGlyphCount = self.textNode.textNode.getCharacterToGlyphMapping().count
         
         return { item, layoutConstants, _, _, _, _ in
             let contentProperties = ChatMessageBubbleContentProperties(hidesSimpleAuthorHeader: false, headerSpacing: 0.0, hidesBackground: .never, forceFullCorners: false, forceAlignment: .none)
@@ -828,7 +828,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                             
                             var previousAnimateGlyphCount: Int?
                             if hasDraft || hadDraft {
-                                previousAnimateGlyphCount = strongSelf.textNode.textNode.getGlyphCount()
+                                previousAnimateGlyphCount = strongSelf.textNode.textNode.getCharacterToGlyphMapping().count
                             }
                             
                             strongSelf.textNode.textNode.displaysAsynchronously = !item.presentationData.isPreview
@@ -1065,7 +1065,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
     
     private func updateTextRevealAnimation(previousGlyphCount: Int) {
         var fromCount = previousGlyphCount
-        let toCount = self.textNode.textNode.getGlyphCount()
+        let toCount = self.textNode.textNode.getCharacterToGlyphMapping().count
         let timestamp = CACurrentMediaTime()
         if let textRevealAnimationState = self.textRevealAnimationState {
             if textRevealAnimationState.toCount == toCount {
@@ -1114,7 +1114,10 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     var requestUpdate = false
                     let glyphCount = textRevealAnimationState.glyphCount(timestamp: timestamp)
                     if let revealGlyphCount = self.textNode.textNode.revealGlyphCount, let cachedLayout = self.textNode.textNode.cachedLayout {
-                        if cachedLayout.sizeForGlyphCount(glyphCount: revealGlyphCount).height != cachedLayout.sizeForGlyphCount(glyphCount: glyphCount).height {
+                        let previousLayout = cachedLayout.layoutForGlyphCount(glyphCount: revealGlyphCount)
+                        let updatedLayout = cachedLayout.layoutForGlyphCount(glyphCount: glyphCount)
+                        
+                        if updatedLayout.size.height != previousLayout.size.height || abs(updatedLayout.size.width - previousLayout.size.width) > 8.0 {
                             if lineUpdateTimeout >= 0.0 {
                                 lastLineUpdateTimestamp = timestamp
                                 requestUpdate = true
@@ -1622,7 +1625,7 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     knobColor = item.presentationData.theme.theme.chat.message.outgoing.textSelectionKnobColor
                 }
                 
-                let textSelectionNode = TextSelectionNode(theme: TextSelectionTheme(selection: selectionColor, knob: knobColor, isDark: item.presentationData.theme.theme.overallDarkAppearance), strings: item.presentationData.strings, textNode: self.textNode.textNode, updateIsActive: { [weak self] value in
+                let textSelectionNode = TextSelectionNode(theme: TextSelectionTheme(selection: selectionColor, knob: knobColor, isDark: item.presentationData.theme.theme.overallDarkAppearance), strings: item.presentationData.strings, textNodeOrView: .node(self.textNode.textNode), updateIsActive: { [weak self] value in
                     self?.updateIsTextSelectionActive?(value)
                 }, present: { [weak self] c, a in
                     guard let self, let item = self.item else {
@@ -1634,13 +1637,13 @@ public class ChatMessageTextBubbleContentNode: ChatMessageBubbleContentNode {
                     } else {
                         item.controllerInteraction.presentGlobalOverlayController(c, a)
                     }
-                }, rootNode: { [weak rootNode] in
-                    return rootNode
+                }, rootView: { [weak rootNode] in
+                    return rootNode?.view
                 }, performAction: { [weak self] text, action in
                     guard let strongSelf = self, let item = strongSelf.item else {
                         return
                     }
-                    item.controllerInteraction.performTextSelectionAction(item.message, true, text, action)
+                    item.controllerInteraction.performTextSelectionAction(item.message, true, text, nil, action)
                 })
                 textSelectionNode.updateRange = { [weak self] selectionRange in
                     guard let strongSelf = self else {

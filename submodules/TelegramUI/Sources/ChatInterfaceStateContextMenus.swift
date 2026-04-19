@@ -495,7 +495,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
     if case .standard(.embedded) = chatPresentationInterfaceState.mode {
         isEmbeddedMode = true
     }
-    // MARK: ExteraGram
+    // MARK: exteraGram
     var canReveal = false
     if !chatPresentationInterfaceState.copyProtectionEnabled {
         outer: for message in messages {
@@ -1374,7 +1374,14 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Conversation_ContextMenuTranslate, icon: { theme in
                         return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Translate"), color: theme.actionSheet.primaryTextColor)
                     }, action: { _, f in
-                        controllerInteraction.performTextSelectionAction(message, !isCopyProtected, NSAttributedString(string: messageText), .translate)
+                        var messageEntities: [MessageTextEntity]?
+                        for attribute in message.attributes {
+                            if let attribute = attribute as? TextEntitiesMessageAttribute {
+                                messageEntities = attribute.entities
+                            }
+                        }
+                        
+                        controllerInteraction.performTextSelectionAction(message, !isCopyProtected, NSAttributedString(string: messageText), messageEntities, .translate)
                         f(.default)
                     })))
                 }
@@ -1395,7 +1402,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                             text = translation.text
                         }
                         
-                        controllerInteraction.performTextSelectionAction(message, !isCopyProtected, NSAttributedString(string: text), .speak)
+                        controllerInteraction.performTextSelectionAction(message, !isCopyProtected, NSAttributedString(string: text), nil, .speak)
                         f(.default)
                     })))
                 }
@@ -1611,7 +1618,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
                     hasSelected = true
                 }
             }
-            if hasSelected, case .poll = activePoll.kind {
+            if hasSelected, !activePoll.revotingDisabled {
                 actions.append(.action(ContextMenuActionItem(text: chatPresentationInterfaceState.strings.Conversation_UnvotePoll, icon: { theme in
                     return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/Unvote"), color: theme.actionSheet.primaryTextColor)
                 }, action: { _, f in
@@ -2093,7 +2100,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
         if !isPinnedMessages, !isReplyThreadHead, data.canSelect {
             egActionsIndex = actions.count
             var didAddSeparator = false
-            // MARK: ExteraGram
+            // MARK: exteraGram
             if let authorId = message.author?.id {
                 let action: ContextMenuItem = .action(ContextMenuActionItem(text: i18n("ContextMenu.SelectFromUser", chatPresentationInterfaceState.strings.baseLanguageCode), icon: { theme in
                     return generateTintedImage(image: UIImage(bundleImageName: "Chat/Context Menu/SelectAll"), color: theme.actionSheet.primaryTextColor)
@@ -2215,7 +2222,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             canViewStats = canViewReadStats(message: message, participantCount: infoSummaryData.participantCount, isMessageRead: isMessageRead, isPremium: isPremium, appConfig: appConfig)
         }
 
-        // MARK: ExteraGram
+        // MARK: exteraGram
         if !egActions.isEmpty {
             if !actions.isEmpty {
                 if let egActionsIndex = egActionsIndex {
@@ -2234,7 +2241,7 @@ func contextMenuForChatPresentationInterfaceState(chatPresentationInterfaceState
             egActions.insert(.separator, at: 1)
             
             let exteragramSubMenu: ContextMenuItem = .action(ContextMenuActionItem(text: "exteraGram", icon: { theme in
-                return generateTintedImage(image: UIImage(bundleImageName: "ExteraGramContextMenu"), color: theme.actionSheet.primaryTextColor)
+                return generateTintedImage(image: UIImage(bundleImageName: "exteraGramContextMenu"), color: theme.actionSheet.primaryTextColor)
             }, action: { c, f in
                 popSGItems = { [weak c] in
                     c?.popItems()

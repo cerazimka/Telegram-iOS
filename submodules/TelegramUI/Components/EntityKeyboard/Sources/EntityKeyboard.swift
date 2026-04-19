@@ -273,7 +273,7 @@ public final class EntityKeyboardComponent: Component {
     public final class View: UIView {
         private let tintContainerView: UIView
         
-        private let pagerView: ComponentHostView<EntityKeyboardChildEnvironment>
+        private let pagerView: ComponentView<EntityKeyboardChildEnvironment>
         
         private var component: EntityKeyboardComponent?
         public private(set) weak var state: EmptyComponentState?
@@ -296,18 +296,30 @@ public final class EntityKeyboardComponent: Component {
         
         override init(frame: CGRect) {
             self.tintContainerView = UIView()
-            self.pagerView = ComponentHostView<EntityKeyboardChildEnvironment>()
+            self.pagerView = ComponentView()
             
             super.init(frame: frame)
             
             //self.clipsToBounds = true
             self.disablesInteractiveTransitionGestureRecognizer = true
-            
-            self.addSubview(self.pagerView)
         }
         
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
+        }
+        
+        override public func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+            if self.alpha.isZero {
+                return nil
+            }
+            for view in self.subviews.reversed() {
+                if let result = view.hitTest(self.convert(point, to: view), with: event), result.isUserInteractionEnabled {
+                    return result
+                }
+            }
+            
+            let result = super.hitTest(point, with: event)
+            return result
         }
         
         func update(component: EntityKeyboardComponent, availableSize: CGSize, state: EmptyComponentState, environment: Environment<Empty>, transition: ComponentTransition) -> CGSize {
@@ -559,7 +571,7 @@ public final class EntityKeyboardComponent: Component {
             
             let emojiContentItemIdUpdated = ActionSlot<(AnyHashable, AnyHashable?, ComponentTransition)>()
             if let emojiContent = component.emojiContent {
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 if EGSimpleSettings.shared.defaultEmojisFirst {
                     emojiContent.panelItemGroups = egPatchEmojiKeyboardItems(emojiContent.panelItemGroups)
                     emojiContent.contentItemGroups = egPatchEmojiKeyboardItems(emojiContent.contentItemGroups)
@@ -793,7 +805,12 @@ public final class EntityKeyboardComponent: Component {
                 forceUpdate: forceUpdate,
                 containerSize: availableSize
             )
-            transition.setFrame(view: self.pagerView, frame: CGRect(origin: CGPoint(), size: pagerSize))
+            if let pagerComponentView = self.pagerView.view {
+                if pagerComponentView.superview == nil {
+                    self.insertSubview(pagerComponentView, at: 0)
+                }
+                transition.setFrame(view: pagerComponentView, frame: CGRect(origin: CGPoint(), size: pagerSize))
+            }
             
             let accountContext = component.emojiContent?.context ?? component.stickerContent?.context
             if let searchComponent = self.searchComponent, let accountContext = accountContext {

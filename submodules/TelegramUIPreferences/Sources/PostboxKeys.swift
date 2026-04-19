@@ -10,6 +10,7 @@ private enum ApplicationSpecificPreferencesKeyValues: Int32 {
     case widgetSettings = 19
     case mediaAutoSaveSettings = 20
     case ageVerificationState = 21
+    case textProcessingEditingState = 22
 }
 
 public struct ApplicationSpecificPreferencesKeys {
@@ -20,10 +21,17 @@ public struct ApplicationSpecificPreferencesKeys {
     public static let widgetSettings = applicationSpecificPreferencesKey(ApplicationSpecificPreferencesKeyValues.widgetSettings.rawValue)
     public static let mediaAutoSaveSettings = applicationSpecificPreferencesKey(ApplicationSpecificPreferencesKeyValues.mediaAutoSaveSettings.rawValue)
     public static let ageVerificationState = applicationSpecificPreferencesKey(ApplicationSpecificPreferencesKeyValues.ageVerificationState.rawValue)
+    
+    public static func textProcessingEditingState(peerId: PeerId) -> ValueBoxKey {
+        let key = ValueBoxKey(length: 4 + 8)
+        key.setInt32(0, value: ApplicationSpecificPreferencesKeyValues.textProcessingEditingState.rawValue)
+        key.setInt64(4, value: peerId.toInt64())
+        return key
+    }
 }
 
 private enum ApplicationSpecificSharedDataKeyValues: Int32 {
-    // MARK: ExteraGram
+    // MARK: exteraGram
     case egStatus = 999
     case inAppNotificationSettings = 0
     case presentationPasscodeSettings = 1
@@ -51,7 +59,7 @@ private enum ApplicationSpecificSharedDataKeyValues: Int32 {
 }
 
 public struct ApplicationSpecificSharedDataKeys {
-    // MARK: ExteraGram
+    // MARK: exteraGram
     public static let egStatus = applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.egStatus.rawValue)
     public static let inAppNotificationSettings = applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.inAppNotificationSettings.rawValue)
     public static let presentationPasscodeSettings = applicationSpecificSharedDataKey(ApplicationSpecificSharedDataKeyValues.presentationPasscodeSettings.rawValue)

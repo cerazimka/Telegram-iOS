@@ -389,7 +389,8 @@ public final class ChatMessageAccessibilityData {
                                     inner: for optionVoters in voters {
                                         if optionVoters.opaqueIdentifier == poll.options[i].opaqueIdentifier {
                                             optionVoterCount[i] = optionVoters.count
-                                            maxOptionVoterCount = max(maxOptionVoterCount, optionVoters.count)
+                                            //TODO:correct
+                                            maxOptionVoterCount = max(maxOptionVoterCount, optionVoters.count ?? 0)
                                             break inner
                                         }
                                     }
@@ -623,10 +624,12 @@ public final class ChatMessageAccessibilityData {
 public enum InternalBubbleTapAction {
     public struct Action {
         public var action: () -> Void
+        public var actionWithLongTapRecognizer: ((TapLongTapOrDoubleTapGestureRecognizer) -> Void)?
         public var contextMenuOnLongPress: Bool
         
-        public init(_ action: @escaping () -> Void, contextMenuOnLongPress: Bool = false) {
+        public init(_ action: @escaping () -> Void, actionWithLongTapRecognizer: ((TapLongTapOrDoubleTapGestureRecognizer) -> Void)? = nil, contextMenuOnLongPress: Bool = false) {
             self.action = action
+            self.actionWithLongTapRecognizer = actionWithLongTapRecognizer
             self.contextMenuOnLongPress = contextMenuOnLongPress
         }
     }

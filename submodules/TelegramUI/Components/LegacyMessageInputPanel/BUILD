@@ -26,6 +26,9 @@ swift_library(
         "//submodules/TelegramUI/Components/MessageInputPanelComponent",
         "//submodules/TelegramUI/Components/LegacyMessageInputPanelInputView",
         "//submodules/TelegramNotices",
+        "//submodules/TextFormat",
+        "//submodules/TelegramUIPreferences",
+        "//submodules/Pasteboard",
     ],
     visibility = [
         "//visibility:public",

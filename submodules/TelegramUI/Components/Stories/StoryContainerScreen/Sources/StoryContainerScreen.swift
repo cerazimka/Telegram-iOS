@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import TelegramUIPreferences
 import EGSimpleSettings
 
@@ -11,7 +11,6 @@ import AccountContext
 import SwiftSignalKit
 import AppBundle
 import MessageInputPanelComponent
-import ShareController
 import TelegramCore
 import Postbox
 import UndoUI
@@ -432,7 +431,7 @@ private final class StoryContainerScreenComponent: Component {
         private var pendingNavigationToItemId: StoryId?
         
         private let storiesWarning = ComponentView<Empty>()
-        private var requestedDisplayStoriesWarning: Bool = EGSimpleSettings.shared.warnOnStoriesOpen // MARK: ExteraGram
+        private var requestedDisplayStoriesWarning: Bool = EGSimpleSettings.shared.warnOnStoriesOpen // MARK: exteraGram
         private var displayStoriesWarningDisposable: Disposable?
         private var isDisplayingStoriesWarning: Bool = false
         
@@ -1327,7 +1326,7 @@ private final class StoryContainerScreenComponent: Component {
                     }
                 })
                 
-                // MARK: ExteraGram
+                // MARK: exteraGram
                 self.requestedDisplayStoriesWarning = EGSimpleSettings.shared.warnOnStoriesOpen
                 if self.requestedDisplayStoriesWarning {
                     self.isDisplayingStoriesWarning = true
@@ -1993,7 +1992,7 @@ private final class StoryContainerScreenComponent: Component {
                 controller.presentationContext.containerLayoutUpdated(subLayout, transition: transition.containedViewLayoutTransition)
             }
             
-            // MARK: ExteraGram
+            // MARK: exteraGram
             if self.isDisplayingStoriesWarning {
                 let _ = self.storiesWarning.update(
                     transition: .immediate,

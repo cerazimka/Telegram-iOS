@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGStrings
 
 import Foundation
@@ -181,7 +181,7 @@ private struct PasscodeOptionsData: Equatable {
 
 private func autolockStringForTimeout(strings: PresentationStrings, timeout: Int32?) -> String {
     if let timeout = timeout {
-        // MARK: ExteraGram
+        // MARK: exteraGram
         if timeout == 5 {
             return i18n("PasscodeSettings.AutoLock.InFiveSeconds", strings.baseLanguageCode)
         } else if timeout == 10 {

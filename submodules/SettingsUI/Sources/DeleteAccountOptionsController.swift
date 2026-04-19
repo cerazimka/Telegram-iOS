@@ -120,7 +120,7 @@ private enum DeleteAccountOptionsEntry: ItemListNodeEntry, Equatable {
                     arguments.setupTwoStepAuth()
                 })
             case let .setPasscode(_, title, text):
-                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.deleteSetPasscode, title: title, label: text, labelStyle: .multilineDetailText, sectionId: self.section, style: .blocks, disclosureStyle: .arrow, action: {
+                return ItemListDisclosureItem(presentationData: presentationData, systemStyle: .glass, icon: PresentationResourcesSettings.faceId, title: title, label: text, labelStyle: .multilineDetailText, sectionId: self.section, style: .blocks, disclosureStyle: .arrow, action: {
                     arguments.setPasscode()
                 })
             case let .clearCache(_, title, text):
@@ -202,15 +202,15 @@ public func deleteAccountOptionsController(context: AccountContext, navigationCo
         |> take(1)
         |> deliverOnMainQueue
         ).start(next: { accountAndPeer, accountsAndPeers in
-            var maximumAvailableAccounts: Int = maximumExteraGramNumberOfAccounts
+            var maximumAvailableAccounts: Int = maximumexteraGramNumberOfAccounts
             if accountAndPeer?.1.isPremium == true && !context.account.testingEnvironment {
-                maximumAvailableAccounts = maximumExteraGramNumberOfAccounts
+                maximumAvailableAccounts = maximumexteraGramNumberOfAccounts
             }
             var count: Int = 1
             for (accountContext, peer, _) in accountsAndPeers {
                 if !accountContext.account.testingEnvironment {
                     if peer.isPremium {
-                        maximumAvailableAccounts = maximumExteraGramNumberOfAccounts
+                        maximumAvailableAccounts = maximumexteraGramNumberOfAccounts
                     }
                     count += 1
                 }

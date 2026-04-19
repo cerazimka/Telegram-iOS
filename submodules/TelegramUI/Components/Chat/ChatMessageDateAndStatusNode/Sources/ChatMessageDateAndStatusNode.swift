@@ -1473,7 +1473,7 @@ public class ChatMessageDateAndStatusNode: ASDisplayNode {
 }
 
 public func shouldDisplayInlineDateReactions(message: Message, isPremium: Bool, forceInline: Bool) -> Bool {
-    // MARK: ExteraGram
+    // MARK: exteraGram
     // With 10.13 it now hides reactions in favor of message effect badge
     return EGSimpleSettings.shared.hideReactions
 }

@@ -15,7 +15,7 @@ public let usEnglishLocale = Locale(identifier: "en_US")
 public func localeWithStrings(_ strings: PresentationStrings) -> Locale {
     var languageCode = strings.baseLanguageCode
     
-    // MARK: - ExteraGram fix for locale bugs, like location crash
+    // MARK: - exteraGram fix for locale bugs, like location crash
     if #available(iOS 18, *) {
         let rawSuffix = "-raw"
         if languageCode.hasSuffix(rawSuffix) {

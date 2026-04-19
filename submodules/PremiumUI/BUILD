@@ -49,7 +49,7 @@ filegroup(
 )
 
 egdeps = [
-    "//ExteraGram/EGStrings:EGStrings"
+    "//exteraGram/EGStrings:EGStrings"
 ]
 
 swift_library(
@@ -95,7 +95,8 @@ swift_library(
         "//submodules/Components/ViewControllerComponent:ViewControllerComponent",
         "//submodules/Components/MultilineTextComponent:MultilineTextComponent",
         "//submodules/Components/MultilineTextWithEntitiesComponent:MultilineTextWithEntitiesComponent",
-        "//submodules/Components/SheetComponent:SheetComponent",
+        "//submodules/Components/SheetComponent",
+        "//submodules/Components/ResizableSheetComponent",
         "//submodules/Components/BundleIconComponent:BundleIconComponent",
         "//submodules/Components/SolidRoundedButtonComponent:SolidRoundedButtonComponent",
         "//submodules/Components/BlurredBackgroundComponent:BlurredBackgroundComponent",
