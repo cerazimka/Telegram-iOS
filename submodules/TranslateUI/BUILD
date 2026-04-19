@@ -2,7 +2,6 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
     "//exteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//submodules/TextFormat:TextFormat"
 ]
 
 swift_library(
