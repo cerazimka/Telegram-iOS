@@ -26,6 +26,55 @@ import ScrollComponent
 import ResizableSheetComponent
 import GlassBarButtonComponent
 
+func requiredBoostSubjectLevel(subject: BoostSubject, group: Bool, context: AccountContext, configuration: PremiumConfiguration) -> Int32 {
+    switch subject {
+    case .stories:
+        return 1
+    case let .channelReactions(reactionCount):
+        return reactionCount
+    case let .nameColors(colors):
+        if let value = context.peerNameColors.nameColorsChannelMinRequiredBoostLevel[colors.rawValue] {
+            return value
+        }
+        return 1
+    case .nameIcon:
+        return configuration.minChannelNameIconLevel
+    case let .profileColors(colors):
+        if group {
+            if let value = context.peerNameColors.profileColorsGroupMinRequiredBoostLevel[colors.rawValue] {
+                return value
+            }
+        } else {
+            return configuration.minChannelProfileColorLevel
+        }
+        return 1
+    case .profileIcon:
+        return group ? configuration.minGroupProfileIconLevel : configuration.minChannelProfileIconLevel
+    case .emojiStatus:
+        return group ? configuration.minGroupEmojiStatusLevel : configuration.minChannelEmojiStatusLevel
+    case .wallpaper:
+        return group ? configuration.minGroupWallpaperLevel : configuration.minChannelWallpaperLevel
+    case .customWallpaper:
+        return group ? configuration.minGroupCustomWallpaperLevel : configuration.minChannelCustomWallpaperLevel
+    case .audioTranscription:
+        return configuration.minGroupAudioTranscriptionLevel
+    case .emojiPack:
+        return configuration.minGroupEmojiPackLevel
+    case .noAds:
+        return configuration.minChannelRestrictAdsLevel
+    case .wearGift:
+        return configuration.minChannelWearGiftLevel
+    case .autoTranslate:
+        return configuration.minChannelAutoTranslateLevel
+    }
+}
+
+extension BoostSubject {
+    public func requiredLevel(group: Bool, context: AccountContext, configuration: PremiumConfiguration) -> Int32 {
+        return requiredBoostSubjectLevel(subject: self, group: group, context: context, configuration: configuration)
+    }
+}
+
 private final class SheetContent: CombinedComponent {
     typealias EnvironmentType = (Empty, ScrollChildEnvironment)
     
