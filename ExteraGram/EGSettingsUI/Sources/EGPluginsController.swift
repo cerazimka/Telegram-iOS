@@ -329,8 +329,6 @@ private struct EGPluginsView: View {
     @State private var isCompact: Bool = PluginsController.shared.isCompactView
     @State private var isSwitchingEngine: Bool = false
     @State private var pluginToShare: EGPlugin? = nil
-    @State private var pluginToDelete: String? = nil
-    @State private var showDeleteAlert: Bool = false
 
     // Mirrors fillItems ordering: pinned (alphabetical) first, then non-pinned (alphabetical).
     // When searching, filters by name only (mirrors lambda$fillItems$1).
@@ -407,8 +405,9 @@ private struct EGPluginsView: View {
                                 onChanged: { PluginsController.shared.plugins = plugins },
                                 onShare: { pluginToShare = plugins[idx] },
                                 onDelete: {
-                                    pluginToDelete = plugins[idx].id
-                                    showDeleteAlert = true
+                                    let id = plugins[idx].id
+                                    plugins.removeAll { $0.id == id }
+                                    PluginsController.shared.plugins = plugins
                                 }
                             )
                         }
@@ -419,22 +418,6 @@ private struct EGPluginsView: View {
         .listStyle(InsetGroupedListStyle())
         .sheet(item: $pluginToShare) { plugin in
             ActivityView(items: [plugin.name])
-        }
-        .alert(isPresented: $showDeleteAlert) {
-            Alert(
-                title: Text(i18n("Plugins.Delete.Title", lang)),
-                message: Text(i18n("Plugins.Delete.Message", lang)),
-                primaryButton: .destructive(Text(i18n("Plugins.Delete.Confirm", lang))) {
-                    if let id = pluginToDelete {
-                        plugins.removeAll { $0.id == id }
-                        PluginsController.shared.plugins = plugins
-                        pluginToDelete = nil
-                    }
-                },
-                secondaryButton: .cancel(Text(i18n("Plugins.Cancel", lang))) {
-                    pluginToDelete = nil
-                }
-            )
         }
     }
 
