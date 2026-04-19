@@ -662,7 +662,6 @@ public class AttachmentTextInputPanelNode: ASDisplayNode, TGCaptionPanelView, AS
         textInputNode.view.addGestureRecognizer(recognizer)
         
         textInputNode.textView.accessibilityHint = self.textPlaceholderNode.attributedText?.string
-        self.initToolbarIfNeeded(context: self.context)
     }
     
     private func textFieldMaxHeight(_ maxHeight: CGFloat, metrics: LayoutMetrics) -> CGFloat {
@@ -989,11 +988,7 @@ public class AttachmentTextInputPanelNode: ASDisplayNode, TGCaptionPanelView, AS
             panelHeight += 11.0
         }
         
-        // MARK: exteraGram
-        var toolbarOffset: CGFloat = 0.0
-        toolbarOffset = layoutToolbar(transition: transition, panelHeight: panelHeight, width: width, leftInset: leftInset, rightInset: rightInset)
-
-        return panelHeight + toolbarOffset
+        return panelHeight
     }
     
     private func updateFieldAndButtonsLayout(inputHasText: Bool, panelHeight: CGFloat, transition: ContainedViewLayoutTransition) -> CGFloat {
