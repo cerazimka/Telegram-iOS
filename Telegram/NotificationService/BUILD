@@ -1,7 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
-    "//exteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier"
+    "//exteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier",
+    "//exteraGram/EGStatus:EGStatus",
 ]
 
 swift_library(
