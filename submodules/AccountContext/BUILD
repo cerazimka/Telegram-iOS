@@ -2,7 +2,8 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 egdeps = [
     "//exteraGram/EGSimpleSettings:EGSimpleSettings",
-    "//exteraGram/EGIAP:EGIAP"
+    "//exteraGram/EGIAP:EGIAP",
+    "//exteraGram/EGStatus:EGStatus",
 ]
 
 swift_library(
