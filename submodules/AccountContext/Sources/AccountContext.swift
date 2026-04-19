@@ -1,4 +1,5 @@
 import EGSimpleSettings
+import EGIAP
 import Foundation
 import UIKit
 import AsyncDisplayKit
