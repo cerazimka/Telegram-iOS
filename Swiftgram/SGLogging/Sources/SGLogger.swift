@@ -2,7 +2,7 @@ import Foundation
 import SwiftSignalKit
 import ManagedFile
 
-private let queue = DispatchQueue(label: "app.swiftgram.ios.trace", qos: .utility)
+private let queue = DispatchQueue(label: "app.exteragram.ios.trace", qos: .utility)
 
 private var sharedLogger: SGLogger?
 
@@ -13,7 +13,7 @@ private func rootPathForBasePath(_ appGroupPath: String) -> String {
 }
 
 public class SGLogger {
-    public let queue = Queue(name: "app.swiftgram.ios.log", qos: .utility)
+    public let queue = Queue(name: "app.exteragram.ios.log", qos: .utility)
     private let maxLength: Int = 2 * 1024 * 1024
     private let maxShortLength: Int = 1 * 1024 * 1024
     private let maxFiles: Int = 20

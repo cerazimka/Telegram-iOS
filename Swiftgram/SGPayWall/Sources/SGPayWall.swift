@@ -287,11 +287,11 @@ struct SGProFeature: Identifiable {
         case .toolbar:
             FeatureIcon(icon: "bold.underline", backgroundColor: .blue, iconSize: 16)
         case .icons:
-            Image("SwiftgramSettings")
+            Image("exteraGramSettings")
                 .resizable()
                 .frame(width: 32, height: 32)
         @unknown default:
-            Image("SwiftgramPro")
+            Image("exteraGramPro")
                 .resizable()
                 .frame(width: 32, height: 32)
         }
@@ -383,7 +383,7 @@ struct SGPayWallView: View {
                         
                         // Title and Subtitle
                         VStack(spacing: 8) {
-                            Text("Swiftgram Pro")
+                            Text("exteraGram Pro")
                                 .font(.largeTitle)
                                 .fontWeight(.bold)
                             

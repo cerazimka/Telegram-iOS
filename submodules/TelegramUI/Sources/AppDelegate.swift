@@ -3488,7 +3488,7 @@ final class UpdateSettings: Codable, Equatable {
     }
 }
 
-// MARK: Swiftgram
+// MARK: exteraGram
 @available(iOS 13.0, *)
 extension AppDelegate {
 
@@ -3590,7 +3590,7 @@ extension AppDelegate {
     }
     
     func fetchSGStatus(primaryContext: AccountContext) async {
-        // TODO(swiftgram): Stuck on getting shouldKeepConnection
+        // TODO(exteragram): Stuck on getting shouldKeepConnection
         // Perhaps, we can drop on some timeout?
 //        let currentShouldKeepConnection = await (primaryContext.account.network.shouldKeepConnection.get() |> take(1) |> deliverOnMainQueue).awaitable()
         guard !primaryContext.account.testingEnvironment else {
@@ -3603,7 +3603,7 @@ extension AppDelegate {
             SGLogger.shared.log("SGIAP", "Asking user id \(userId) to keep connection: true")
             primaryContext.account.network.shouldKeepConnection.set(.single(true))
         }
-        // MARK: Swiftgram
+        // MARK: exteraGram
         let sgIqtpQueryString = makeIqtpQuery("s")
         //
         let iqtpResponse = try? await sgIqtpQuery(engine: primaryContext.engine, query: sgIqtpQueryString).awaitable()

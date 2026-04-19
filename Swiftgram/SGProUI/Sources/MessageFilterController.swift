@@ -16,7 +16,7 @@ struct MessageFilterKeywordInputFieldModifier: ViewModifier {
         if #available(iOS 15.0, *) {
             content
                 .submitLabel(.return)
-                .submitScope(false) // TODO(swiftgram): Keyboard still closing
+                .submitScope(false) // TODO(exteragram): Keyboard still closing
                 .interactiveDismissDisabled()
                 .onSubmit {
                     onAdd()

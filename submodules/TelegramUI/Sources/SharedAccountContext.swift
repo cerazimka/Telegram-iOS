@@ -4539,7 +4539,7 @@ private func useFlatModalCallsPresentation(context: AccountContext) -> Bool {
 
 
 
-// MARK: Swiftgram
+// MARK: exteraGram
 extension SharedAccountContextImpl {
     func initSGIAP(isMainApp: Bool) {
         if isMainApp {

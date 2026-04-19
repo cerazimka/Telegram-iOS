@@ -989,7 +989,7 @@ public class AttachmentTextInputPanelNode: ASDisplayNode, TGCaptionPanelView, AS
             panelHeight += 11.0
         }
         
-        // MARK: Swiftgram
+        // MARK: exteraGram
         var toolbarOffset: CGFloat = 0.0
         toolbarOffset = layoutToolbar(transition: transition, panelHeight: panelHeight, width: width, leftInset: leftInset, rightInset: rightInset)
 

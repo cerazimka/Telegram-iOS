@@ -1339,7 +1339,7 @@ public protocol SharedAccountContext: AnyObject {
     var automaticMediaDownloadSettings: Signal<MediaAutoDownloadSettings, NoError> { get }
     var currentAutodownloadSettings: Atomic<AutodownloadSettings> { get }
     var immediateExperimentalUISettings: ExperimentalUISettings { get }
-    // MARK: Swiftgram
+    // MARK: exteraGram
     var immediateSGStatus: SGStatus { get }
     var SGIAP: SGIAPManager? { get }
     func makeSGProController(context: AccountContext) -> ViewController

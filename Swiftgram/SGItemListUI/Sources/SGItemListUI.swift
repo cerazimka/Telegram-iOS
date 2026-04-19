@@ -1,4 +1,4 @@
-// MARK: Swiftgram
+// MARK: exteraGram
 import SGLogging
 import SGSimpleSettings
 import SGStrings

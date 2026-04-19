@@ -1,4 +1,4 @@
-# Swiftgram Playground
+# exteraGram Playground
 
 Small app to quickly iterate on components testing without building an entire messenger.
 

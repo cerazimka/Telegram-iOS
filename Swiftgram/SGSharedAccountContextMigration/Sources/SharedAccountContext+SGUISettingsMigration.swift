@@ -1,4 +1,4 @@
-// MARK: Swiftgram
+// MARK: exteraGram
 import SGLogging
 import SGAppGroupIdentifier
 import SGSimpleSettings
@@ -9,7 +9,7 @@ import Postbox
 import Foundation
 
 extension SharedAccountContextImpl {
-    // MARK: Swiftgram
+    // MARK: exteraGram
     func performSGUISettingsMigrationIfNecessary() {
         if self.didPerformSGUISettingsMigration {
             return

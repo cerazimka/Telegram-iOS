@@ -24,8 +24,8 @@ class WallpaperNYNode: ASDisplayNode {
             let cell1 = CAEmitterCell()
             switch SGSimpleSettings.shared.nyStyle {
                 case SGSimpleSettings.NYStyle.lightning.rawValue:
-                    // cell1.contents = generateTintedImage(image: UIImage(bundleImageName: "SwiftgramContextMenu"), color: .white)
-                    if let image = UIImage(bundleImageName: "SwiftgramContextMenu") {
+                    // cell1.contents = generateTintedImage(image: UIImage(bundleImageName: "exteraGramContextMenu"), color: .white)
+                    if let image = UIImage(bundleImageName: "exteraGramContextMenu") {
                         cell1.contents = paintImage(image, to: UIColor.white.cgColor).cgImage
                     }
                     cell1.name = "lightning"

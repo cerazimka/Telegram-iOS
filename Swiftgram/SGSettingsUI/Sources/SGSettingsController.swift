@@ -1,4 +1,4 @@
-// MARK: Swiftgram
+// MARK: exteraGram
 import SGLogging
 import SGSimpleSettings
 import SGStrings
@@ -720,9 +720,9 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
         
         let entries = SGControllerEntries(presentationData: presentationData, callListSettings: callListSettings, experimentalUISettings: experimentalUISettings, appConfiguration: appConfiguration, nameColors: PeerNameColors.with(availableReplyColors: availableReplyColors, availableProfileColors: availableProfileColors), state: state)
         
-        let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("Swiftgram"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
+        let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("exteraGram"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
         
-        // TODO(swiftgram): focusOnItemTag support
+        // TODO(exteragram): focusOnItemTag support
         /* var index = 0
         var scrollToItem: ListViewScrollToItem?
          if let focusOnItemTag = focusOnItemTag {

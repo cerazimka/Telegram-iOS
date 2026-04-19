@@ -2,7 +2,7 @@ import SwiftUI
 import Foundation
 
 
-// MARK: Swiftgram
+// MARK: exteraGram
 public struct ChatToolbarView: View {
     var onQuote: () -> Void
     var onSpoiler: () -> Void

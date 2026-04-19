@@ -634,7 +634,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                     controller?.replace(with: c)
                 }
                 pushControllerImpl?(controller)
-            // MARK: Swiftgram
+            // MARK: exteraGram
             } else if icon.isSGPro && context.sharedContext.immediateSGStatus.status < 2 {
                 if let payWallController = context.sharedContext.makeSGPayWallController(context: context) {
                     presentControllerImpl?(payWallController, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
@@ -1107,7 +1107,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             ApplicationSpecificSharedDataKeys.chatSettings,
             ApplicationSpecificSharedDataKeys.mediaDisplaySettings,
             SharedDataKeys.chatThemes,
-            ApplicationSpecificSharedDataKeys.sgStatus // MARK: Swiftgram
+            ApplicationSpecificSharedDataKeys.sgStatus // MARK: exteraGram
         ]),
         cloudThemes.get(),
         availableAppIcons,

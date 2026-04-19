@@ -3667,7 +3667,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         transition.updateFrame(view: self.glassBackgroundContainer, frame: containerFrame)
         self.glassBackgroundContainer.update(size: containerFrame.size, isDark: interfaceState.theme.overallDarkAppearance, transition: ComponentTransition(transition))
         
-        // MARK: Swiftgram
+        // MARK: exteraGram
         var toolbarOffset: CGFloat = 0.0
         toolbarOffset = layoutToolbar(transition: transition, panelHeight: contentHeight, width: width, leftInset: originalLeftInset, rightInset: rightInset, displayBotStartButton: displayBotStartButton)
         
