@@ -71,7 +71,7 @@ public final class ChatPanelInterfaceInteraction {
         case editPrice
     }
     
-    public let setupReplyMessage: (MessageId?, Int32?, @escaping (ContainedViewLayoutTransition, @escaping () -> Void) -> Void) -> Void
+    public let setupReplyMessage: (MessageId?, EngineMessageReplyInnerSubject?, @escaping (ContainedViewLayoutTransition, @escaping () -> Void) -> Void) -> Void
     public let egSelectLastWordIfIdle: () -> Void
     public let egSetNewLine: () -> Void
     public let setupEditMessage: (MessageId?, @escaping (ContainedViewLayoutTransition) -> Void) -> Void
