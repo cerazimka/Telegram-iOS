@@ -10,19 +10,19 @@ import Foundation
 
 extension SharedAccountContextImpl {
     // MARK: exteraGram
-    func performSGUISettingsMigrationIfNecessary() {
-        if self.didPerformSGUISettingsMigration {
+    func performEGUISettingsMigrationIfNecessary() {
+        if self.didPerformEGUISettingsMigration {
             return
         }
         let egMigrationKey = "sg_migrated_sgui_settings_v1"
         if UserDefaults.standard.bool(forKey: egMigrationKey) {
-            self.didPerformSGUISettingsMigration = true
+            self.didPerformEGUISettingsMigration = true
             return
         }
         guard let egPrimary = self.egPrimaryAccountContextForMigration() else {
             return
         }
-        self.didPerformSGUISettingsMigration = true
+        self.didPerformEGUISettingsMigration = true
         
         let egPreferences: Signal<PreferencesView, NoError> = egPrimary.account.postbox.preferencesView(keys: [ApplicationSpecificPreferencesKeys.EGUISettings])
         let _ = (egPreferences
