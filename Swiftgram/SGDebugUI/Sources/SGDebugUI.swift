@@ -1,6 +1,6 @@
 import Foundation
 import UniformTypeIdentifiers
-import SGItemListUI
+import EGItemListUI
 import UndoUI
 import AccountContext
 import Display
@@ -13,27 +13,27 @@ import PresentationDataUtils
 import TelegramUIPreferences
 
 // Optional
-import SGSimpleSettings
-import SGLogging
-import SGPayWall
+import EGSimpleSettings
+import EGLogging
+import EGPayWall
 import OverlayStatusController
 #if DEBUG
 import FLEX
 #endif
 
 
-private enum SGDebugControllerSection: Int32, SGItemListSection {
+private enum EGDebugControllerSection: Int32, EGItemListSection {
     case base
     case notifications
 }
 
-private enum SGDebugDisclosureLink: String {
+private enum EGDebugDisclosureLink: String {
     case sessionBackupManager
     case messageFilter
     case debugIAP
 }
 
-private enum SGDebugActions: String {
+private enum EGDebugActions: String {
     case flexing
     case fileManager
     case clearRegDateCache
@@ -43,24 +43,24 @@ private enum SGDebugActions: String {
     case resetIAP
 }
 
-private enum SGDebugToggles: String {
+private enum EGDebugToggles: String {
     case forceImmediateShareSheet
     case legacyNotificationsFix
     case inputToolbar
 }
 
 
-private enum SGDebugOneFromManySetting: String {
+private enum EGDebugOneFromManySetting: String {
     case pinnedMessageNotifications
     case mentionsAndRepliesNotifications
 }
 
-private typealias SGDebugControllerEntry = SGItemListUIEntry<SGDebugControllerSection, SGDebugToggles, AnyHashable, SGDebugOneFromManySetting, SGDebugDisclosureLink, SGDebugActions>
+private typealias EGDebugControllerEntry = EGItemListUIEntry<EGDebugControllerSection, EGDebugToggles, AnyHashable, EGDebugOneFromManySetting, EGDebugDisclosureLink, EGDebugActions>
 
-private func SGDebugControllerEntries(presentationData: PresentationData) -> [SGDebugControllerEntry] {
-    var entries: [SGDebugControllerEntry] = []
+private func EGDebugControllerEntries(presentationData: PresentationData) -> [EGDebugControllerEntry] {
+    var entries: [EGDebugControllerEntry] = []
     
-    let id = SGItemListCounter()
+    let id = EGItemListCounter()
     #if DEBUG
     entries.append(.action(id: id.count, section: .base, actionType: .flexing, text: "FLEX", kind: .generic))
     entries.append(.action(id: id.count, section: .base, actionType: .fileManager, text: "FileManager", kind: .generic))
@@ -68,7 +68,7 @@ private func SGDebugControllerEntries(presentationData: PresentationData) -> [SG
 
     entries.append(.action(id: id.count, section: .base, actionType: .clearRegDateCache, text: "Clear Regdate cache", kind: .generic))
     entries.append(.action(id: id.count, section: .base, actionType: .clearOutgoingTranslationLanguageCache, text: "Clear Outgoing Translation cache", kind: .generic))
-    entries.append(.toggle(id: id.count, section: .base, settingName: .forceImmediateShareSheet, value: SGSimpleSettings.shared.forceSystemSharing, text: "Force System Share Sheet", enabled: true))
+    entries.append(.toggle(id: id.count, section: .base, settingName: .forceImmediateShareSheet, value: EGSimpleSettings.shared.forceSystemSharing, text: "Force System Share Sheet", enabled: true))
     
     entries.append(.action(id: id.count, section: .base, actionType: .restorePurchases, text: "PayWall.RestorePurchases".i18n(presentationData.strings.baseLanguageCode), kind: .generic))
     #if DEBUG
@@ -76,7 +76,7 @@ private func SGDebugControllerEntries(presentationData: PresentationData) -> [SG
     #endif
     entries.append(.action(id: id.count, section: .base, actionType: .resetIAP, text: "Reset Pro", kind: .destructive))
 
-    entries.append(.toggle(id: id.count, section: .notifications, settingName: .legacyNotificationsFix, value: SGSimpleSettings.shared.legacyNotificationsFix, text: "[OLD] Fix empty notifications", enabled: true))
+    entries.append(.toggle(id: id.count, section: .notifications, settingName: .legacyNotificationsFix, value: EGSimpleSettings.shared.legacyNotificationsFix, text: "[OLD] Fix empty notifications", enabled: true))
     return entries
 }
 private func okUndoController(_ text: String, _ presentationData: PresentationData) -> UndoOverlayController {
@@ -90,15 +90,15 @@ public func sgDebugController(context: AccountContext) -> ViewController {
 
     let simplePromise = ValuePromise(true, ignoreRepeated: false)
     
-    let arguments = SGItemListArguments<SGDebugToggles, AnyHashable, SGDebugOneFromManySetting, SGDebugDisclosureLink, SGDebugActions>(context: context, setBoolValue: { toggleName, value in
+    let arguments = EGItemListArguments<EGDebugToggles, AnyHashable, EGDebugOneFromManySetting, EGDebugDisclosureLink, EGDebugActions>(context: context, setBoolValue: { toggleName, value in
         switch toggleName {
             case .forceImmediateShareSheet:
-                SGSimpleSettings.shared.forceSystemSharing = value
+                EGSimpleSettings.shared.forceSystemSharing = value
             case .legacyNotificationsFix:
-                SGSimpleSettings.shared.legacyNotificationsFix = value
-                SGSimpleSettings.shared.synchronizeShared()
+                EGSimpleSettings.shared.legacyNotificationsFix = value
+                EGSimpleSettings.shared.synchronizeShared()
             case .inputToolbar:
-                SGSimpleSettings.shared.inputToolbar = value
+                EGSimpleSettings.shared.inputToolbar = value
         }
     }, setOneFromManyValue: { setting in
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
@@ -120,15 +120,15 @@ public func sgDebugController(context: AccountContext) -> ViewController {
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
         switch actionType {
             case .clearRegDateCache:
-                SGLogger.shared.log("SGDebug", "Regdate cache cleanup init")
+                EGLogger.shared.log("SGDebug", "Regdate cache cleanup init")
                 
                 /*
                 let spinner = OverlayStatusController(theme: presentationData.theme, type: .loading(cancelled: nil))
 
                 presentControllerImpl?(spinner, nil)
                 */
-                SGSimpleSettings.shared.regDateCache.drop()
-                SGLogger.shared.log("SGDebug", "Regdate cache cleanup succesfull")
+                EGSimpleSettings.shared.regDateCache.drop()
+                EGLogger.shared.log("SGDebug", "Regdate cache cleanup succesfull")
                 presentControllerImpl?(okUndoController("OK: Regdate cache cleaned", presentationData), nil)
                 /*
                 Queue.mainQueue().async() { [weak spinner] in
@@ -136,9 +136,9 @@ public func sgDebugController(context: AccountContext) -> ViewController {
                 }
                 */
             case .clearOutgoingTranslationLanguageCache:
-                SGLogger.shared.log("SGDebug", "Outgoing translation language cache cleanup init")
-                SGSimpleSettings.shared.outgoingLanguageTranslation.drop()
-                SGLogger.shared.log("SGDebug", "Outgoing translation language cache cleanup succesfull")
+                EGLogger.shared.log("SGDebug", "Outgoing translation language cache cleanup init")
+                EGSimpleSettings.shared.outgoingLanguageTranslation.drop()
+                EGLogger.shared.log("SGDebug", "Outgoing translation language cache cleanup succesfull")
                 presentControllerImpl?(okUndoController("OK: Outgoing translation language cache cleaned", presentationData), nil)
         case .flexing:
             #if DEBUG
@@ -173,15 +173,15 @@ public func sgDebugController(context: AccountContext) -> ViewController {
                 action: { _ in return false }
             ),
             nil)
-            context.sharedContext.SGIAP?.restorePurchases {}
+            context.sharedContext.EGIAP?.restorePurchases {}
         case .setIAP:
             #if DEBUG
             #endif
         case .resetIAP:
             let updateSettingsSignal = updateSGStatusInteractively(accountManager: context.sharedContext.accountManager, { status in
                 var status = status
-                status.status = SGStatus.default.status
-                SGSimpleSettings.shared.primaryUserId = ""
+                status.status = EGStatus.default.status
+                EGSimpleSettings.shared.primaryUserId = ""
                 return status
             })
             let _ = (updateSettingsSignal |> deliverOnMainQueue).start(next: {
@@ -199,7 +199,7 @@ public func sgDebugController(context: AccountContext) -> ViewController {
     let signal = combineLatest(context.sharedContext.presentationData, simplePromise.get())
     |> map { presentationData, _ ->  (ItemListControllerState, (ItemListNodeState, Any)) in
         
-        let entries = SGDebugControllerEntries(presentationData: presentationData)
+        let entries = EGDebugControllerEntries(presentationData: presentationData)
         
         let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("exteraGram Debug"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
         

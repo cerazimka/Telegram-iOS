@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGConfig",
-    module_name = "SGConfig",
+    name = "EGConfig",
+    module_name = "EGConfig",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

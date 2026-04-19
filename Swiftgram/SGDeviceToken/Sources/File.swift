@@ -1,12 +1,12 @@
 import SwiftSignalKit
 import DeviceCheck
 
-public enum SGDeviceTokenError {
+public enum EGDeviceTokenError {
     case unsupportedDevice
     case generic(String)
 }
 
-public func getDeviceToken() -> Signal<String, SGDeviceTokenError> {
+public func getDeviceToken() -> Signal<String, EGDeviceTokenError> {
     return Signal { subscriber in
         let currentDevice = DCDevice.current
         if currentDevice.isSupported {

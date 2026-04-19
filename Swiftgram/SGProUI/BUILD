@@ -2,8 +2,8 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 
 swift_library(
-    name = "SGProUI",
-    module_name = "SGProUI",
+    name = "EGProUI",
+    module_name = "EGProUI",
     srcs = glob([
 		"Sources/**/*.swift",
     ]),
@@ -11,14 +11,14 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGKeychainBackupManager:SGKeychainBackupManager",
-        "//Swiftgram/SGItemListUI:SGItemListUI",
-        "//Swiftgram/SGLogging:SGLogging",
-        "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-        "//Swiftgram/SGStrings:SGStrings",
-        "//Swiftgram/SGAPI:SGAPI",
-        "//Swiftgram/SGAPIToken:SGAPIToken",
-        "//Swiftgram/SGSwiftUI:SGSwiftUI",
+        "//exteraGram/EGKeychainBackupManager:EGKeychainBackupManager",
+        "//exteraGram/EGItemListUI:EGItemListUI",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGStrings:EGStrings",
+        "//exteraGram/EGAPI:EGAPI",
+        "//exteraGram/EGAPIToken:EGAPIToken",
+        "//exteraGram/EGSwiftUI:EGSwiftUI",
         #
         "//submodules/SettingsUI:SettingsUI",
         #

@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGShowMessageJson",
+    name = "EGShowMessageJson",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

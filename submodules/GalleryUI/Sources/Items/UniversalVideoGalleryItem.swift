@@ -3533,9 +3533,9 @@ final class UniversalVideoGalleryItemNode: ZoomableContentGalleryItemNode {
     }
 
 
-    private typealias SGContextMenuItems = (items: [ContextMenuItem], topItems: [ContextMenuItem])
+    private typealias EGContextMenuItems = (items: [ContextMenuItem], topItems: [ContextMenuItem])
 
-    private func contextMenuMainItems(isSettings: Bool, dismiss: @escaping () -> Void) -> Signal<SGContextMenuItems, NoError> {
+    private func contextMenuMainItems(isSettings: Bool, dismiss: @escaping () -> Void) -> Signal<EGContextMenuItems, NoError> {
         guard let videoNode = self.videoNode, let item = self.item else {
             return .single(([], []))
         }
@@ -3547,7 +3547,7 @@ final class UniversalVideoGalleryItemNode: ZoomableContentGalleryItemNode {
             peer = .single(nil)
         }
 
-        func mapMenu(values: (MediaPlayerStatus?, EnginePeer?, (current: Int, preferred: UniversalVideoContentVideoQuality, available: [Int])?)) -> SGContextMenuItems {
+        func mapMenu(values: (MediaPlayerStatus?, EnginePeer?, (current: Int, preferred: UniversalVideoContentVideoQuality, available: [Int])?)) -> EGContextMenuItems {
             let (status, peer, videoQualityState) = values
             guard let status = status else {
                 return (items: [], topItems: [])

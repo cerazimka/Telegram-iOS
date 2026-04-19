@@ -2,14 +2,14 @@ import Foundation
 import SwiftSignalKit
 import TelegramCore
 
-public struct SGUISettings: Equatable, Codable {
+public struct EGUISettings: Equatable, Codable {
     public var hideStories: Bool
     public var showProfileId: Bool
     public var warnOnStoriesOpen: Bool
     public var sendWithReturnKey: Bool
     
-    public static var `default`: SGUISettings {
-        return SGUISettings(hideStories: false, showProfileId: true, warnOnStoriesOpen: false, sendWithReturnKey: false)
+    public static var `default`: EGUISettings {
+        return EGUISettings(hideStories: false, showProfileId: true, warnOnStoriesOpen: false, sendWithReturnKey: false)
     }
     
     public init(hideStories: Bool, showProfileId: Bool, warnOnStoriesOpen: Bool, sendWithReturnKey: Bool) {
@@ -38,10 +38,10 @@ public struct SGUISettings: Equatable, Codable {
     }
 }
 
-public func updateSGUISettings(engine: TelegramEngine, _ f: @escaping (SGUISettings) -> SGUISettings) -> Signal<Never, NoError> {
-    return engine.preferences.update(id: ApplicationSpecificPreferencesKeys.SGUISettings, { entry in
-        let currentSettings: SGUISettings
-        if let entry = entry?.get(SGUISettings.self) {
+public func updateEGUISettings(engine: TelegramEngine, _ f: @escaping (EGUISettings) -> EGUISettings) -> Signal<Never, NoError> {
+    return engine.preferences.update(id: ApplicationSpecificPreferencesKeys.EGUISettings, { entry in
+        let currentSettings: EGUISettings
+        if let entry = entry?.get(EGUISettings.self) {
             currentSettings = entry
         } else {
             currentSettings = .default

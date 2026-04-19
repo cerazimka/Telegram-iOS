@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGSwiftSignalKit",
+    name = "EGSwiftSignalKit",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

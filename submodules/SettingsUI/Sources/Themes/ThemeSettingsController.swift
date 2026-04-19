@@ -1107,7 +1107,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             ApplicationSpecificSharedDataKeys.chatSettings,
             ApplicationSpecificSharedDataKeys.mediaDisplaySettings,
             SharedDataKeys.chatThemes,
-            ApplicationSpecificSharedDataKeys.sgStatus // MARK: exteraGram
+            ApplicationSpecificSharedDataKeys.egStatus // MARK: exteraGram
         ]),
         cloudThemes.get(),
         availableAppIcons,

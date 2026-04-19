@@ -1,4 +1,4 @@
-import SGStrings
+import EGStrings
 
 import Foundation
 import UIKit
@@ -12,7 +12,7 @@ import BalancedTextComponent
 import TelegramCore
 import ButtonComponent
 
-final class SGStoryWarningComponent: Component {
+final class EGStoryWarningComponent: Component {
     let context: AccountContext
     let theme: PresentationTheme
     let strings: PresentationStrings
@@ -39,7 +39,7 @@ final class SGStoryWarningComponent: Component {
         self.close = close
     }
     
-    static func ==(lhs: SGStoryWarningComponent, rhs: SGStoryWarningComponent) -> Bool {
+    static func ==(lhs: EGStoryWarningComponent, rhs: EGStoryWarningComponent) -> Bool {
         if lhs.theme !== rhs.theme {
             return false
         }
@@ -47,7 +47,7 @@ final class SGStoryWarningComponent: Component {
     }
     
     final class View: UIView {
-        private var component: SGStoryWarningComponent?
+        private var component: EGStoryWarningComponent?
         private weak var state: EmptyComponentState?
         
         private let effectView: UIVisualEffectView
@@ -116,7 +116,7 @@ final class SGStoryWarningComponent: Component {
             self.containerView.layer.animateScale(from: 1.0, to: 1.1, duration: 0.4, timingFunction: kCAMediaTimingFunctionSpring, removeOnCompletion: false)
         }
         
-        func update(component: SGStoryWarningComponent, availableSize: CGSize, transition: ComponentTransition) -> CGSize {
+        func update(component: EGStoryWarningComponent, availableSize: CGSize, transition: ComponentTransition) -> CGSize {
             self.component = component
             
             let sideInset: CGFloat = 48.0

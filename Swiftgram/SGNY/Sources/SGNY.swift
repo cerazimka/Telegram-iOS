@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 import AsyncDisplayKit
 import Display
-import SGSimpleSettings
+import EGSimpleSettings
 
 
 class WallpaperNYNode: ASDisplayNode {
@@ -22,8 +22,8 @@ class WallpaperNYNode: ASDisplayNode {
             particlesLayer.renderMode = .oldestLast
 
             let cell1 = CAEmitterCell()
-            switch SGSimpleSettings.shared.nyStyle {
-                case SGSimpleSettings.NYStyle.lightning.rawValue:
+            switch EGSimpleSettings.shared.nyStyle {
+                case EGSimpleSettings.NYStyle.lightning.rawValue:
                     // cell1.contents = generateTintedImage(image: UIImage(bundleImageName: "exteraGramContextMenu"), color: .white)
                     if let image = UIImage(bundleImageName: "exteraGramContextMenu") {
                         cell1.contents = paintImage(image, to: UIColor.white.cgColor).cgImage
@@ -57,8 +57,8 @@ class WallpaperNYNode: ASDisplayNode {
         
         if let emitterLayer = self.emitterLayer {
             var emitterWidthK: CGFloat = 1.5
-            switch SGSimpleSettings.shared.nyStyle {
-                case SGSimpleSettings.NYStyle.lightning.rawValue:
+            switch EGSimpleSettings.shared.nyStyle {
+                case EGSimpleSettings.NYStyle.lightning.rawValue:
                     emitterWidthK = 1.5
                 default:
                     break

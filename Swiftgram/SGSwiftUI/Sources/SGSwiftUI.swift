@@ -60,7 +60,7 @@ public extension EnvironmentValues {
 
 
 @available(iOS 13.0, *)
-public struct SGSwiftUIView<Content: View>: View {
+public struct EGSwiftUIView<Content: View>: View {
     public let content: Content
     public let manageSafeArea: Bool
 
@@ -77,7 +77,7 @@ public struct SGSwiftUIView<Content: View>: View {
     ) {
         #if DEBUG
         if manageSafeArea {
-            print("WARNING SGSwiftUIView: manageSafeArea is deprecated, use @Environment(\\.navigationBarHeight) and @Environment(\\.containerViewLayout)")
+            print("WARNING EGSwiftUIView: manageSafeArea is deprecated, use @Environment(\\.navigationBarHeight) and @Environment(\\.containerViewLayout)")
         }
         #endif
         self.navigationBarHeight = legacyController.navigationBarHeightModel

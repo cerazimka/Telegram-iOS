@@ -894,7 +894,7 @@ func openExternalUrlImpl(context: AccountContext, urlContext: OpenURLContext, ur
                                     navigationController?.pushViewController(debugController)
                                     return
                                 }
-                            case "sgdebug", "sg_debug":
+                            case "sgdebug", "eg_debug":
                                 navigationController?.pushViewController(egDebugController(context: context))
                                 return
                             case "settings":

@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGDoubleTapMessageAction",
+    name = "EGDoubleTapMessageAction",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

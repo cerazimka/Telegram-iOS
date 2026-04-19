@@ -1,12 +1,12 @@
 import Foundation
-import SGAppGroupIdentifier
-import SGLogging
+import EGAppGroupIdentifier
+import EGLogging
 
-let APP_GROUP_IDENTIFIER = sgAppGroupIdentifier()
+let APP_GROUP_IDENTIFIER = egAppGroupIdentifier()
 
-public class SGSimpleSettings {
+public class EGSimpleSettings {
     
-    public static let shared = SGSimpleSettings()
+    public static let shared = EGSimpleSettings()
     
     private init() {
         setDefaultValues()
@@ -15,11 +15,11 @@ public class SGSimpleSettings {
     }
     
     private func setDefaultValues() {
-        UserDefaults.standard.register(defaults: SGSimpleSettings.defaultValues)
+        UserDefaults.standard.register(defaults: EGSimpleSettings.defaultValues)
         // Just in case group defaults will be nil
-        UserDefaults.standard.register(defaults: SGSimpleSettings.groupDefaultValues)
+        UserDefaults.standard.register(defaults: EGSimpleSettings.groupDefaultValues)
         if let groupUserDefaults = UserDefaults(suiteName: APP_GROUP_IDENTIFIER) {
-            groupUserDefaults.register(defaults: SGSimpleSettings.groupDefaultValues)
+            groupUserDefaults.register(defaults: EGSimpleSettings.groupDefaultValues)
         }
     }
     
@@ -29,10 +29,10 @@ public class SGSimpleSettings {
             if !groupUserDefaults.bool(forKey: showRepostToStoryMigrationKey) {
                 self.showRepostToStoryV2 = self.showRepostToStory
                 groupUserDefaults.set(true, forKey: showRepostToStoryMigrationKey)
-                SGLogger.shared.log("SGSimpleSettings", "Migrated showRepostToStory. \(self.showRepostToStory) -> \(self.showRepostToStoryV2)")
+                EGLogger.shared.log("EGSimpleSettings", "Migrated showRepostToStory. \(self.showRepostToStory) -> \(self.showRepostToStoryV2)")
             }
         } else {
-            SGLogger.shared.log("SGSimpleSettings", "Unable to migrate showRepostToStory. Shared UserDefaults suite is not available for '\(APP_GROUP_IDENTIFIER)'.")
+            EGLogger.shared.log("EGSimpleSettings", "Unable to migrate showRepostToStory. Shared UserDefaults suite is not available for '\(APP_GROUP_IDENTIFIER)'.")
         }
 
         let chatListLinesMigrationKey = "migrated_\(Keys.chatListLines.rawValue)"
@@ -43,7 +43,7 @@ public class SGSimpleSettings {
                     self.chatListLines = ChatListLines.one.rawValue
                 }
                 UserDefaults.standard.removeObject(forKey: legacyCompactMessagePreviewKey)
-                SGLogger.shared.log("SGSimpleSettings", "Migrated compactMessagePreview -> chatListLines. \(self.chatListLines)")
+                EGLogger.shared.log("EGSimpleSettings", "Migrated compactMessagePreview -> chatListLines. \(self.chatListLines)")
             }
             UserDefaults.standard.set(true, forKey: chatListLinesMigrationKey)
         }
@@ -594,7 +594,7 @@ public class SGSimpleSettings {
     public var tabBarSearchEnabled: Bool
 }
 
-extension SGSimpleSettings {
+extension EGSimpleSettings {
     public var isStealthModeEnabled: Bool {
         return storyStealthMode && canUseStealthMode
     }
@@ -604,33 +604,33 @@ extension SGSimpleSettings {
     }
 }
 
-extension SGSimpleSettings {
-    public var translationBackendEnum: SGSimpleSettings.TranslationBackend {
+extension EGSimpleSettings {
+    public var translationBackendEnum: EGSimpleSettings.TranslationBackend {
         return TranslationBackend(rawValue: translationBackend) ?? .default
     }
     
-    public var transcriptionBackendEnum: SGSimpleSettings.TranscriptionBackend {
+    public var transcriptionBackendEnum: EGSimpleSettings.TranscriptionBackend {
         return TranscriptionBackend(rawValue: transcriptionBackend) ?? .default
     }
 }
 
-extension SGSimpleSettings {
+extension EGSimpleSettings {
     public var isNYEnabled: Bool {
         return canUseNY && NYStyle(rawValue: nyStyle) != .default
     }
 }
 
 public func getSGDownloadPartSize(_ default: Int64, fileSize: Int64?) -> Int64 {
-    let currentDownloadSetting = SGSimpleSettings.shared.downloadSpeedBoost
+    let currentDownloadSetting = EGSimpleSettings.shared.downloadSpeedBoost
     // Increasing chunk size for small files make it worse in terms of overall download performance
     let smallFileSizeThreshold = 1 * 1024 * 1024 // 1 MB
     switch (currentDownloadSetting) {
-        case SGSimpleSettings.DownloadSpeedBoostValues.medium.rawValue:
+        case EGSimpleSettings.DownloadSpeedBoostValues.medium.rawValue:
             if let fileSize, fileSize <= smallFileSizeThreshold {
                 return `default`
             }
             return 512 * 1024
-        case SGSimpleSettings.DownloadSpeedBoostValues.maximum.rawValue:
+        case EGSimpleSettings.DownloadSpeedBoostValues.maximum.rawValue:
             if let fileSize, fileSize <= smallFileSizeThreshold {
                 return `default`
             }
@@ -641,11 +641,11 @@ public func getSGDownloadPartSize(_ default: Int64, fileSize: Int64?) -> Int64 {
 }
 
 public func getSGMaxPendingParts(_ default: Int) -> Int {
-    let currentDownloadSetting = SGSimpleSettings.shared.downloadSpeedBoost
+    let currentDownloadSetting = EGSimpleSettings.shared.downloadSpeedBoost
     switch (currentDownloadSetting) {
-        case SGSimpleSettings.DownloadSpeedBoostValues.medium.rawValue:
+        case EGSimpleSettings.DownloadSpeedBoostValues.medium.rawValue:
             return 8
-        case SGSimpleSettings.DownloadSpeedBoostValues.maximum.rawValue:
+        case EGSimpleSettings.DownloadSpeedBoostValues.maximum.rawValue:
             return 12
         default:
             return `default`
@@ -653,11 +653,11 @@ public func getSGMaxPendingParts(_ default: Int) -> Int {
 }
 
 public func sgUseShortAllChatsTitle(_ default: Bool) -> Bool {
-    let currentOverride = SGSimpleSettings.shared.allChatsTitleLengthOverride
+    let currentOverride = EGSimpleSettings.shared.allChatsTitleLengthOverride
     switch (currentOverride) {
-        case SGSimpleSettings.AllChatsTitleLengthOverride.short.rawValue:
+        case EGSimpleSettings.AllChatsTitleLengthOverride.short.rawValue:
             return true
-        case SGSimpleSettings.AllChatsTitleLengthOverride.long.rawValue:
+        case EGSimpleSettings.AllChatsTitleLengthOverride.long.rawValue:
             return false
         default:
             return `default`

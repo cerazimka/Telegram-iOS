@@ -1,9 +1,9 @@
 import Foundation
 
-public struct SGGHSettings: Codable, Equatable {
+public struct EGGHSettings: Codable, Equatable {
     public let announcementsData: String?
     
-    public static var defaultValue: SGGHSettings {
-        return SGGHSettings(announcementsData: nil)
+    public static var defaultValue: EGGHSettings {
+        return EGGHSettings(announcementsData: nil)
     }
 }

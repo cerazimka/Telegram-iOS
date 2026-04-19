@@ -1,15 +1,15 @@
 import Foundation
 
 // Assuming NGLogging and AppBundle are custom modules, they are imported here.
-import SGLogging
+import EGLogging
 import AppBundle
 
 
-public let SGFallbackLocale = "en"
+public let EGFallbackLocale = "en"
 
-public class SGLocalizationManager {
+public class EGLocalizationManager {
     
-    public static let shared = SGLocalizationManager()
+    public static let shared = EGLocalizationManager()
     
     private let appBundle: Bundle
     private var localizations: [String: [String: String]] = [:]
@@ -23,9 +23,9 @@ public class SGLocalizationManager {
         "sdh": "ku"
     ]
     
-    private init(fetchLocale: String = SGFallbackLocale) {
+    private init(fetchLocale: String = EGFallbackLocale) {
         self.appBundle = getAppBundle()
-        // Iterating over all the app languages and loading SGLocalizable.strings
+        // Iterating over all the app languages and loading EGLocalizable.strings
         self.appBundle.localizations.forEach { locale in
             if locale != "Base" {
                 localizations[locale] = loadLocalDictionary(for: locale)
@@ -35,7 +35,7 @@ public class SGLocalizationManager {
         self.downloadLocale(fetchLocale)
     }
     
-    public func localizedString(_ key: String, _ locale: String = SGFallbackLocale, args: CVarArg...) -> String {
+    public func localizedString(_ key: String, _ locale: String = EGFallbackLocale, args: CVarArg...) -> String {
         let sanitizedLocale = self.sanitizeLocale(locale)
         
         if let localizedString = findLocalizedString(forKey: key, inLocale: sanitizedLocale) {
@@ -46,18 +46,18 @@ public class SGLocalizationManager {
             }
         }
         
-        SGLogger.shared.log("Strings", "Missing string for key: \(key) in locale: \(locale)")
+        EGLogger.shared.log("Strings", "Missing string for key: \(key) in locale: \(locale)")
         return key
     }
     
     private func loadLocalDictionary(for locale: String) -> [String: String] {
-        guard let path = self.appBundle.path(forResource: "SGLocalizable", ofType: "strings", inDirectory: nil, forLocalization: locale) else {
-            // SGLogger.shared.log("Localization", "Unable to find path for locale: \(locale)")
+        guard let path = self.appBundle.path(forResource: "EGLocalizable", ofType: "strings", inDirectory: nil, forLocalization: locale) else {
+            // EGLogger.shared.log("Localization", "Unable to find path for locale: \(locale)")
             return [:]
         }
 
         guard let dictionary = NSDictionary(contentsOf: URL(fileURLWithPath: path)) as? [String: String] else {
-            // SGLogger.shared.log("Localization", "Unable to load dictionary for locale: \(locale)")
+            // EGLogger.shared.log("Localization", "Unable to load dictionary for locale: \(locale)")
             return [:]
         }
 
@@ -66,14 +66,14 @@ public class SGLocalizationManager {
     
     public func downloadLocale(_ locale: String) {
         #if DEBUG
-        SGLogger.shared.log("Strings", "DEBUG ignoring locale download: \(locale)")
+        EGLogger.shared.log("Strings", "DEBUG ignoring locale download: \(locale)")
         if ({ return true }()) {
             return
         }
         #endif
         let sanitizedLocale = self.sanitizeLocale(locale)
         guard let url = URL(string: self.getStringsUrl(for: sanitizedLocale)) else {
-            SGLogger.shared.log("Strings", "Invalid URL for locale: \(sanitizedLocale)")
+            EGLogger.shared.log("Strings", "Invalid URL for locale: \(sanitizedLocale)")
             return
         }
         
@@ -81,10 +81,10 @@ public class SGLocalizationManager {
             if let localeDict = NSDictionary(contentsOf: url) as? [String: String] {
                 DispatchQueue.main.async {
                     self.webLocalizations[sanitizedLocale] = localeDict
-                    SGLogger.shared.log("Strings", "Successfully downloaded locale \(sanitizedLocale)")
+                    EGLogger.shared.log("Strings", "Successfully downloaded locale \(sanitizedLocale)")
                 }
             } else {
-                SGLogger.shared.log("Strings", "Failed to download \(sanitizedLocale)")
+                EGLogger.shared.log("Strings", "Failed to download \(sanitizedLocale)")
             }
         }
     }
@@ -115,20 +115,20 @@ public class SGLocalizationManager {
         if let fallbackLocale = self.fallbackMappings[locale] {
             return self.findLocalizedString(forKey: key, inLocale: fallbackLocale)
         }
-        return self.localizations[SGFallbackLocale]?[key]
+        return self.localizations[EGFallbackLocale]?[key]
     }
 
     private func getStringsUrl(for locale: String) -> String {
-        return "https://raw.githubusercontent.com/Swiftgram/Telegram-iOS/master/Swiftgram/SGStrings/Strings/\(locale).lproj/SGLocalizable.strings"
+        return "https://raw.githubusercontent.com/Swiftgram/Telegram-iOS/master/Swiftgram/SGStrings/Strings/\(locale).lproj/EGLocalizable.strings"
     }
 
 }
 
-public let i18n = SGLocalizationManager.shared.localizedString
+public let i18n = EGLocalizationManager.shared.localizedString
 
 
 public extension String {
-    func i18n(_ locale: String = SGFallbackLocale, args: CVarArg...) -> String {
-        return SGLocalizationManager.shared.localizedString(self, locale, args: args)
+    func i18n(_ locale: String = EGFallbackLocale, args: CVarArg...) -> String {
+        return EGLocalizationManager.shared.localizedString(self, locale, args: args)
     }
 }

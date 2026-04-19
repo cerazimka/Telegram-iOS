@@ -1,6 +1,6 @@
 import StoreKit
-import SGConfig
-import SGLogging
+import EGConfig
+import EGLogging
 import AppBundle
 import Combine
 
@@ -88,22 +88,22 @@ private func fractionalValueToCurrencyAmount(value: Double, currency: String) ->
 
 
 public extension Notification.Name {
-    static let SGIAPHelperPurchaseNotification = Notification.Name("SGIAPPurchaseNotification")
-    static let SGIAPHelperErrorNotification = Notification.Name("SGIAPErrorNotification")
-    static let SGIAPHelperProductsUpdatedNotification = Notification.Name("SGIAPProductsUpdatedNotification")
-    static let SGIAPHelperValidationErrorNotification = Notification.Name("SGIAPValidationErrorNotification")
+    static let EGIAPHelperPurchaseNotification = Notification.Name("SGIAPPurchaseNotification")
+    static let EGIAPHelperErrorNotification = Notification.Name("SGIAPErrorNotification")
+    static let EGIAPHelperProductsUpdatedNotification = Notification.Name("SGIAPProductsUpdatedNotification")
+    static let EGIAPHelperValidationErrorNotification = Notification.Name("SGIAPValidationErrorNotification")
 }
 
-public final class SGIAPManager: NSObject {
+public final class EGIAPManager: NSObject {
     private var productRequest: SKProductsRequest?
     private var productsRequestCompletion: (([SKProduct]) -> Void)?
     private var purchaseCompletion: ((Bool, Error?) -> Void)?
     
-    public private(set) var availableProducts: [SGProduct] = []
+    public private(set) var availableProducts: [EGProduct] = []
     private var finishedSuccessfulTransactions = Set<String>()
     private var onRestoreCompletion: (() -> Void)?
     
-    public final class SGProduct: Equatable {
+    public final class EGProduct: Equatable {
         private lazy var numberFormatter: NumberFormatter = {
             let numberFormatter = NumberFormatter()
             numberFormatter.numberStyle = .currency
@@ -189,7 +189,7 @@ public final class SGIAPManager: NSObject {
             }
         }
         
-        public static func ==(lhs: SGProduct, rhs: SGProduct) -> Bool {
+        public static func ==(lhs: EGProduct, rhs: EGProduct) -> Bool {
             if lhs.id != rhs.id {
                 return false
             }
@@ -227,14 +227,14 @@ public final class SGIAPManager: NSObject {
     }
     
     public func buyProduct(_ product: SKProduct) {
-        SGLogger.shared.log("SGIAP", "Buying \(product.productIdentifier)...")
+        EGLogger.shared.log("EGIAP", "Buying \(product.productIdentifier)...")
         let payment = SKPayment(product: product)
         SKPaymentQueue.default().add(payment)
     }
     
     private func requestProducts() {
-        SGLogger.shared.log("SGIAP", "Requesting products for \(SG_CONFIG.iaps.count) ids...")
-        let productRequest = SKProductsRequest(productIdentifiers: Set(SG_CONFIG.iaps))
+        EGLogger.shared.log("EGIAP", "Requesting products for \(EG_CONFIG.iaps.count) ids...")
+        let productRequest = SKProductsRequest(productIdentifiers: Set(EG_CONFIG.iaps))
         
         productRequest.delegate = self
         productRequest.start()
@@ -243,7 +243,7 @@ public final class SGIAPManager: NSObject {
     }
     
     public func restorePurchases(completion: @escaping () -> Void) {
-        SGLogger.shared.log("SGIAP", "Restoring purchases...")
+        EGLogger.shared.log("EGIAP", "Restoring purchases...")
         self.onRestoreCompletion = completion
 
         let paymentQueue = SKPaymentQueue.default()
@@ -252,33 +252,33 @@ public final class SGIAPManager: NSObject {
 
 }
 
-extension SGIAPManager: SKProductsRequestDelegate {
+extension EGIAPManager: SKProductsRequestDelegate {
     public func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
         self.productRequest = nil
         
         DispatchQueue.main.async {
             let products = response.products
-            SGLogger.shared.log("SGIAP", "Received products (\(products.count)): \(products.map({ $0.productIdentifier }).joined(separator: ", "))")
+            EGLogger.shared.log("EGIAP", "Received products (\(products.count)): \(products.map({ $0.productIdentifier }).joined(separator: ", "))")
             let currentlyAvailableProducts = self.availableProducts
-            self.availableProducts = products.map({ SGProduct(skProduct: $0) })
+            self.availableProducts = products.map({ EGProduct(skProduct: $0) })
             if currentlyAvailableProducts != self.availableProducts {
-                NotificationCenter.default.post(name: .SGIAPHelperProductsUpdatedNotification, object: nil)
+                NotificationCenter.default.post(name: .EGIAPHelperProductsUpdatedNotification, object: nil)
             }
         }
     }
     
     public func request(_ request: SKRequest, didFailWithError error: Error) {
-        SGLogger.shared.log("SGIAP", "Failed to load list of products. Error \(error.localizedDescription)")
+        EGLogger.shared.log("EGIAP", "Failed to load list of products. Error \(error.localizedDescription)")
         self.productRequest = nil
     }
 }
 
-extension SGIAPManager: SKPaymentTransactionObserver {
+extension EGIAPManager: SKPaymentTransactionObserver {
     public func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
-        SGLogger.shared.log("SGIAP", "paymentQueue transactions \(transactions.count)")
+        EGLogger.shared.log("EGIAP", "paymentQueue transactions \(transactions.count)")
         var purchaceTransactions: [SKPaymentTransaction] = []
         for transaction in transactions {
-            SGLogger.shared.log("SGIAP", "Transaction \(transaction.transactionIdentifier ?? "nil") state for product \(transaction.payment.productIdentifier): \(transaction.transactionState.description)")
+            EGLogger.shared.log("EGIAP", "Transaction \(transaction.transactionIdentifier ?? "nil") state for product \(transaction.payment.productIdentifier): \(transaction.transactionState.description)")
             switch transaction.transactionState {
                 case .purchased, .restored:
                     purchaceTransactions.append(transaction)
@@ -292,24 +292,24 @@ extension SGIAPManager: SKPaymentTransactionObserver {
                         let localizedDescription = transaction.error?.localizedDescription,
                         transactionError.code != SKError.paymentCancelled.rawValue {
                         localizedError = localizedDescription
-                        SGLogger.shared.log("SGIAP", "Transaction Error [\(transaction.transactionIdentifier ?? "nil")]: \(localizedDescription)")
+                        EGLogger.shared.log("EGIAP", "Transaction Error [\(transaction.transactionIdentifier ?? "nil")]: \(localizedDescription)")
                     }
-                    SGLogger.shared.log("SGIAP", "Sending SGIAPHelperErrorNotification for \(transaction.transactionIdentifier ?? "nil")")
-                    NotificationCenter.default.post(name: .SGIAPHelperErrorNotification, object: transaction, userInfo: ["localizedError": localizedError])
+                    EGLogger.shared.log("EGIAP", "Sending EGIAPHelperErrorNotification for \(transaction.transactionIdentifier ?? "nil")")
+                    NotificationCenter.default.post(name: .EGIAPHelperErrorNotification, object: transaction, userInfo: ["localizedError": localizedError])
                 default:
-                    SGLogger.shared.log("SGIAP", "Unknown transaction \(transaction.transactionIdentifier ?? "nil") state \(transaction.transactionState). Finishing transaction.")
+                    EGLogger.shared.log("EGIAP", "Unknown transaction \(transaction.transactionIdentifier ?? "nil") state \(transaction.transactionState). Finishing transaction.")
                     SKPaymentQueue.default().finishTransaction(transaction)
             }
         }
         
         if !purchaceTransactions.isEmpty {
-            SGLogger.shared.log("SGIAP", "Sending SGIAPHelperPurchaseNotification for \(purchaceTransactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
-            NotificationCenter.default.post(name: .SGIAPHelperPurchaseNotification, object: purchaceTransactions)
+            EGLogger.shared.log("EGIAP", "Sending EGIAPHelperPurchaseNotification for \(purchaceTransactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+            NotificationCenter.default.post(name: .EGIAPHelperPurchaseNotification, object: purchaceTransactions)
         }
     }
     
     public func paymentQueueRestoreCompletedTransactionsFinished(_ queue: SKPaymentQueue) {
-        SGLogger.shared.log("SGIAP", "Transactions restored")
+        EGLogger.shared.log("EGIAP", "Transactions restored")
         
         if let onRestoreCompletion = self.onRestoreCompletion {
             self.onRestoreCompletion = nil
@@ -354,10 +354,10 @@ public func getPurchaceReceiptData() -> Data? {
         do {
             receiptData = try Data(contentsOf: appStoreReceiptURL, options: .alwaysMapped)
         } catch {
-            SGLogger.shared.log("SGIAP", "Couldn't read receipt data with error: \(error.localizedDescription)")
+            EGLogger.shared.log("EGIAP", "Couldn't read receipt data with error: \(error.localizedDescription)")
         }
     } else {
-        SGLogger.shared.log("SGIAP", "Couldn't find receipt path")
+        EGLogger.shared.log("EGIAP", "Couldn't find receipt path")
     }
     return receiptData
 }

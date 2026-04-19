@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGWebAppExtensions",
-    module_name = "SGWebAppExtensions",
+    name = "EGWebAppExtensions",
+    module_name = "EGWebAppExtensions",
     srcs = glob([
 		"Sources/**/*.swift",
     ]),

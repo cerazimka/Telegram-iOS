@@ -26,8 +26,8 @@ flex_dependency = select({
 
 
 swift_library(
-    name = "SGDebugUI",
-    module_name = "SGDebugUI",
+    name = "EGDebugUI",
+    module_name = "EGDebugUI",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -35,13 +35,13 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGItemListUI:SGItemListUI",
-        "//Swiftgram/SGLogging:SGLogging",
-        "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-        "//Swiftgram/SGStrings:SGStrings",
-        "//Swiftgram/SGSwiftUI:SGSwiftUI",
-        "//Swiftgram/SGIAP:SGIAP",
-        "//Swiftgram/SGPayWall:SGPayWall",
+        "//exteraGram/EGItemListUI:EGItemListUI",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGStrings:EGStrings",
+        "//exteraGram/EGSwiftUI:EGSwiftUI",
+        "//exteraGram/EGIAP:EGIAP",
+        "//exteraGram/EGPayWall:EGPayWall",
         "//submodules/TelegramUIPreferences:TelegramUIPreferences",
         "//submodules/LegacyUI:LegacyUI",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",

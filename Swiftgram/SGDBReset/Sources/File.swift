@@ -1,9 +1,9 @@
 import UIKit
 import Foundation
-import SGLogging
+import EGLogging
 
 private let dbResetKey = "sg_db_reset"
-private let dbHardResetKey = "sg_db_hard_reset"
+private let dbHardResetKey = "eg_db_hard_reset"
 
 public func sgDBResetIfNeeded(databasePath: String, present: ((UIViewController) -> ())?) {
     guard UserDefaults.standard.bool(forKey: dbResetKey) else {

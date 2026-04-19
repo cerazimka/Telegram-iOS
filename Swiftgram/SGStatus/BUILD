@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGStatus",
+    name = "EGStatus",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

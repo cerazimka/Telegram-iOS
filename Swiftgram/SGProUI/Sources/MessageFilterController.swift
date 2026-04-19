@@ -1,8 +1,8 @@
 import Foundation
 import SwiftUI
-import SGSwiftUI
-import SGStrings
-import SGSimpleSettings
+import EGSwiftUI
+import EGStrings
+import EGSimpleSettings
 import LegacyUI
 import Display
 import TelegramPresentationData
@@ -62,13 +62,13 @@ struct MessageFilterView: View {
     @State private var newKeyword: String = ""
     @State private var keywords: [String] {
         didSet {
-            SGSimpleSettings.shared.messageFilterKeywords = keywords
+            EGSimpleSettings.shared.messageFilterKeywords = keywords
         }
     }
     
     init(wrapperController: LegacyController?) {
         self.wrapperController = wrapperController
-        _keywords = State(initialValue: SGSimpleSettings.shared.messageFilterKeywords)
+        _keywords = State(initialValue: EGSimpleSettings.shared.messageFilterKeywords)
     }
     
     var bodyContent: some View {
@@ -168,7 +168,7 @@ public func sgMessageFilterController(presentationData: PresentationData? = nil)
     legacyController.statusBar.statusBarStyle = theme.rootController
         .statusBarStyle.style
     legacyController.displayNavigationBar = false
-    let swiftUIView = SGSwiftUIView<MessageFilterView>(
+    let swiftUIView = EGSwiftUIView<MessageFilterView>(
         legacyController: legacyController,
         content: {
             MessageFilterView(wrapperController: legacyController)

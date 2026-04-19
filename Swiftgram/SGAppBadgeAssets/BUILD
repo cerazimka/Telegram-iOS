@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGAppBadgeAssets",
+    name = "EGAppBadgeAssets",
     srcs = glob(["Images.xcassets/**"]),
     visibility = ["//visibility:public"],
 )

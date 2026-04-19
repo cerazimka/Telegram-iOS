@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGSwiftUI",
-    module_name = "SGSwiftUI",
+    name = "EGSwiftUI",
+    module_name = "EGSwiftUI",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

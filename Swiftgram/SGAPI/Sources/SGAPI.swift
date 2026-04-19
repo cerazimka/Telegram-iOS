@@ -1,18 +1,18 @@
 import Foundation
 import SwiftSignalKit
 
-import SGConfig
-import SGLogging
-import SGSimpleSettings
-import SGWebAppExtensions
-import SGWebSettingsScheme
-import SGRequests
-import SGRegDateScheme
+import EGConfig
+import EGLogging
+import EGSimpleSettings
+import EGWebAppExtensions
+import EGWebSettingsScheme
+import EGRequests
+import EGRegDateScheme
 
 private let API_VERSION: String = "0"
 
 private func buildApiUrl(_ endpoint: String) -> String {
-    return "\(SG_CONFIG.apiUrl)/v\(API_VERSION)/\(endpoint)"
+    return "\(EG_CONFIG.apiUrl)/v\(API_VERSION)/\(endpoint)"
 }
 
 public let SG_API_AUTHORIZATION_HEADER = "Authorization"
@@ -22,11 +22,11 @@ private enum HTTPRequestError {
     case network
 }
 
-public enum SGAPIError {
+public enum EGAPIError {
     case generic(String? = nil)
 }
 
-public func getSGSettings(token: String) -> Signal<SGWebSettings, SGAPIError> {
+public func getEGSettings(token: String) -> Signal<EGWebSettings, EGAPIError> {
     return Signal { subscriber in
 
         let url = URL(string: buildApiUrl("settings"))!
@@ -43,7 +43,7 @@ public func getSGSettings(token: String) -> Signal<SGWebSettings, SGAPIError> {
             do {
                 let decoder = JSONDecoder()
                 decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let settings = try decoder.decode(SGWebSettings.self, from: data)
+                let settings = try decoder.decode(EGWebSettings.self, from: data)
                 subscriber.putNext(settings)
                 subscriber.putCompletion()
             } catch {
@@ -63,7 +63,7 @@ public func getSGSettings(token: String) -> Signal<SGWebSettings, SGAPIError> {
 
 
 
-public func postSGSettings(token: String, data: [String:Any]) -> Signal<Void, SGAPIError> {
+public func postEGSettings(token: String, data: [String:Any]) -> Signal<Void, EGAPIError> {
     return Signal { subscriber in
 
         let url = URL(string: buildApiUrl("settings"))!
@@ -105,7 +105,7 @@ public func postSGSettings(token: String, data: [String:Any]) -> Signal<Void, SG
     }
 }
 
-public func getSGAPIRegDate(token: String, deviceToken: String, userId: Int64) -> Signal<RegDate, SGAPIError> {
+public func getEGAPIRegDate(token: String, deviceToken: String, userId: Int64) -> Signal<RegDate, EGAPIError> {
     return Signal { subscriber in
 
         let url = URL(string: buildApiUrl("regdate/\(userId)"))!
@@ -145,7 +145,7 @@ public func getSGAPIRegDate(token: String, deviceToken: String, userId: Int64) -
 }
 
 
-public func postSGReceipt(token: String, deviceToken: String, encodedReceiptData: Data) -> Signal<Void, SGAPIError> {
+public func postEGReceipt(token: String, deviceToken: String, encodedReceiptData: Data) -> Signal<Void, EGAPIError> {
     return Signal { subscriber in
 
         let url = URL(string: buildApiUrl("validate"))!

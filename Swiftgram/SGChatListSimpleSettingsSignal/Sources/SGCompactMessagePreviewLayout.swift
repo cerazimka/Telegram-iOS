@@ -1,10 +1,10 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import CoreGraphics
 import Display
 
-enum SGCompactMessagePreviewLayout {
+enum EGCompactMessagePreviewLayout {
     static func isEnabled() -> Bool {
-        (SGSimpleSettings.ChatListLines(rawValue: SGSimpleSettings.shared.chatListLines) ?? .three) != .three
+        (EGSimpleSettings.ChatListLines(rawValue: EGSimpleSettings.shared.chatListLines) ?? .three) != .three
     }
 
     static func avatarScaleDivisor(compactChatList: Bool, compactMessagePreview: Bool) -> CGFloat {

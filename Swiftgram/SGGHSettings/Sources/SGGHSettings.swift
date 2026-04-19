@@ -1,6 +1,6 @@
 import Foundation
-import SGLogging
-import SGGHSettingsScheme
+import EGLogging
+import EGGHSettingsScheme
 import AccountContext
 import TelegramCore
 
@@ -28,14 +28,14 @@ public func updateSGGHSettingsInteractivelly(context: AccountContext) {
 
 let maxRetries: Int = 3
 
-enum SGGHFetchError: Error {
+enum EGGHFetchError: Error {
     case invalidURL
     case notFound
     case fetchFailed(statusCode: Int)
     case decodingFailed
 }
 
-func fetchSGGHSettings(locale: String) async throws -> SGGHSettings {
+func fetchSGGHSettings(locale: String) async throws -> EGGHSettings {
     let baseURL = "https://raw.githubusercontent.com/Swiftgram/settings/refs/heads/main"
     var candidates: [String] = []
     if let buildNumber = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
@@ -53,7 +53,7 @@ func fetchSGGHSettings(locale: String) async throws -> SGGHSettings {
     for candidate in candidates {
         let urlString = "\(baseURL)/\(candidate)"
         guard let url = URL(string: urlString) else {
-            SGLogger.shared.log("SGGHSettings", "[0] Fetch failed for \(candidate). Invalid URL: \(urlString)")
+            EGLogger.shared.log("EGGHSettings", "[0] Fetch failed for \(candidate). Invalid URL: \(urlString)")
             continue
         }
 
@@ -61,8 +61,8 @@ func fetchSGGHSettings(locale: String) async throws -> SGGHSettings {
             do {
                 let (data, response) = try await URLSession.shared.data(from: url)
                 guard let httpResponse = response as? HTTPURLResponse else {
-                    SGLogger.shared.log("SGGHSettings", "[\(attempt)] Fetch failed for \(candidate). Invalid response type: \(response)")
-                    throw SGGHFetchError.fetchFailed(statusCode: -1)
+                    EGLogger.shared.log("EGGHSettings", "[\(attempt)] Fetch failed for \(candidate). Invalid response type: \(response)")
+                    throw EGGHFetchError.fetchFailed(statusCode: -1)
                 }
 
                 switch httpResponse.statusCode {
@@ -70,19 +70,19 @@ func fetchSGGHSettings(locale: String) async throws -> SGGHSettings {
                     do {
                         let jsonDecoder = JSONDecoder()
                         jsonDecoder.keyDecodingStrategy = .convertFromSnakeCase
-                        let settings = try jsonDecoder.decode(SGGHSettings.self, from: data)
-                        SGLogger.shared.log("SGGHSettings", "[\(attempt)] Fetched \(candidate): \(settings)")
+                        let settings = try jsonDecoder.decode(EGGHSettings.self, from: data)
+                        EGLogger.shared.log("EGGHSettings", "[\(attempt)] Fetched \(candidate): \(settings)")
                         return settings
                     } catch {
-                        SGLogger.shared.log("SGGHSettings", "[\(attempt)] Failed to decode \(candidate): \(error)")
-                        throw SGGHFetchError.decodingFailed
+                        EGLogger.shared.log("EGGHSettings", "[\(attempt)] Failed to decode \(candidate): \(error)")
+                        throw EGGHFetchError.decodingFailed
                     }
                 case 404:
-                    SGLogger.shared.log("SGGHSettings", "[\(attempt)] Not found \(candidate) on the remote.")
+                    EGLogger.shared.log("EGGHSettings", "[\(attempt)] Not found \(candidate) on the remote.")
                     break attemptsOuter
                 default:
-                    SGLogger.shared.log("SGGHSettings", "[\(attempt)] Fetch failed for \(candidate), status code: \(httpResponse.statusCode)")
-                    throw SGGHFetchError.fetchFailed(statusCode: httpResponse.statusCode)
+                    EGLogger.shared.log("EGGHSettings", "[\(attempt)] Fetch failed for \(candidate), status code: \(httpResponse.statusCode)")
+                    throw EGGHFetchError.fetchFailed(statusCode: httpResponse.statusCode)
                 }
             } catch {
                 lastError = error
@@ -94,6 +94,6 @@ func fetchSGGHSettings(locale: String) async throws -> SGGHSettings {
         }
     }
 
-    SGLogger.shared.log("SGGHSettings", "All attempts failed. Last error: \(String(describing: lastError))")
-    throw SGGHFetchError.fetchFailed(statusCode: -1)
+    EGLogger.shared.log("EGGHSettings", "All attempts failed. Last error: \(String(describing: lastError))")
+    throw EGGHFetchError.fetchFailed(statusCode: -1)
 }

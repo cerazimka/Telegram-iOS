@@ -1,19 +1,19 @@
 import Foundation
 import SwiftUI
 import StoreKit
-import SGSwiftUI
-import SGIAP
+import EGSwiftUI
+import EGIAP
 import TelegramPresentationData
 import LegacyUI
 import Display
-import SGConfig
-import SGStrings
+import EGConfig
+import EGStrings
 import SwiftSignalKit
 import TelegramUIPreferences
 
 
 
-public func sgPayWallController(statusSignal: Signal<Int64, NoError>, replacementController: ViewController, presentationData: PresentationData? = nil, SGIAPManager: SGIAPManager, openUrl: @escaping (String, Bool) -> Void /* url, forceExternal */, paymentsEnabled: Bool, canBuyInBeta: Bool, openAppStorePage: @escaping () -> Void, proSupportUrl: String?) -> ViewController {
+public func egPayWallController(statusSignal: Signal<Int64, NoError>, replacementController: ViewController, presentationData: PresentationData? = nil, EGIAPManager: EGIAPManager, openUrl: @escaping (String, Bool) -> Void /* url, forceExternal */, paymentsEnabled: Bool, canBuyInBeta: Bool, openAppStorePage: @escaping () -> Void, proSupportUrl: String?) -> ViewController {
     //    let theme = presentationData?.theme ?? (UITraitCollection.current.userInterfaceStyle == .dark ? defaultDarkColorPresentationTheme : defaultPresentationTheme)
     let theme = defaultDarkColorPresentationTheme
     let strings = presentationData?.strings ?? defaultPresentationStrings
@@ -28,10 +28,10 @@ public func sgPayWallController(statusSignal: Signal<Int64, NoError>, replacemen
     legacyController.attemptNavigation = { _ in return false }
     legacyController.view.disablesInteractiveTransitionGestureRecognizer = true
     
-    let swiftUIView = SGSwiftUIView<SGPayWallView>(
+    let swiftUIView = EGSwiftUIView<EGPayWallView>(
         legacyController: legacyController,
         content: {
-            SGPayWallView(wrapperController: legacyController, replacementController: replacementController, SGIAP: SGIAPManager, statusSignal: statusSignal, openUrl: openUrl, openAppStorePage: openAppStorePage, paymentsEnabled: paymentsEnabled, canBuyInBeta: canBuyInBeta, proSupportUrl: proSupportUrl)
+            EGPayWallView(wrapperController: legacyController, replacementController: replacementController, EGIAP: EGIAPManager, statusSignal: statusSignal, openUrl: openUrl, openAppStorePage: openAppStorePage, paymentsEnabled: paymentsEnabled, canBuyInBeta: canBuyInBeta, proSupportUrl: proSupportUrl)
         }
     )
     let controller = UIHostingController(rootView: swiftUIView, ignoreSafeArea: true)
@@ -97,14 +97,14 @@ struct BackgroundView: View {
 
 
 
-struct SGPayWallFeatureDetails: View {
+struct EGPayWallFeatureDetails: View {
     
     let dismissAction: () -> Void
     var bottomOffset: CGFloat = 0.0
     let contentHeight: CGFloat = 690.0
-    let features: [SGProFeature]
+    let features: [EGProFeature]
     
-    @State var shownFeature: SGProFeatureId?
+    @State var shownFeature: EGProFeatureId?
      // Add animation states
     @State private var showBackground = false
     @State private var showContent = false
@@ -131,7 +131,7 @@ struct SGPayWallFeatureDetails: View {
                         TabView(selection: $shownFeature) {
                             ForEach(features) { feature in
                                 ScrollView(showsIndicators: false) {
-                                    SGProFeatureView(
+                                    EGProFeatureView(
                                         feature: feature
                                     )
                                     Color.clear.frame(height: 8.0) // paginator padding
@@ -226,8 +226,8 @@ struct SGPayWallFeatureDetails: View {
 
 
 
-struct SGProFeatureView: View {
-    let feature: SGProFeature
+struct EGProFeatureView: View {
+    let feature: EGProFeature
     
     var body: some View {
         VStack(spacing: 16) {
@@ -258,7 +258,7 @@ struct SGProFeatureView: View {
     }
 }
 
-enum SGProFeatureId: Hashable {
+enum EGProFeatureId: Hashable {
     case backup
     case filter
     case notifications
@@ -268,9 +268,9 @@ enum SGProFeatureId: Hashable {
 
 
 
-struct SGProFeature: Identifiable {
+struct EGProFeature: Identifiable {
     
-    let id: SGProFeatureId
+    let id: EGProFeatureId
     let title: String
     let subtitle: String
     let description: String?
@@ -317,14 +317,14 @@ struct SGProFeature: Identifiable {
 
 
 
-struct SGPayWallView: View {
+struct EGPayWallView: View {
     @Environment(\.navigationBarHeight) var navigationBarHeight: CGFloat
     @Environment(\.containerViewLayout) var containerViewLayout: ContainerViewLayout?
     @Environment(\.lang) var lang: String
     
     weak var wrapperController: LegacyController?
     let replacementController: ViewController
-    let SGIAP: SGIAPManager
+    let EGIAP: EGIAPManager
     let statusSignal: Signal<Int64, NoError>
     let openUrl: (String, Bool) -> Void // url, forceExternal
     let openAppStorePage: () -> Void
@@ -340,18 +340,18 @@ struct SGPayWallView: View {
     }
     
     // State management
-    @State private var product: SGIAPManager.SGProduct?
+    @State private var product: EGIAPManager.EGProduct?
     @State private var currentStatus: Int64 = 1
     @State private var state: PayWallState = .ready
     @State private var showErrorAlert: Bool = false
     @State private var showConfetti: Bool = false
     @State private var showDetails: Bool = false
-    @State private var shownFeature: SGProFeatureId? = nil
+    @State private var shownFeature: EGProFeatureId? = nil
     
-    private let productsPub = NotificationCenter.default.publisher(for: .SGIAPHelperProductsUpdatedNotification, object: nil)
-    private let buyOrRestoreSuccessPub = NotificationCenter.default.publisher(for: .SGIAPHelperPurchaseNotification, object: nil)
-    private let buyErrorPub = NotificationCenter.default.publisher(for: .SGIAPHelperErrorNotification, object: nil)
-    private let validationErrorPub = NotificationCenter.default.publisher(for: .SGIAPHelperValidationErrorNotification, object: nil)
+    private let productsPub = NotificationCenter.default.publisher(for: .EGIAPHelperProductsUpdatedNotification, object: nil)
+    private let buyOrRestoreSuccessPub = NotificationCenter.default.publisher(for: .EGIAPHelperPurchaseNotification, object: nil)
+    private let buyErrorPub = NotificationCenter.default.publisher(for: .EGIAPHelperErrorNotification, object: nil)
+    private let validationErrorPub = NotificationCenter.default.publisher(for: .EGIAPHelperValidationErrorNotification, object: nil)
     
     @State private var statusTask: Task<Void, Never>? = nil
     
@@ -360,13 +360,13 @@ struct SGPayWallView: View {
     
     @State private var purchaseSectionSize: CGSize = .zero
     
-    private var features: [SGProFeature]  {
+    private var features: [EGProFeature]  {
         return [
-            SGProFeature(id: .toolbar, title: "PayWall.InputToolbar.Title".i18n(lang), subtitle: "PayWall.InputToolbar.Notice".i18n(lang), description: "PayWall.InputToolbar.Description".i18n(lang)),
-            SGProFeature(id: .filter, title: "PayWall.MessageFilter.Title".i18n(lang), subtitle: "PayWall.MessageFilter.Notice".i18n(lang), description: "PayWall.MessageFilter.Description".i18n(lang)),
-            SGProFeature(id: .icons, title: "PayWall.AppIcons.Title".i18n(lang), subtitle: "PayWall.AppIcons.Notice".i18n(lang), description: nil),
-            SGProFeature(id: .backup, title: "PayWall.SessionBackup.Title".i18n(lang), subtitle: "PayWall.SessionBackup.Notice".i18n(lang), description: "PayWall.SessionBackup.Description".i18n(lang)),
-            SGProFeature(id: .notifications, title: "PayWall.Notifications.Title".i18n(lang), subtitle: "PayWall.Notifications.Notice".i18n(lang), description: "PayWall.Notifications.Description".i18n(lang)),
+            EGProFeature(id: .toolbar, title: "PayWall.InputToolbar.Title".i18n(lang), subtitle: "PayWall.InputToolbar.Notice".i18n(lang), description: "PayWall.InputToolbar.Description".i18n(lang)),
+            EGProFeature(id: .filter, title: "PayWall.MessageFilter.Title".i18n(lang), subtitle: "PayWall.MessageFilter.Notice".i18n(lang), description: "PayWall.MessageFilter.Description".i18n(lang)),
+            EGProFeature(id: .icons, title: "PayWall.AppIcons.Title".i18n(lang), subtitle: "PayWall.AppIcons.Notice".i18n(lang), description: nil),
+            EGProFeature(id: .backup, title: "PayWall.SessionBackup.Title".i18n(lang), subtitle: "PayWall.SessionBackup.Notice".i18n(lang), description: "PayWall.SessionBackup.Description".i18n(lang)),
+            EGProFeature(id: .notifications, title: "PayWall.Notifications.Title".i18n(lang), subtitle: "PayWall.Notifications.Notice".i18n(lang), description: "PayWall.Notifications.Description".i18n(lang)),
         ]
     }
     
@@ -422,7 +422,7 @@ struct SGPayWallView: View {
                 .padding(.trailing, max(innerShadowWidth + 8.0, sgRightSafeAreaInset(containerViewLayout)))
                 
                 if showDetails {
-                    SGPayWallFeatureDetails(
+                    EGPayWallFeatureDetails(
                         dismissAction: dismissDetails,
                         bottomOffset: (purchaseSectionSize.height / 2.0)  * 0.9, // reduced offset for paginator
                         features: features,
@@ -447,7 +447,7 @@ struct SGPayWallView: View {
                 let statusStream = statusSignal.awaitableStream()
                 for await newStatus in statusStream {
                     #if DEBUG
-                    print("SGPayWallView: newStatus = \(newStatus)")
+                    print("EGPayWallView: newStatus = \(newStatus)")
                     #endif
                     if Task.isCancelled {
                         #if DEBUG
@@ -647,7 +647,7 @@ struct SGPayWallView: View {
             } else if state == .validating {
                 return "PayWall.Button.Validating".i18n(lang)
             } else if let product = product {
-                if !SGIAP.canMakePayments || paymentsEnabled == false {
+                if !EGIAP.canMakePayments || paymentsEnabled == false {
                     return "PayWall.Button.PaymentsUnavailable".i18n(lang)
                 } else if Bundle.main.appStoreReceiptURL?.lastPathComponent == "sandboxReceipt" && !canBuyInBeta {
                     return "PayWall.Button.BuyInAppStore".i18n(lang)
@@ -661,14 +661,14 @@ struct SGPayWallView: View {
     }
     
     private var canPurchase: Bool {
-        if !SGIAP.canMakePayments || paymentsEnabled == false {
+        if !EGIAP.canMakePayments || paymentsEnabled == false {
             return false
         } else {
             return product != nil
         }
     }
     
-    private func showDetailsForFeature(_ featureId: SGProFeatureId) {
+    private func showDetailsForFeature(_ featureId: EGProFeatureId) {
         if #available(iOS 14.0, *) {
             shownFeature = featureId
             showDetails = true
@@ -681,7 +681,7 @@ struct SGPayWallView: View {
     }
     
     private func updateSelectedProduct() {
-        product = SGIAP.availableProducts.first { $0.id == SG_CONFIG.iaps.first ?? "" }
+        product = EGIAP.availableProducts.first { $0.id == EG_CONFIG.iaps.first ?? "" }
     }
     
     private func handlePurchase() {
@@ -693,14 +693,14 @@ struct SGPayWallView: View {
             } else {
                 guard let product = product else { return }
                 state = .purchasing
-                SGIAP.buyProduct(product.skProduct)
+                EGIAP.buyProduct(product.skProduct)
             }
         }
     }
     
     private func handleRestorePurchases() {
         state = .restoring
-        SGIAP.restorePurchases {
+        EGIAP.restorePurchases {
             state = .validating
         }
     }

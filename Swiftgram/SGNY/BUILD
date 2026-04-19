@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGNY",
+    name = "EGNY",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -9,7 +9,7 @@ filegroup(
 )
 
 filegroup(
-    name = "SGNYAssets",
+    name = "EGNYAssets",
     srcs = glob(["Images.xcassets/**"]),
     visibility = ["//visibility:public"],
 )

@@ -2,7 +2,7 @@ import Foundation
 import BuildConfig
 import TelegramCore
 
-public enum SGRecentSessionApiId {
+public enum EGRecentSessionApiId {
     public static func string(for session: RecentAccountSession) -> String? {
         guard !session.isCurrent, let baseAppBundleId = Bundle.main.bundleIdentifier else {
             return nil

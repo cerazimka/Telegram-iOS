@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGInputToolbar",
-    module_name = "SGInputToolbar",
+    name = "EGInputToolbar",
+    module_name = "EGInputToolbar",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

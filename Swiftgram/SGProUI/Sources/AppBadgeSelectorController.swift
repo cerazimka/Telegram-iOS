@@ -1,8 +1,8 @@
 import Foundation
 import SwiftUI
-import SGSwiftUI
-import SGStrings
-import SGSimpleSettings
+import EGSwiftUI
+import EGStrings
+import EGSimpleSettings
 import LegacyUI
 import Display
 import TelegramPresentationData
@@ -25,7 +25,7 @@ func getAvailableAppBadges() -> [AppBadge] {
         .init(displayName: "Day", assetName: "DayAppBadge"),
     ]
 
-    if SGSimpleSettings.shared.duckyAppIconAvailable {
+    if EGSimpleSettings.shared.duckyAppIconAvailable {
         appBadges.append(.init(displayName: "Ducky", assetName: "DuckyAppBadge"))
     }
     appBadges += [
@@ -62,7 +62,7 @@ struct AppBadgeSettingsView: View {
         self.context = context
         
         for badge in self.availableAppBadges {
-            if badge.assetName == SGSimpleSettings.shared.customAppBadge {
+            if badge.assetName == EGSimpleSettings.shared.customAppBadge {
                 self._selectedBadge = State(initialValue: badge)
                 return
             }
@@ -76,7 +76,7 @@ struct AppBadgeSettingsView: View {
         let image = UIImage(bundleImageName: selectedBadge.assetName) ?? UIImage(bundleImageName: "Components/AppBadge")
         if self.context.sharedContext.immediateSGStatus.status > 1 {
             DispatchQueue.main.async {
-                SGSimpleSettings.shared.customAppBadge = selectedBadge.assetName
+                EGSimpleSettings.shared.customAppBadge = selectedBadge.assetName
                 self.context.sharedContext.mainWindow?.badgeView.image = image
             }
         }
@@ -135,7 +135,7 @@ public func sgAppBadgeSettingsController(context: AccountContext, presentationDa
         .statusBarStyle.style
     legacyController.title = "AppBadge.Title".i18n(strings.baseLanguageCode)
     
-    let swiftUIView = SGSwiftUIView<AppBadgeSettingsView>(
+    let swiftUIView = EGSwiftUIView<AppBadgeSettingsView>(
         legacyController: legacyController,
         manageSafeArea: true,
         content: {

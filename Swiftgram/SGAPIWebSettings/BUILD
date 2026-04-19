@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGAPIWebSettings",
-    module_name = "SGAPIWebSettings",
+    name = "EGAPIWebSettings",
+    module_name = "EGAPIWebSettings",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -10,10 +10,10 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGAPI:SGAPI",
-        "//Swiftgram/SGAPIToken:SGAPIToken",
-        "//Swiftgram/SGLogging:SGLogging",
-        "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
+        "//exteraGram/EGAPI:EGAPI",
+        "//exteraGram/EGAPIToken:EGAPIToken",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
         "//submodules/AccountContext:AccountContext",
         "//submodules/TelegramCore:TelegramCore",
     ],

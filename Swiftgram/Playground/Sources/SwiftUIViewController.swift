@@ -2,7 +2,7 @@ import AsyncDisplayKit
 import Display
 import Foundation
 import LegacyUI
-import SGSwiftUI
+import EGSwiftUI
 import SwiftUI
 import TelegramPresentationData
 import UIKit
@@ -73,7 +73,7 @@ public func mySwiftUIViewController(_ num: Int64) -> ViewController {
         .statusBarStyle.style
     legacyController.title = "Controller: \(num)"
 
-    let swiftUIView = SGSwiftUIView<MySwiftUIView>(
+    let swiftUIView = EGSwiftUIView<MySwiftUIView>(
         navigationBarHeight: legacyController.navigationBarHeightModel,
         containerViewLayout: legacyController.containerViewLayoutModel,
         content: { MySwiftUIView(wrapperController: legacyController, num: num) }

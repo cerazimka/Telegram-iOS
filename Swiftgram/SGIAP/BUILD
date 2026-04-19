@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGIAP",
-    module_name = "SGIAP",
+    name = "EGIAP",
+    module_name = "EGIAP",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -10,8 +10,8 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGLogging:SGLogging",
-        "//Swiftgram/SGConfig:SGConfig",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGConfig:EGConfig",
         "//submodules/AppBundle:AppBundle",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
     ],

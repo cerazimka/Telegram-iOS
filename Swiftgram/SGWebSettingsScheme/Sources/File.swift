@@ -1,15 +1,15 @@
 import Foundation
 
-public struct SGWebSettings: Codable, Equatable {
-    public let global: SGGlobalSettings
-    public let user: SGUserSettings
+public struct EGWebSettings: Codable, Equatable {
+    public let global: EGGlobalSettings
+    public let user: EGUserSettings
     
-    public static var defaultValue: SGWebSettings {
-        return SGWebSettings(global: SGGlobalSettings(ytPip: true, qrLogin: true, storiesAvailable: false, canViewMessages: true, canEditSettings: false, canShowTelescope: false, announcementsData: nil, regdateFormat: "month", botMonkeys: [], forceReasons: [], unforceReasons: [], paymentsEnabled: true, duckyAppIconAvailable: true, canGrant: false, proSupportUrl: nil, nyAvailable: false), user: SGUserSettings(contentReasons: [], canSendTelescope: false, canBuyInBeta: true))
+    public static var defaultValue: EGWebSettings {
+        return EGWebSettings(global: EGGlobalSettings(ytPip: true, qrLogin: true, storiesAvailable: false, canViewMessages: true, canEditSettings: false, canShowTelescope: false, announcementsData: nil, regdateFormat: "month", botMonkeys: [], forceReasons: [], unforceReasons: [], paymentsEnabled: true, duckyAppIconAvailable: true, canGrant: false, proSupportUrl: nil, nyAvailable: false), user: EGUserSettings(contentReasons: [], canSendTelescope: false, canBuyInBeta: true))
     }
 }
 
-public struct SGGlobalSettings: Codable, Equatable {
+public struct EGGlobalSettings: Codable, Equatable {
     public let ytPip: Bool
     public let qrLogin: Bool
     public let storiesAvailable: Bool
@@ -18,7 +18,7 @@ public struct SGGlobalSettings: Codable, Equatable {
     public let canShowTelescope: Bool
     public let announcementsData: String?
     public let regdateFormat: String
-    public let botMonkeys: [SGBotMonkeys]
+    public let botMonkeys: [EGBotMonkeys]
     public let forceReasons: [Int64]
     public let unforceReasons: [Int64]
     public let paymentsEnabled: Bool
@@ -28,7 +28,7 @@ public struct SGGlobalSettings: Codable, Equatable {
     public let nyAvailable: Bool
 }
 
-public struct SGBotMonkeys: Codable, Equatable {
+public struct EGBotMonkeys: Codable, Equatable {
     public let botId: Int64
     public let src: String
     public let enable: String
@@ -36,14 +36,14 @@ public struct SGBotMonkeys: Codable, Equatable {
 }
 
 
-public struct SGUserSettings: Codable, Equatable {
+public struct EGUserSettings: Codable, Equatable {
     public let contentReasons: [String]
     public let canSendTelescope: Bool
     public let canBuyInBeta: Bool
 }
 
 
-public extension SGUserSettings {
+public extension EGUserSettings {
     func expandedContentReasons() -> [String] {
         return contentReasons.compactMap { base64String in
             guard let data = Data(base64Encoded: base64String),

@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGItemListUI",
-    module_name = "SGItemListUI",
+    name = "EGItemListUI",
+    module_name = "EGItemListUI",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

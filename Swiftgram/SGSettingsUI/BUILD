@@ -1,14 +1,14 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 filegroup(
-    name = "SGUIAssets",
+    name = "EGUIAssets",
     srcs = glob(["Images.xcassets/**"]),
     visibility = ["//visibility:public"],
 )
 
 swift_library(
-    name = "SGSettingsUI",
-    module_name = "SGSettingsUI",
+    name = "EGSettingsUI",
+    module_name = "EGSettingsUI",
     srcs = glob([
 		"Sources/**/*.swift",
     ]),
@@ -16,12 +16,12 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGItemListUI:SGItemListUI",
-        "//Swiftgram/SGLogging:SGLogging",
-        "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-        "//Swiftgram/SGStrings:SGStrings",
-#        "//Swiftgram/SGAPI:SGAPI",
-        "//Swiftgram/SGAPIToken:SGAPIToken",
+        "//exteraGram/EGItemListUI:EGItemListUI",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGStrings:EGStrings",
+#        "//exteraGram/EGAPI:EGAPI",
+        "//exteraGram/EGAPIToken:EGAPIToken",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/Display:Display",
         "//submodules/Postbox:Postbox",

@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGDBReset",
+    name = "EGDBReset",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

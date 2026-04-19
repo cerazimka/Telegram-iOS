@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGKeychainBackupManager",
-    module_name = "SGKeychainBackupManager",
+    name = "EGKeychainBackupManager",
+    module_name = "EGKeychainBackupManager",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

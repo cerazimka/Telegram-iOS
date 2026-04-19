@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGAPI",
-    module_name = "SGAPI",
+    name = "EGAPI",
+    module_name = "EGAPI",
     srcs = glob([
 		"Sources/**/*.swift",
     ]),
@@ -11,13 +11,13 @@ swift_library(
     ],
     deps = [
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
-        "//Swiftgram/SGLogging:SGLogging",
-        "//Swiftgram/SGWebAppExtensions:SGWebAppExtensions",
-        "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-        "//Swiftgram/SGWebSettingsScheme:SGWebSettingsScheme",
-        "//Swiftgram/SGRegDateScheme:SGRegDateScheme",
-        "//Swiftgram/SGRequests:SGRequests",
-        "//Swiftgram/SGConfig:SGConfig"
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGWebAppExtensions:EGWebAppExtensions",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGWebSettingsScheme:EGWebSettingsScheme",
+        "//exteraGram/EGRegDateScheme:EGRegDateScheme",
+        "//exteraGram/EGRequests:EGRequests",
+        "//exteraGram/EGConfig:EGConfig"
     ],
     visibility = [
         "//visibility:public",

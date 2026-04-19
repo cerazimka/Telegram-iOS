@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGChatListSimpleSettingsSignal",
+    name = "EGChatListSimpleSettingsSignal",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

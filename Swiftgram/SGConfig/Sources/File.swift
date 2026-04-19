@@ -1,7 +1,7 @@
 import Foundation
 import BuildConfig
 
-public struct SGConfig: Codable {
+public struct EGConfig: Codable {
     public var apiUrl: String = "https://api.swiftgram.app"
     public var webappUrl: String = "https://my.swiftgram.app"
     public var botUsername: String = "exteraGramBot"
@@ -9,14 +9,14 @@ public struct SGConfig: Codable {
     public var iaps: [String] = []
 }
 
-private func parseSGConfig(_ jsonString: String) -> SGConfig {
+private func parseEGConfig(_ jsonString: String) -> EGConfig {
     let jsonData = Data(jsonString.utf8)
     let decoder = JSONDecoder()
     decoder.keyDecodingStrategy = .convertFromSnakeCase
-    return (try? decoder.decode(SGConfig.self, from: jsonData)) ?? SGConfig()
+    return (try? decoder.decode(EGConfig.self, from: jsonData)) ?? EGConfig()
 }
 
 private let baseAppBundleId = Bundle.main.bundleIdentifier!
 private let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
-public let SG_CONFIG: SGConfig = parseSGConfig(buildConfig.sgConfig)
-public let SG_API_WEBAPP_URL_PARSED = URL(string: SG_CONFIG.webappUrl)!
+public let EG_CONFIG: EGConfig = parseEGConfig(buildConfig.sgConfig)
+public let SG_API_WEBAPP_URL_PARSED = URL(string: EG_CONFIG.webappUrl)!

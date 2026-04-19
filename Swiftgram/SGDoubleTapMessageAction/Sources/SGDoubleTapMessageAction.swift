@@ -1,13 +1,13 @@
 import Foundation
-import SGSimpleSettings
+import EGSimpleSettings
 import Postbox
 import TelegramCore
 
 
 func sgDoubleTapMessageAction(incoming: Bool, message: Message) -> String {
     if incoming {
-        return SGSimpleSettings.MessageDoubleTapAction.default.rawValue
+        return EGSimpleSettings.MessageDoubleTapAction.default.rawValue
     } else {
-        return SGSimpleSettings.shared.messageDoubleTapActionOutgoing
+        return EGSimpleSettings.shared.messageDoubleTapActionOutgoing
     }
 }

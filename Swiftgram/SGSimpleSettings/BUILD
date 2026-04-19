@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGSimpleSettings",
-    module_name = "SGSimpleSettings",
+    name = "EGSimpleSettings",
+    module_name = "EGSimpleSettings",
     srcs = glob([
 		"Sources/**/*.swift",
     ]),
@@ -10,8 +10,8 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGAppGroupIdentifier:SGAppGroupIdentifier",
-        "//Swiftgram/SGLogging:SGLogging",
+        "//exteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier",
+        "//exteraGram/EGLogging:EGLogging",
     ],
     visibility = [
         "//visibility:public",

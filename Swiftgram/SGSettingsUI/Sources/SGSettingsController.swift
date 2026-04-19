@@ -1,10 +1,10 @@
 // MARK: exteraGram
-import SGLogging
-import SGSimpleSettings
-import SGStrings
-import SGAPIToken
+import EGLogging
+import EGSimpleSettings
+import EGStrings
+import EGAPIToken
 
-import SGItemListUI
+import EGItemListUI
 import Foundation
 import UIKit
 import Display
@@ -25,7 +25,7 @@ import PeerNameColorScreen
 import UndoUI
 
 
-private enum SGControllerSection: Int32, SGItemListSection {
+private enum EGControllerSection: Int32, EGItemListSection {
     case search
     case trending
     case content
@@ -45,7 +45,7 @@ private enum SGControllerSection: Int32, SGItemListSection {
     case other
 }
 
-private enum SGBoolSetting: String {
+private enum EGBoolSetting: String {
     case hidePhoneInSettings
     case showTabNames
     case showContactsTab
@@ -108,7 +108,7 @@ private enum SGBoolSetting: String {
     case tabBarSearchEnabled
 }
 
-private enum SGOneFromManySetting: String {
+private enum EGOneFromManySetting: String {
     case nyStyle
     case bottomTabStyle
     case downloadSpeedBoost
@@ -118,13 +118,13 @@ private enum SGOneFromManySetting: String {
     case transcriptionBackend
 }
 
-private enum SGSliderSetting: String {
+private enum EGSliderSetting: String {
     case accountColorsSaturation
     case outgoingPhotoQuality
     case stickerSize
 }
 
-private enum SGDisclosureLink: String {
+private enum EGDisclosureLink: String {
     case contentSettings
     case languageSettings
 }
@@ -134,83 +134,83 @@ private struct PeerNameColorScreenState: Equatable {
     var updatedBackgroundEmojiId: Int64?
 }
 
-private struct SGSettingsControllerState: Equatable {
+private struct EGSettingsControllerState: Equatable {
     var searchQuery: String?
 }
 
-private typealias SGControllerEntry = SGItemListUIEntry<SGControllerSection, SGBoolSetting, SGSliderSetting, SGOneFromManySetting, SGDisclosureLink, AnyHashable>
+private typealias EGControllerEntry = EGItemListUIEntry<EGControllerSection, EGBoolSetting, EGSliderSetting, EGOneFromManySetting, EGDisclosureLink, AnyHashable>
 
-private func SGControllerEntries(presentationData: PresentationData, callListSettings: CallListSettings, experimentalUISettings: ExperimentalUISettings, appConfiguration: AppConfiguration, nameColors: PeerNameColors, state: SGSettingsControllerState) -> [SGControllerEntry] {
+private func EGControllerEntries(presentationData: PresentationData, callListSettings: CallListSettings, experimentalUISettings: ExperimentalUISettings, appConfiguration: AppConfiguration, nameColors: PeerNameColors, state: EGSettingsControllerState) -> [EGControllerEntry] {
     
     let lang = presentationData.strings.baseLanguageCode
     let strings = presentationData.strings
     let newStr = strings.Settings_New
-    var entries: [SGControllerEntry] = []
+    var entries: [EGControllerEntry] = []
     
-    let id = SGItemListCounter()
+    let id = EGItemListCounter()
     
     entries.append(.searchInput(id: id.count, section: .search, title: NSAttributedString(string: "🔍"), text: state.searchQuery ?? "", placeholder: strings.Common_Search))
     
     
-    if SGSimpleSettings.shared.canUseNY {
+    if EGSimpleSettings.shared.canUseNY {
         entries.append(.header(id: id.count, section: .trending, text: i18n("Settings.NY.Header", lang), badge: newStr))
-        entries.append(.toggle(id: id.count, section: .trending, settingName: .nyStyleSnow, value: SGSimpleSettings.shared.nyStyle == SGSimpleSettings.NYStyle.snow.rawValue, text: i18n("Settings.NY.Style.snow", lang), enabled: true))
-        entries.append(.toggle(id: id.count, section: .trending, settingName: .nyStyleLightning, value: SGSimpleSettings.shared.nyStyle == SGSimpleSettings.NYStyle.lightning.rawValue, text: i18n("Settings.NY.Style.lightning", lang), enabled: true))
-        // entries.append(.oneFromManySelector(id: id.count, section: .trending, settingName: .nyStyle, text: i18n("Settings.NY.Style", lang), value: i18n("Settings.NY.Style.\(SGSimpleSettings.shared.nyStyle)", lang), enabled: true))
+        entries.append(.toggle(id: id.count, section: .trending, settingName: .nyStyleSnow, value: EGSimpleSettings.shared.nyStyle == EGSimpleSettings.NYStyle.snow.rawValue, text: i18n("Settings.NY.Style.snow", lang), enabled: true))
+        entries.append(.toggle(id: id.count, section: .trending, settingName: .nyStyleLightning, value: EGSimpleSettings.shared.nyStyle == EGSimpleSettings.NYStyle.lightning.rawValue, text: i18n("Settings.NY.Style.lightning", lang), enabled: true))
+        // entries.append(.oneFromManySelector(id: id.count, section: .trending, settingName: .nyStyle, text: i18n("Settings.NY.Style", lang), value: i18n("Settings.NY.Style.\(EGSimpleSettings.shared.nyStyle)", lang), enabled: true))
         entries.append(.notice(id: id.count, section: .trending, text: i18n("Settings.NY.Notice", lang)))
     } else {
         id.increment(3)
     }
     
-    if appConfiguration.sgWebSettings.global.canEditSettings {
+    if appConfiguration.egWebSettings.global.canEditSettings {
         entries.append(.disclosure(id: id.count, section: .content, link: .contentSettings, text: i18n("Settings.ContentSettings", lang)))
     } else {
         id.increment(1)
     }
     
     entries.append(.header(id: id.count, section: .tabs, text: i18n("Settings.Tabs.Header", lang), badge: nil))
-    entries.append(.toggle(id: id.count, section: .tabs, settingName: .hideTabBar, value: SGSimpleSettings.shared.hideTabBar, text: i18n("Settings.Tabs.HideTabBar", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .tabs, settingName: .showContactsTab, value: callListSettings.showContactsTab, text: i18n("Settings.Tabs.ShowContacts", lang), enabled: !SGSimpleSettings.shared.hideTabBar))
-    entries.append(.toggle(id: id.count, section: .tabs, settingName: .showCallsTab, value: callListSettings.showTab, text: strings.CallSettings_TabIcon, enabled: !SGSimpleSettings.shared.hideTabBar))
-    entries.append(.toggle(id: id.count, section: .tabs, settingName: .showTabNames, value: SGSimpleSettings.shared.showTabNames, text: i18n("Settings.Tabs.ShowNames", lang), enabled: !SGSimpleSettings.shared.hideTabBar))
-    entries.append(.toggle(id: id.count, section: .tabs, settingName: .tabBarSearchEnabled, value: SGSimpleSettings.shared.tabBarSearchEnabled, text: i18n("Settings.Tabs.SearchButton", lang), enabled: !SGSimpleSettings.shared.hideTabBar))
-    entries.append(.toggle(id: id.count, section: .tabs, settingName: .wideTabBar, value: SGSimpleSettings.shared.wideTabBar, text: i18n("Settings.Tabs.WideTabBar", lang), enabled: !SGSimpleSettings.shared.hideTabBar))
+    entries.append(.toggle(id: id.count, section: .tabs, settingName: .hideTabBar, value: EGSimpleSettings.shared.hideTabBar, text: i18n("Settings.Tabs.HideTabBar", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .tabs, settingName: .showContactsTab, value: callListSettings.showContactsTab, text: i18n("Settings.Tabs.ShowContacts", lang), enabled: !EGSimpleSettings.shared.hideTabBar))
+    entries.append(.toggle(id: id.count, section: .tabs, settingName: .showCallsTab, value: callListSettings.showTab, text: strings.CallSettings_TabIcon, enabled: !EGSimpleSettings.shared.hideTabBar))
+    entries.append(.toggle(id: id.count, section: .tabs, settingName: .showTabNames, value: EGSimpleSettings.shared.showTabNames, text: i18n("Settings.Tabs.ShowNames", lang), enabled: !EGSimpleSettings.shared.hideTabBar))
+    entries.append(.toggle(id: id.count, section: .tabs, settingName: .tabBarSearchEnabled, value: EGSimpleSettings.shared.tabBarSearchEnabled, text: i18n("Settings.Tabs.SearchButton", lang), enabled: !EGSimpleSettings.shared.hideTabBar))
+    entries.append(.toggle(id: id.count, section: .tabs, settingName: .wideTabBar, value: EGSimpleSettings.shared.wideTabBar, text: i18n("Settings.Tabs.WideTabBar", lang), enabled: !EGSimpleSettings.shared.hideTabBar))
     entries.append(.notice(id: id.count, section: .tabs, text: i18n("Settings.Tabs.WideTabBar.Notice", lang)))
     
     entries.append(.header(id: id.count, section: .folders, text: strings.Settings_ChatFolders.uppercased(), badge: nil))
     entries.append(.toggle(id: id.count, section: .folders, settingName: .foldersAtBottom, value: experimentalUISettings.foldersTabAtBottom, text: i18n("Settings.Folders.BottomTab", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .folders, settingName: .allChatsHidden, value: SGSimpleSettings.shared.allChatsHidden, text: i18n("Settings.Folders.AllChatsHidden", lang, strings.ChatList_Tabs_AllChats), enabled: true))
+    entries.append(.toggle(id: id.count, section: .folders, settingName: .allChatsHidden, value: EGSimpleSettings.shared.allChatsHidden, text: i18n("Settings.Folders.AllChatsHidden", lang, strings.ChatList_Tabs_AllChats), enabled: true))
     #if DEBUG
-//    entries.append(.oneFromManySelector(id: id.count, section: .folders, settingName: .allChatsFolderPositionOverride, text: i18n("Settings.Folders.AllChatsPlacement", lang), value: i18n("Settings.Folders.AllChatsPlacement.\(SGSimpleSettings.shared.allChatsFolderPositionOverride)", lang), enabled: true))
+//    entries.append(.oneFromManySelector(id: id.count, section: .folders, settingName: .allChatsFolderPositionOverride, text: i18n("Settings.Folders.AllChatsPlacement", lang), value: i18n("Settings.Folders.AllChatsPlacement.\(EGSimpleSettings.shared.allChatsFolderPositionOverride)", lang), enabled: true))
     #endif
-    entries.append(.toggle(id: id.count, section: .folders, settingName: .compactFolderNames, value: SGSimpleSettings.shared.compactFolderNames, text: i18n("Settings.Folders.CompactNames", lang), enabled: true))
-    entries.append(.oneFromManySelector(id: id.count, section: .folders, settingName: .allChatsTitleLengthOverride, text: i18n("Settings.Folders.AllChatsTitle", lang), value: i18n("Settings.Folders.AllChatsTitle.\(SGSimpleSettings.shared.allChatsTitleLengthOverride)", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .folders, settingName: .rememberLastFolder, value: SGSimpleSettings.shared.rememberLastFolder, text: i18n("Settings.Folders.RememberLast", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .folders, settingName: .compactFolderNames, value: EGSimpleSettings.shared.compactFolderNames, text: i18n("Settings.Folders.CompactNames", lang), enabled: true))
+    entries.append(.oneFromManySelector(id: id.count, section: .folders, settingName: .allChatsTitleLengthOverride, text: i18n("Settings.Folders.AllChatsTitle", lang), value: i18n("Settings.Folders.AllChatsTitle.\(EGSimpleSettings.shared.allChatsTitleLengthOverride)", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .folders, settingName: .rememberLastFolder, value: EGSimpleSettings.shared.rememberLastFolder, text: i18n("Settings.Folders.RememberLast", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .folders, text: i18n("Settings.Folders.RememberLast.Notice", lang)))
     
     entries.append(.header(id: id.count, section: .chatList, text: i18n("Settings.ChatList.Header", lang), badge: nil))
-    entries.append(.toggle(id: id.count, section: .chatList, settingName: .compactChatList, value: SGSimpleSettings.shared.compactChatList, text: i18n("Settings.CompactChatList", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .chatList, settingName: .compactMessagePreview, value: SGSimpleSettings.shared.chatListLines != SGSimpleSettings.ChatListLines.three.rawValue, text: i18n("Settings.CompactMessagePreview", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .chatList, settingName: .disableChatSwipeOptions, value: !SGSimpleSettings.shared.disableChatSwipeOptions, text: i18n("Settings.ChatSwipeOptions", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .chatList, settingName: .disableDeleteChatSwipeOption, value: !SGSimpleSettings.shared.disableDeleteChatSwipeOption, text: i18n("Settings.DeleteChatSwipeOption", lang), enabled: !SGSimpleSettings.shared.disableChatSwipeOptions))
+    entries.append(.toggle(id: id.count, section: .chatList, settingName: .compactChatList, value: EGSimpleSettings.shared.compactChatList, text: i18n("Settings.CompactChatList", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .chatList, settingName: .compactMessagePreview, value: EGSimpleSettings.shared.chatListLines != EGSimpleSettings.ChatListLines.three.rawValue, text: i18n("Settings.CompactMessagePreview", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .chatList, settingName: .disableChatSwipeOptions, value: !EGSimpleSettings.shared.disableChatSwipeOptions, text: i18n("Settings.ChatSwipeOptions", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .chatList, settingName: .disableDeleteChatSwipeOption, value: !EGSimpleSettings.shared.disableDeleteChatSwipeOption, text: i18n("Settings.DeleteChatSwipeOption", lang), enabled: !EGSimpleSettings.shared.disableChatSwipeOptions))
     
     entries.append(.header(id: id.count, section: .profiles, text: i18n("Settings.Profiles.Header", lang), badge: nil))
-    entries.append(.toggle(id: id.count, section: .profiles, settingName: .showProfileId, value: SGSimpleSettings.shared.showProfileId, text: i18n("Settings.ShowProfileID", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .profiles, settingName: .showDC, value: SGSimpleSettings.shared.showDC, text: i18n("Settings.ShowDC", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .profiles, settingName: .showRegDate, value: SGSimpleSettings.shared.showRegDate, text: i18n("Settings.ShowRegDate", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .profiles, settingName: .showProfileId, value: EGSimpleSettings.shared.showProfileId, text: i18n("Settings.ShowProfileID", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .profiles, settingName: .showDC, value: EGSimpleSettings.shared.showDC, text: i18n("Settings.ShowDC", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .profiles, settingName: .showRegDate, value: EGSimpleSettings.shared.showRegDate, text: i18n("Settings.ShowRegDate", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .profiles, text: i18n("Settings.ShowRegDate.Notice", lang)))
-    entries.append(.toggle(id: id.count, section: .profiles, settingName: .showCreationDate, value: SGSimpleSettings.shared.showCreationDate, text: i18n("Settings.ShowCreationDate", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .profiles, settingName: .showCreationDate, value: EGSimpleSettings.shared.showCreationDate, text: i18n("Settings.ShowCreationDate", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .profiles, text: i18n("Settings.ShowCreationDate.Notice", lang)))
-    entries.append(.toggle(id: id.count, section: .profiles, settingName: .confirmCalls, value: SGSimpleSettings.shared.confirmCalls, text: i18n("Settings.CallConfirmation", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .profiles, settingName: .confirmCalls, value: EGSimpleSettings.shared.confirmCalls, text: i18n("Settings.CallConfirmation", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .profiles, text: i18n("Settings.CallConfirmation.Notice", lang)))
     
     entries.append(.header(id: id.count, section: .stories, text: strings.AutoDownloadSettings_Stories.uppercased(), badge: nil))
-    entries.append(.toggle(id: id.count, section: .stories, settingName: .hideStories, value: SGSimpleSettings.shared.hideStories, text: i18n("Settings.Stories.Hide", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .stories, settingName: .disableSwipeToRecordStory, value: SGSimpleSettings.shared.disableSwipeToRecordStory, text: i18n("Settings.Stories.DisableSwipeToRecord", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .stories, settingName: .warnOnStoriesOpen, value: SGSimpleSettings.shared.warnOnStoriesOpen, text: i18n("Settings.Stories.WarnBeforeView", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .stories, settingName: .showRepostToStory, value: SGSimpleSettings.shared.showRepostToStoryV2, text: strings.Share_RepostToStory.replacingOccurrences(of: "\n", with: " "), enabled: true))
-    if SGSimpleSettings.shared.canUseStealthMode {
-        entries.append(.toggle(id: id.count, section: .stories, settingName: .storyStealthMode, value: SGSimpleSettings.shared.storyStealthMode, text: strings.Story_StealthMode_Title, enabled: true))
+    entries.append(.toggle(id: id.count, section: .stories, settingName: .hideStories, value: EGSimpleSettings.shared.hideStories, text: i18n("Settings.Stories.Hide", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .stories, settingName: .disableSwipeToRecordStory, value: EGSimpleSettings.shared.disableSwipeToRecordStory, text: i18n("Settings.Stories.DisableSwipeToRecord", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .stories, settingName: .warnOnStoriesOpen, value: EGSimpleSettings.shared.warnOnStoriesOpen, text: i18n("Settings.Stories.WarnBeforeView", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .stories, settingName: .showRepostToStory, value: EGSimpleSettings.shared.showRepostToStoryV2, text: strings.Share_RepostToStory.replacingOccurrences(of: "\n", with: " "), enabled: true))
+    if EGSimpleSettings.shared.canUseStealthMode {
+        entries.append(.toggle(id: id.count, section: .stories, settingName: .storyStealthMode, value: EGSimpleSettings.shared.storyStealthMode, text: strings.Story_StealthMode_Title, enabled: true))
         entries.append(.notice(id: id.count, section: .stories, text: strings.Story_StealthMode_ControlText))
     } else {
         id.increment(2)
@@ -218,25 +218,25 @@ private func SGControllerEntries(presentationData: PresentationData, callListSet
 
     
     entries.append(.header(id: id.count, section: .translation, text: strings.Localization_TranslateMessages.uppercased(), badge: nil))
-    entries.append(.oneFromManySelector(id: id.count, section: .translation, settingName: .translationBackend, text: i18n("Settings.Translation.Backend", lang), value: i18n("Settings.Translation.Backend.\(SGSimpleSettings.shared.translationBackend)", lang), enabled: true))
-    if SGSimpleSettings.shared.translationBackendEnum != .gtranslate {
-        entries.append(.notice(id: id.count, section: .translation, text: i18n("Settings.Translation.Backend.Notice", lang, "Settings.Translation.Backend.\(SGSimpleSettings.TranslationBackend.gtranslate.rawValue)".i18n(lang))))
+    entries.append(.oneFromManySelector(id: id.count, section: .translation, settingName: .translationBackend, text: i18n("Settings.Translation.Backend", lang), value: i18n("Settings.Translation.Backend.\(EGSimpleSettings.shared.translationBackend)", lang), enabled: true))
+    if EGSimpleSettings.shared.translationBackendEnum != .gtranslate {
+        entries.append(.notice(id: id.count, section: .translation, text: i18n("Settings.Translation.Backend.Notice", lang, "Settings.Translation.Backend.\(EGSimpleSettings.TranslationBackend.gtranslate.rawValue)".i18n(lang))))
     } else {
         id.increment(1)
     }
-    entries.append(.toggle(id: id.count, section: .translation, settingName: .quickTranslateButton, value: SGSimpleSettings.shared.quickTranslateButton, text: i18n("Settings.Translation.QuickTranslateButton", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .translation, settingName: .quickTranslateButton, value: EGSimpleSettings.shared.quickTranslateButton, text: i18n("Settings.Translation.QuickTranslateButton", lang), enabled: true))
     entries.append(.disclosure(id: id.count, section: .translation, link: .languageSettings, text: strings.Localization_TranslateEntireChat))
     entries.append(.notice(id: id.count, section: .translation, text: i18n("Common.NoTelegramPremiumNeeded", lang, strings.Settings_Premium)))
 
     entries.append(.header(id: id.count, section: .voiceMessages, text: "Settings.Transcription.Header".i18n(lang), badge: nil))
-    entries.append(.oneFromManySelector(id: id.count, section: .voiceMessages, settingName: .transcriptionBackend, text: i18n("Settings.Transcription.Backend", lang), value: i18n("Settings.Transcription.Backend.\(SGSimpleSettings.shared.transcriptionBackend)", lang), enabled: true))
-    if SGSimpleSettings.shared.transcriptionBackendEnum != .apple {
-        entries.append(.notice(id: id.count, section: .voiceMessages, text: i18n("Settings.Transcription.Backend.Notice", lang, "Settings.Transcription.Backend.\(SGSimpleSettings.TranscriptionBackend.apple.rawValue)".i18n(lang))))
+    entries.append(.oneFromManySelector(id: id.count, section: .voiceMessages, settingName: .transcriptionBackend, text: i18n("Settings.Transcription.Backend", lang), value: i18n("Settings.Transcription.Backend.\(EGSimpleSettings.shared.transcriptionBackend)", lang), enabled: true))
+    if EGSimpleSettings.shared.transcriptionBackendEnum != .apple {
+        entries.append(.notice(id: id.count, section: .voiceMessages, text: i18n("Settings.Transcription.Backend.Notice", lang, "Settings.Transcription.Backend.\(EGSimpleSettings.TranscriptionBackend.apple.rawValue)".i18n(lang))))
     } else {
         id.increment(1)
     }
     entries.append(.header(id: id.count, section: .voiceMessages, text: strings.Privacy_VoiceMessages.uppercased(), badge: nil))
-    entries.append(.toggle(id: id.count, section: .voiceMessages, settingName: .forceBuiltInMic, value: SGSimpleSettings.shared.forceBuiltInMic, text: i18n("Settings.forceBuiltInMic", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .voiceMessages, settingName: .forceBuiltInMic, value: EGSimpleSettings.shared.forceBuiltInMic, text: i18n("Settings.forceBuiltInMic", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .voiceMessages, text: i18n("Settings.forceBuiltInMic.Notice", lang)))
 
     entries.append(.header(id: id.count, section: .calls, text: strings.Calls_TabTitle.uppercased(), badge: nil))
@@ -245,37 +245,37 @@ private func SGControllerEntries(presentationData: PresentationData, callListSet
     
     entries.append(.header(id: id.count, section: .photo, text: strings.NetworkUsageSettings_MediaImageDataSection, badge: nil))
     entries.append(.header(id: id.count, section: .photo, text: strings.PhotoEditor_QualityTool.uppercased(), badge: nil))
-    entries.append(.percentageSlider(id: id.count, section: .photo, settingName: .outgoingPhotoQuality, value: SGSimpleSettings.shared.outgoingPhotoQuality))
+    entries.append(.percentageSlider(id: id.count, section: .photo, settingName: .outgoingPhotoQuality, value: EGSimpleSettings.shared.outgoingPhotoQuality))
     entries.append(.notice(id: id.count, section: .photo, text: i18n("Settings.Photo.Quality.Notice", lang)))
-    entries.append(.toggle(id: id.count, section: .photo, settingName: .sendLargePhotos, value: SGSimpleSettings.shared.sendLargePhotos, text: i18n("Settings.Photo.SendLarge", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .photo, settingName: .sendLargePhotos, value: EGSimpleSettings.shared.sendLargePhotos, text: i18n("Settings.Photo.SendLarge", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .photo, text: i18n("Settings.Photo.SendLarge.Notice", lang)))
     
     entries.append(.header(id: id.count, section: .stickers, text: strings.StickerPacksSettings_Title.uppercased(), badge: nil))
     entries.append(.header(id: id.count, section: .stickers, text: i18n("Settings.Stickers.Size", lang), badge: nil))
-    entries.append(.percentageSlider(id: id.count, section: .stickers, settingName: .stickerSize, value: SGSimpleSettings.shared.stickerSize))
-    entries.append(.toggle(id: id.count, section: .stickers, settingName: .stickerTimestamp, value: SGSimpleSettings.shared.stickerTimestamp, text: i18n("Settings.Stickers.Timestamp", lang), enabled: true))
+    entries.append(.percentageSlider(id: id.count, section: .stickers, settingName: .stickerSize, value: EGSimpleSettings.shared.stickerSize))
+    entries.append(.toggle(id: id.count, section: .stickers, settingName: .stickerTimestamp, value: EGSimpleSettings.shared.stickerTimestamp, text: i18n("Settings.Stickers.Timestamp", lang), enabled: true))
     
     
     entries.append(.header(id: id.count, section: .videoNotes, text: i18n("Settings.VideoNotes.Header", lang), badge: nil))
-    entries.append(.toggle(id: id.count, section: .videoNotes, settingName: .startTelescopeWithRearCam, value: SGSimpleSettings.shared.startTelescopeWithRearCam, text: i18n("Settings.VideoNotes.StartWithRearCam", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .videoNotes, settingName: .startTelescopeWithRearCam, value: EGSimpleSettings.shared.startTelescopeWithRearCam, text: i18n("Settings.VideoNotes.StartWithRearCam", lang), enabled: true))
     
     entries.append(.header(id: id.count, section: .contextMenu, text: i18n("Settings.ContextMenu", lang), badge: nil))
     entries.append(.notice(id: id.count, section: .contextMenu, text: i18n("Settings.ContextMenu.Notice", lang)))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowSaveToCloud, value: SGSimpleSettings.shared.contextShowSaveToCloud, text: i18n("ContextMenu.SaveToCloud", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowHideForwardName, value: SGSimpleSettings.shared.contextShowHideForwardName, text: strings.Conversation_ForwardOptions_HideSendersNames, enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowSelectFromUser, value: SGSimpleSettings.shared.contextShowSelectFromUser, text: i18n("ContextMenu.SelectFromUser", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowRestrict, value: SGSimpleSettings.shared.contextShowRestrict, text: strings.Conversation_ContextMenuBan, enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowReport, value: SGSimpleSettings.shared.contextShowReport, text: strings.Conversation_ContextMenuReport, enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowReply, value: SGSimpleSettings.shared.contextShowReply, text: strings.Conversation_ContextMenuReply, enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowPin, value: SGSimpleSettings.shared.contextShowPin, text: strings.Conversation_Pin, enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowSaveMedia, value: SGSimpleSettings.shared.contextShowSaveMedia, text: strings.Conversation_SaveToFiles, enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowMessageReplies, value: SGSimpleSettings.shared.contextShowMessageReplies, text: strings.Conversation_ContextViewThread, enabled: true))
-    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowJson, value: SGSimpleSettings.shared.contextShowJson, text: "JSON", enabled: true))
-    /* entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowRestrict, value: SGSimpleSettings.shared.contextShowRestrict, text: strings.Conversation_ContextMenuBan)) */
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowSaveToCloud, value: EGSimpleSettings.shared.contextShowSaveToCloud, text: i18n("ContextMenu.SaveToCloud", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowHideForwardName, value: EGSimpleSettings.shared.contextShowHideForwardName, text: strings.Conversation_ForwardOptions_HideSendersNames, enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowSelectFromUser, value: EGSimpleSettings.shared.contextShowSelectFromUser, text: i18n("ContextMenu.SelectFromUser", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowRestrict, value: EGSimpleSettings.shared.contextShowRestrict, text: strings.Conversation_ContextMenuBan, enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowReport, value: EGSimpleSettings.shared.contextShowReport, text: strings.Conversation_ContextMenuReport, enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowReply, value: EGSimpleSettings.shared.contextShowReply, text: strings.Conversation_ContextMenuReply, enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowPin, value: EGSimpleSettings.shared.contextShowPin, text: strings.Conversation_Pin, enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowSaveMedia, value: EGSimpleSettings.shared.contextShowSaveMedia, text: strings.Conversation_SaveToFiles, enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowMessageReplies, value: EGSimpleSettings.shared.contextShowMessageReplies, text: strings.Conversation_ContextViewThread, enabled: true))
+    entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowJson, value: EGSimpleSettings.shared.contextShowJson, text: "JSON", enabled: true))
+    /* entries.append(.toggle(id: id.count, section: .contextMenu, settingName: .contextShowRestrict, value: EGSimpleSettings.shared.contextShowRestrict, text: strings.Conversation_ContextMenuBan)) */
     
     entries.append(.header(id: id.count, section: .accountColors, text: i18n("Settings.CustomColors.Header", lang), badge: nil))
     entries.append(.header(id: id.count, section: .accountColors, text: i18n("Settings.CustomColors.Saturation", lang), badge: nil))
-    let accountColorSaturation = SGSimpleSettings.shared.accountColorsSaturation
+    let accountColorSaturation = EGSimpleSettings.shared.accountColorsSaturation
     entries.append(.percentageSlider(id: id.count, section: .accountColors, settingName: .accountColorsSaturation, value: accountColorSaturation))
 //    let nameColor: PeerNameColor
 //    if let updatedNameColor = state.updatedNameColor {
@@ -305,28 +305,28 @@ private func SGControllerEntries(presentationData: PresentationData, callListSet
     
     id.increment(10000)
     entries.append(.header(id: id.count, section: .other, text: strings.Appearance_Other.uppercased(), badge: nil))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .swipeForVideoPIP, value: SGSimpleSettings.shared.videoPIPSwipeDirection == SGSimpleSettings.VideoPIPSwipeDirection.up.rawValue, text: i18n("Settings.swipeForVideoPIP", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .swipeForVideoPIP, value: EGSimpleSettings.shared.videoPIPSwipeDirection == EGSimpleSettings.VideoPIPSwipeDirection.up.rawValue, text: i18n("Settings.swipeForVideoPIP", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .other, text: i18n("Settings.swipeForVideoPIP.Notice", lang)))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .hideChannelBottomButton, value: !SGSimpleSettings.shared.hideChannelBottomButton, text: i18n("Settings.showChannelBottomButton", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .wideChannelPosts, value: SGSimpleSettings.shared.wideChannelPosts, text: i18n("Settings.wideChannelPosts", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .secondsInMessages, value: SGSimpleSettings.shared.secondsInMessages, text: i18n("Settings.secondsInMessages", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .messageDoubleTapActionOutgoingEdit, value: SGSimpleSettings.shared.messageDoubleTapActionOutgoing == SGSimpleSettings.MessageDoubleTapAction.edit.rawValue, text: i18n("Settings.messageDoubleTapActionOutgoingEdit", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .hideRecordingButton, value: !SGSimpleSettings.shared.hideRecordingButton, text: i18n("Settings.RecordingButton", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .disableSnapDeletionEffect, value: !SGSimpleSettings.shared.disableSnapDeletionEffect, text: i18n("Settings.SnapDeletionEffect", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .disableSendAsButton, value: !SGSimpleSettings.shared.disableSendAsButton, text: i18n("Settings.SendAsButton", lang, strings.Conversation_SendMesageAs), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .disableGalleryCamera, value: !SGSimpleSettings.shared.disableGalleryCamera, text: i18n("Settings.GalleryCamera", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .disableGalleryCameraPreview, value: !SGSimpleSettings.shared.disableGalleryCameraPreview, text: i18n("Settings.GalleryCameraPreview", lang), enabled: !SGSimpleSettings.shared.disableGalleryCamera))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .disableScrollToNextChannel, value: !SGSimpleSettings.shared.disableScrollToNextChannel, text: i18n("Settings.PullToNextChannel", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .disableScrollToNextTopic, value: !SGSimpleSettings.shared.disableScrollToNextTopic, text: i18n("Settings.PullToNextTopic", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .hideReactions, value: SGSimpleSettings.shared.hideReactions, text: i18n("Settings.HideReactions", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .uploadSpeedBoost, value: SGSimpleSettings.shared.uploadSpeedBoost, text: i18n("Settings.UploadsBoost", lang), enabled: true))
-    entries.append(.oneFromManySelector(id: id.count, section: .other, settingName: .downloadSpeedBoost, text: i18n("Settings.DownloadsBoost", lang), value: i18n("Settings.DownloadsBoost.\(SGSimpleSettings.shared.downloadSpeedBoost)", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .hideChannelBottomButton, value: !EGSimpleSettings.shared.hideChannelBottomButton, text: i18n("Settings.showChannelBottomButton", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .wideChannelPosts, value: EGSimpleSettings.shared.wideChannelPosts, text: i18n("Settings.wideChannelPosts", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .secondsInMessages, value: EGSimpleSettings.shared.secondsInMessages, text: i18n("Settings.secondsInMessages", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .messageDoubleTapActionOutgoingEdit, value: EGSimpleSettings.shared.messageDoubleTapActionOutgoing == EGSimpleSettings.MessageDoubleTapAction.edit.rawValue, text: i18n("Settings.messageDoubleTapActionOutgoingEdit", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .hideRecordingButton, value: !EGSimpleSettings.shared.hideRecordingButton, text: i18n("Settings.RecordingButton", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .disableSnapDeletionEffect, value: !EGSimpleSettings.shared.disableSnapDeletionEffect, text: i18n("Settings.SnapDeletionEffect", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .disableSendAsButton, value: !EGSimpleSettings.shared.disableSendAsButton, text: i18n("Settings.SendAsButton", lang, strings.Conversation_SendMesageAs), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .disableGalleryCamera, value: !EGSimpleSettings.shared.disableGalleryCamera, text: i18n("Settings.GalleryCamera", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .disableGalleryCameraPreview, value: !EGSimpleSettings.shared.disableGalleryCameraPreview, text: i18n("Settings.GalleryCameraPreview", lang), enabled: !EGSimpleSettings.shared.disableGalleryCamera))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .disableScrollToNextChannel, value: !EGSimpleSettings.shared.disableScrollToNextChannel, text: i18n("Settings.PullToNextChannel", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .disableScrollToNextTopic, value: !EGSimpleSettings.shared.disableScrollToNextTopic, text: i18n("Settings.PullToNextTopic", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .hideReactions, value: EGSimpleSettings.shared.hideReactions, text: i18n("Settings.HideReactions", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .uploadSpeedBoost, value: EGSimpleSettings.shared.uploadSpeedBoost, text: i18n("Settings.UploadsBoost", lang), enabled: true))
+    entries.append(.oneFromManySelector(id: id.count, section: .other, settingName: .downloadSpeedBoost, text: i18n("Settings.DownloadsBoost", lang), value: i18n("Settings.DownloadsBoost.\(EGSimpleSettings.shared.downloadSpeedBoost)", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .other, text: i18n("Settings.DownloadsBoost.Notice", lang)))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .sendWithReturnKey, value: SGSimpleSettings.shared.sendWithReturnKey, text: i18n("Settings.SendWithReturnKey", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .forceEmojiTab, value: SGSimpleSettings.shared.forceEmojiTab, text: i18n("Settings.ForceEmojiTab", lang), enabled: true))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .defaultEmojisFirst, value: SGSimpleSettings.shared.defaultEmojisFirst, text: i18n("Settings.DefaultEmojisFirst", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .sendWithReturnKey, value: EGSimpleSettings.shared.sendWithReturnKey, text: i18n("Settings.SendWithReturnKey", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .forceEmojiTab, value: EGSimpleSettings.shared.forceEmojiTab, text: i18n("Settings.ForceEmojiTab", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .defaultEmojisFirst, value: EGSimpleSettings.shared.defaultEmojisFirst, text: i18n("Settings.DefaultEmojisFirst", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .other, text: i18n("Settings.DefaultEmojisFirst.Notice", lang)))
-    entries.append(.toggle(id: id.count, section: .other, settingName: .hidePhoneInSettings, value: SGSimpleSettings.shared.hidePhoneInSettings, text: i18n("Settings.HidePhoneInSettingsUI", lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .other, settingName: .hidePhoneInSettings, value: EGSimpleSettings.shared.hidePhoneInSettings, text: i18n("Settings.HidePhoneInSettingsUI", lang), enabled: true))
     entries.append(.notice(id: id.count, section: .other, text: i18n("Settings.HidePhoneInSettingsUI.Notice", lang)))
     
     return filterSGItemListUIEntrires(entries: entries, by: state.searchQuery)
@@ -339,22 +339,22 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
 //    var getNavigationControllerImpl: (() -> NavigationController?)?
     var askForRestart: (() -> Void)?
     
-    let initialState = SGSettingsControllerState()
+    let initialState = EGSettingsControllerState()
     let statePromise = ValuePromise(initialState, ignoreRepeated: true)
     let stateValue = Atomic(value: initialState)
-    let updateState: ((SGSettingsControllerState) -> SGSettingsControllerState) -> Void = { f in
+    let updateState: ((EGSettingsControllerState) -> EGSettingsControllerState) -> Void = { f in
         statePromise.set(stateValue.modify { f($0) })
     }
     
-//    let sliderPromise = ValuePromise(SGSimpleSettings.shared.accountColorsSaturation, ignoreRepeated: true)
-//    let sliderStateValue = Atomic(value: SGSimpleSettings.shared.accountColorsSaturation)
+//    let sliderPromise = ValuePromise(EGSimpleSettings.shared.accountColorsSaturation, ignoreRepeated: true)
+//    let sliderStateValue = Atomic(value: EGSimpleSettings.shared.accountColorsSaturation)
 //    let _: ((Int32) -> Int32) -> Void = { f in
 //        sliderPromise.set(sliderStateValue.modify( {f($0)}))
 //    }
     
     let simplePromise = ValuePromise(true, ignoreRepeated: false)
     
-    let arguments = SGItemListArguments<SGBoolSetting, SGSliderSetting, SGOneFromManySetting, SGDisclosureLink, AnyHashable>(
+    let arguments = EGItemListArguments<EGBoolSetting, EGSliderSetting, EGOneFromManySetting, EGDisclosureLink, AnyHashable>(
         context: context,
         /*updatePeerColor: { color in
           updateState { state in
@@ -365,10 +365,10 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
         },*/ setBoolValue: { setting, value in
         switch setting {
         case .hidePhoneInSettings:
-            SGSimpleSettings.shared.hidePhoneInSettings = value
+            EGSimpleSettings.shared.hidePhoneInSettings = value
             askForRestart?()
         case .showTabNames:
-            SGSimpleSettings.shared.showTabNames = value
+            EGSimpleSettings.shared.showTabNames = value
             askForRestart?()
         case .showContactsTab:
             let _ = (
@@ -383,9 +383,9 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                 )
             ).start()
         case .tabBarSearchEnabled:
-            SGSimpleSettings.shared.tabBarSearchEnabled = value
+            EGSimpleSettings.shared.tabBarSearchEnabled = value
         case .wideTabBar:
-            SGSimpleSettings.shared.wideTabBar = value
+            EGSimpleSettings.shared.wideTabBar = value
             askForRestart?()
         case .foldersAtBottom:
             let _ = (
@@ -397,115 +397,115 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                 )
             ).start()
         case .startTelescopeWithRearCam:
-            SGSimpleSettings.shared.startTelescopeWithRearCam = value
+            EGSimpleSettings.shared.startTelescopeWithRearCam = value
         case .hideStories:
-            SGSimpleSettings.shared.hideStories = value
+            EGSimpleSettings.shared.hideStories = value
         case .showProfileId:
-            SGSimpleSettings.shared.showProfileId = value
+            EGSimpleSettings.shared.showProfileId = value
         case .warnOnStoriesOpen:
-            SGSimpleSettings.shared.warnOnStoriesOpen = value
+            EGSimpleSettings.shared.warnOnStoriesOpen = value
         case .sendWithReturnKey:
-            SGSimpleSettings.shared.sendWithReturnKey = value
+            EGSimpleSettings.shared.sendWithReturnKey = value
         case .rememberLastFolder:
-            SGSimpleSettings.shared.rememberLastFolder = value
+            EGSimpleSettings.shared.rememberLastFolder = value
         case .sendLargePhotos:
-            SGSimpleSettings.shared.sendLargePhotos = value
+            EGSimpleSettings.shared.sendLargePhotos = value
         case .storyStealthMode:
-            SGSimpleSettings.shared.storyStealthMode = value
+            EGSimpleSettings.shared.storyStealthMode = value
         case .disableSwipeToRecordStory:
-            SGSimpleSettings.shared.disableSwipeToRecordStory = value
+            EGSimpleSettings.shared.disableSwipeToRecordStory = value
         case .quickTranslateButton:
-            SGSimpleSettings.shared.quickTranslateButton = value
+            EGSimpleSettings.shared.quickTranslateButton = value
         case .uploadSpeedBoost:
-            SGSimpleSettings.shared.uploadSpeedBoost = value
+            EGSimpleSettings.shared.uploadSpeedBoost = value
         case .hideReactions:
-            SGSimpleSettings.shared.hideReactions = value
+            EGSimpleSettings.shared.hideReactions = value
         case .showRepostToStory:
-            SGSimpleSettings.shared.showRepostToStoryV2 = value
+            EGSimpleSettings.shared.showRepostToStoryV2 = value
         case .contextShowSelectFromUser:
-            SGSimpleSettings.shared.contextShowSelectFromUser = value
+            EGSimpleSettings.shared.contextShowSelectFromUser = value
         case .contextShowSaveToCloud:
-            SGSimpleSettings.shared.contextShowSaveToCloud = value
+            EGSimpleSettings.shared.contextShowSaveToCloud = value
         case .contextShowRestrict:
-            SGSimpleSettings.shared.contextShowRestrict = value
+            EGSimpleSettings.shared.contextShowRestrict = value
         case .contextShowHideForwardName:
-            SGSimpleSettings.shared.contextShowHideForwardName = value
+            EGSimpleSettings.shared.contextShowHideForwardName = value
         case .disableScrollToNextChannel:
-            SGSimpleSettings.shared.disableScrollToNextChannel = !value
+            EGSimpleSettings.shared.disableScrollToNextChannel = !value
         case .disableScrollToNextTopic:
-            SGSimpleSettings.shared.disableScrollToNextTopic = !value
+            EGSimpleSettings.shared.disableScrollToNextTopic = !value
         case .disableChatSwipeOptions:
-            SGSimpleSettings.shared.disableChatSwipeOptions = !value
+            EGSimpleSettings.shared.disableChatSwipeOptions = !value
             simplePromise.set(true) // Trigger update for 'enabled' field of other toggles
             askForRestart?()
         case .disableDeleteChatSwipeOption:
-            SGSimpleSettings.shared.disableDeleteChatSwipeOption = !value
+            EGSimpleSettings.shared.disableDeleteChatSwipeOption = !value
             askForRestart?()
         case .disableGalleryCamera:
-            SGSimpleSettings.shared.disableGalleryCamera = !value
+            EGSimpleSettings.shared.disableGalleryCamera = !value
             simplePromise.set(true)
         case .disableGalleryCameraPreview:
-            SGSimpleSettings.shared.disableGalleryCameraPreview = !value
+            EGSimpleSettings.shared.disableGalleryCameraPreview = !value
         case .disableSendAsButton:
-            SGSimpleSettings.shared.disableSendAsButton = !value
+            EGSimpleSettings.shared.disableSendAsButton = !value
         case .disableSnapDeletionEffect:
-            SGSimpleSettings.shared.disableSnapDeletionEffect = !value
+            EGSimpleSettings.shared.disableSnapDeletionEffect = !value
         case .contextShowReport:
-            SGSimpleSettings.shared.contextShowReport = value
+            EGSimpleSettings.shared.contextShowReport = value
         case .contextShowReply:
-            SGSimpleSettings.shared.contextShowReply = value
+            EGSimpleSettings.shared.contextShowReply = value
         case .contextShowPin:
-            SGSimpleSettings.shared.contextShowPin = value
+            EGSimpleSettings.shared.contextShowPin = value
         case .contextShowSaveMedia:
-            SGSimpleSettings.shared.contextShowSaveMedia = value
+            EGSimpleSettings.shared.contextShowSaveMedia = value
         case .contextShowMessageReplies:
-            SGSimpleSettings.shared.contextShowMessageReplies = value
+            EGSimpleSettings.shared.contextShowMessageReplies = value
         case .stickerTimestamp:
-            SGSimpleSettings.shared.stickerTimestamp = value
+            EGSimpleSettings.shared.stickerTimestamp = value
         case .contextShowJson:
-            SGSimpleSettings.shared.contextShowJson = value
+            EGSimpleSettings.shared.contextShowJson = value
         case .hideRecordingButton:
-            SGSimpleSettings.shared.hideRecordingButton = !value
+            EGSimpleSettings.shared.hideRecordingButton = !value
         case .hideTabBar:
-            SGSimpleSettings.shared.hideTabBar = value
+            EGSimpleSettings.shared.hideTabBar = value
             simplePromise.set(true) // Trigger update for 'enabled' field of other toggles
             askForRestart?()
         case .showDC:
-            SGSimpleSettings.shared.showDC = value
+            EGSimpleSettings.shared.showDC = value
         case .showCreationDate:
-            SGSimpleSettings.shared.showCreationDate = value
+            EGSimpleSettings.shared.showCreationDate = value
         case .showRegDate:
-            SGSimpleSettings.shared.showRegDate = value
+            EGSimpleSettings.shared.showRegDate = value
         case .compactChatList:
-            SGSimpleSettings.shared.compactChatList = value
+            EGSimpleSettings.shared.compactChatList = value
             askForRestart?()
         case .compactMessagePreview:
-            SGSimpleSettings.shared.chatListLines = value ? SGSimpleSettings.ChatListLines.one.rawValue : SGSimpleSettings.ChatListLines.three.rawValue
+            EGSimpleSettings.shared.chatListLines = value ? EGSimpleSettings.ChatListLines.one.rawValue : EGSimpleSettings.ChatListLines.three.rawValue
             askForRestart?()
         case .compactFolderNames:
-            SGSimpleSettings.shared.compactFolderNames = value
+            EGSimpleSettings.shared.compactFolderNames = value
             askForRestart?()
         case .allChatsHidden:
-            SGSimpleSettings.shared.allChatsHidden = value
+            EGSimpleSettings.shared.allChatsHidden = value
             askForRestart?()
         case .defaultEmojisFirst:
-            SGSimpleSettings.shared.defaultEmojisFirst = value
+            EGSimpleSettings.shared.defaultEmojisFirst = value
         case .messageDoubleTapActionOutgoingEdit:
-            SGSimpleSettings.shared.messageDoubleTapActionOutgoing = value ? SGSimpleSettings.MessageDoubleTapAction.edit.rawValue : SGSimpleSettings.MessageDoubleTapAction.default.rawValue
+            EGSimpleSettings.shared.messageDoubleTapActionOutgoing = value ? EGSimpleSettings.MessageDoubleTapAction.edit.rawValue : EGSimpleSettings.MessageDoubleTapAction.default.rawValue
         case .wideChannelPosts:
-            SGSimpleSettings.shared.wideChannelPosts = value
+            EGSimpleSettings.shared.wideChannelPosts = value
         case .forceEmojiTab:
-            SGSimpleSettings.shared.forceEmojiTab = value
+            EGSimpleSettings.shared.forceEmojiTab = value
         case .forceBuiltInMic:
-            SGSimpleSettings.shared.forceBuiltInMic = value
+            EGSimpleSettings.shared.forceBuiltInMic = value
         case .hideChannelBottomButton:
-            SGSimpleSettings.shared.hideChannelBottomButton = !value
+            EGSimpleSettings.shared.hideChannelBottomButton = !value
         case .secondsInMessages:
-            SGSimpleSettings.shared.secondsInMessages = value
+            EGSimpleSettings.shared.secondsInMessages = value
         case .confirmCalls:
-            SGSimpleSettings.shared.confirmCalls = value
+            EGSimpleSettings.shared.confirmCalls = value
         case .swipeForVideoPIP:
-            SGSimpleSettings.shared.videoPIPSwipeDirection = value ? SGSimpleSettings.VideoPIPSwipeDirection.up.rawValue : SGSimpleSettings.VideoPIPSwipeDirection.none.rawValue
+            EGSimpleSettings.shared.videoPIPSwipeDirection = value ? EGSimpleSettings.VideoPIPSwipeDirection.up.rawValue : EGSimpleSettings.VideoPIPSwipeDirection.none.rawValue
         case .enableVoipTcp:
             let _ = (
                 updateExperimentalUISettingsInteractively(accountManager: context.sharedContext.accountManager, { settings in
@@ -516,27 +516,27 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                 )
             ).start()
         case .nyStyleSnow:
-            SGSimpleSettings.shared.nyStyle = value ? SGSimpleSettings.NYStyle.snow.rawValue : SGSimpleSettings.NYStyle.default.rawValue
+            EGSimpleSettings.shared.nyStyle = value ? EGSimpleSettings.NYStyle.snow.rawValue : EGSimpleSettings.NYStyle.default.rawValue
             simplePromise.set(true) // Trigger update for 'enabled' field of other toggles
         case .nyStyleLightning:
-            SGSimpleSettings.shared.nyStyle = value ? SGSimpleSettings.NYStyle.lightning.rawValue : SGSimpleSettings.NYStyle.default.rawValue
+            EGSimpleSettings.shared.nyStyle = value ? EGSimpleSettings.NYStyle.lightning.rawValue : EGSimpleSettings.NYStyle.default.rawValue
             simplePromise.set(true) // Trigger update for 'enabled' field of other toggles
         }
     }, updateSliderValue: { setting, value in
         switch (setting) {
             case .accountColorsSaturation:
-                if SGSimpleSettings.shared.accountColorsSaturation != value {
-                    SGSimpleSettings.shared.accountColorsSaturation = value
+                if EGSimpleSettings.shared.accountColorsSaturation != value {
+                    EGSimpleSettings.shared.accountColorsSaturation = value
                     simplePromise.set(true)
                 }
             case .outgoingPhotoQuality:
-                if SGSimpleSettings.shared.outgoingPhotoQuality != value {
-                    SGSimpleSettings.shared.outgoingPhotoQuality = value
+                if EGSimpleSettings.shared.outgoingPhotoQuality != value {
+                    EGSimpleSettings.shared.outgoingPhotoQuality = value
                     simplePromise.set(true)
                 }
             case .stickerSize:
-                if SGSimpleSettings.shared.stickerSize != value {
-                    SGSimpleSettings.shared.stickerSize = value
+                if EGSimpleSettings.shared.stickerSize != value {
+                    EGSimpleSettings.shared.stickerSize = value
                     simplePromise.set(true)
                 }
         }
@@ -549,11 +549,11 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
         switch (setting) {
             case .downloadSpeedBoost:
                 let setAction: (String) -> Void = { value in
-                    SGSimpleSettings.shared.downloadSpeedBoost = value
+                    EGSimpleSettings.shared.downloadSpeedBoost = value
                     
                     let enableDownloadX: Bool
                     switch (value) {
-                        case SGSimpleSettings.DownloadSpeedBoostValues.none.rawValue:
+                        case EGSimpleSettings.DownloadSpeedBoostValues.none.rawValue:
                             enableDownloadX = false
                         default:
                             enableDownloadX = true
@@ -573,7 +573,7 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                     })
                 }
 
-                for value in SGSimpleSettings.DownloadSpeedBoostValues.allCases {
+                for value in EGSimpleSettings.DownloadSpeedBoostValues.allCases {
                     items.append(ActionSheetButtonItem(title: i18n("Settings.DownloadsBoost.\(value.rawValue)", presentationData.strings.baseLanguageCode), color: .accent, action: { [weak actionSheet] in
                         actionSheet?.dismissAnimated()
                         setAction(value.rawValue)
@@ -581,11 +581,11 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                 }
             case .bottomTabStyle:
                 let setAction: (String) -> Void = { value in
-                    SGSimpleSettings.shared.bottomTabStyle = value
+                    EGSimpleSettings.shared.bottomTabStyle = value
                     simplePromise.set(true)
                 }
 
-                for value in SGSimpleSettings.BottomTabStyleValues.allCases {
+                for value in EGSimpleSettings.BottomTabStyleValues.allCases {
                     items.append(ActionSheetButtonItem(title: i18n("Settings.Folders.BottomTabStyle.\(value.rawValue)", presentationData.strings.baseLanguageCode), color: .accent, action: { [weak actionSheet] in
                         actionSheet?.dismissAnimated()
                         setAction(value.rawValue)
@@ -593,16 +593,16 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                 }
             case .allChatsTitleLengthOverride:
                 let setAction: (String) -> Void = { value in
-                    SGSimpleSettings.shared.allChatsTitleLengthOverride = value
+                    EGSimpleSettings.shared.allChatsTitleLengthOverride = value
                     simplePromise.set(true)
                 }
 
-                for value in SGSimpleSettings.AllChatsTitleLengthOverride.allCases {
+                for value in EGSimpleSettings.AllChatsTitleLengthOverride.allCases {
                     let title: String
                     switch (value) {
-                        case SGSimpleSettings.AllChatsTitleLengthOverride.short:
+                        case EGSimpleSettings.AllChatsTitleLengthOverride.short:
                             title = "\"\(presentationData.strings.ChatList_Tabs_All)\""
-                        case SGSimpleSettings.AllChatsTitleLengthOverride.long:
+                        case EGSimpleSettings.AllChatsTitleLengthOverride.long:
                             title = "\"\(presentationData.strings.ChatList_Tabs_AllChats)\""
                         default:
                             title = i18n("Settings.Folders.AllChatsTitle.none", presentationData.strings.baseLanguageCode)
@@ -614,11 +614,11 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                 }
 //        case .allChatsFolderPositionOverride:
 //            let setAction: (String) -> Void = { value in
-//                SGSimpleSettings.shared.allChatsFolderPositionOverride = value
+//                EGSimpleSettings.shared.allChatsFolderPositionOverride = value
 //                simplePromise.set(true)
 //            }
 //
-//            for value in SGSimpleSettings.AllChatsFolderPositionOverride.allCases {
+//            for value in EGSimpleSettings.AllChatsFolderPositionOverride.allCases {
 //                items.append(ActionSheetButtonItem(title: i18n("Settings.Folders.AllChatsTitle.\(value)", presentationData.strings.baseLanguageCode), color: .accent, action: { [weak actionSheet] in
 //                    actionSheet?.dismissAnimated()
 //                    setAction(value.rawValue)
@@ -626,11 +626,11 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
 //            }
             case .translationBackend:
                 let setAction: (String) -> Void = { value in
-                    SGSimpleSettings.shared.translationBackend = value
+                    EGSimpleSettings.shared.translationBackend = value
                     simplePromise.set(true)
                 }
 
-                for value in SGSimpleSettings.TranslationBackend.allCases {
+                for value in EGSimpleSettings.TranslationBackend.allCases {
                     if value == .system {
                         if #available(iOS 18.0, *) {
                         } else {
@@ -644,11 +644,11 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                 }
             case .transcriptionBackend:
                 let setAction: (String) -> Void = { value in
-                    SGSimpleSettings.shared.transcriptionBackend = value
+                    EGSimpleSettings.shared.transcriptionBackend = value
                     simplePromise.set(true)
                 }
 
-                for value in SGSimpleSettings.TranscriptionBackend.allCases {
+                for value in EGSimpleSettings.TranscriptionBackend.allCases {
                     if #available(iOS 13.0, *) {
                     } else {
                         if value == .apple {
@@ -662,11 +662,11 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
                 }
             case .nyStyle:
                 let setAction: (String) -> Void = { value in
-                    SGSimpleSettings.shared.nyStyle = value
+                    EGSimpleSettings.shared.nyStyle = value
                     simplePromise.set(true)
                 }
 
-                for value in SGSimpleSettings.NYStyle.allCases {
+                for value in EGSimpleSettings.NYStyle.allCases {
                     items.append(ActionSheetButtonItem(title: i18n("Settings.NY.Style.\(value.rawValue)", presentationData.strings.baseLanguageCode), color: .accent, action: { [weak actionSheet] in
                         actionSheet?.dismissAnimated()
                         setAction(value.rawValue)
@@ -685,7 +685,7 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
             case .languageSettings:
                 pushControllerImpl?(context.sharedContext.makeLocalizationListController(context: context))
             case .contentSettings:
-                let _ = (getSGSettingsURL(context: context) |> deliverOnMainQueue).start(next: { [weak context] url in
+                let _ = (getEGSettingsURL(context: context) |> deliverOnMainQueue).start(next: { [weak context] url in
                     guard let strongContext = context else {
                         return
                     }
@@ -718,7 +718,7 @@ public func sgSettingsController(context: AccountContext/*, focusOnItemTag: Int?
         let callListSettings: CallListSettings = sharedData.entries[ApplicationSpecificSharedDataKeys.callListSettings]?.get(CallListSettings.self) ?? CallListSettings.defaultSettings
         let experimentalUISettings: ExperimentalUISettings = sharedData.entries[ApplicationSpecificSharedDataKeys.experimentalUISettings]?.get(ExperimentalUISettings.self) ?? ExperimentalUISettings.defaultSettings
         
-        let entries = SGControllerEntries(presentationData: presentationData, callListSettings: callListSettings, experimentalUISettings: experimentalUISettings, appConfiguration: appConfiguration, nameColors: PeerNameColors.with(availableReplyColors: availableReplyColors, availableProfileColors: availableProfileColors), state: state)
+        let entries = EGControllerEntries(presentationData: presentationData, callListSettings: callListSettings, experimentalUISettings: experimentalUISettings, appConfiguration: appConfiguration, nameColors: PeerNameColors.with(availableReplyColors: availableReplyColors, availableProfileColors: availableProfileColors), state: state)
         
         let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("exteraGram"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
         

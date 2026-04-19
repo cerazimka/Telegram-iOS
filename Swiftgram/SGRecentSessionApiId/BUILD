@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGRecentSessionApiId",
+    name = "EGRecentSessionApiId",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

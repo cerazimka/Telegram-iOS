@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGEmojiKeyboardDefaultFirst",
+    name = "EGEmojiKeyboardDefaultFirst",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

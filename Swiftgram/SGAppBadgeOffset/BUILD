@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGAppBadgeOffset",
+    name = "EGAppBadgeOffset",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

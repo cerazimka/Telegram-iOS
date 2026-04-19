@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGLoggingComposer",
-    module_name = "SGLoggingComposer",
+    name = "EGLoggingComposer",
+    module_name = "EGLoggingComposer",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -10,7 +10,7 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGLogging:SGLogging",
+        "//exteraGram/EGLogging:EGLogging",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
     ],
     visibility = [

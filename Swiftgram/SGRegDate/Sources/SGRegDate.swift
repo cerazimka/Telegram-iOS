@@ -2,14 +2,14 @@ import Foundation
 import SwiftSignalKit
 import TelegramPresentationData
 
-import SGLogging
-import SGStrings
-import SGRegDateScheme
+import EGLogging
+import EGStrings
+import EGRegDateScheme
 import AccountContext
-import SGSimpleSettings
-import SGAPI
-import SGAPIToken
-import SGDeviceToken
+import EGSimpleSettings
+import EGAPI
+import EGAPIToken
+import EGDeviceToken
 
 public enum RegDateError {
     case generic
@@ -19,14 +19,14 @@ public func getRegDate(context: AccountContext, peerId: Int64) -> Signal<RegDate
     return Signal { subscriber in
         var tokensRequestSignal: Disposable? = nil
         var apiRequestSignal: Disposable? = nil
-        if let regDateData = SGSimpleSettings.shared.regDateCache[String(peerId)], let regDate = try? JSONDecoder().decode(RegDate.self, from: regDateData), regDate.validUntil == 0 || regDate.validUntil > Int64(Date().timeIntervalSince1970) {
+        if let regDateData = EGSimpleSettings.shared.regDateCache[String(peerId)], let regDate = try? JSONDecoder().decode(RegDate.self, from: regDateData), regDate.validUntil == 0 || regDate.validUntil > Int64(Date().timeIntervalSince1970) {
             subscriber.putNext(regDate)
             subscriber.putCompletion()
-        } else if SGSimpleSettings.shared.showRegDate {
-            tokensRequestSignal = combineLatest(getDeviceToken() |> mapError { error -> Void in SGLogger.shared.log("SGDeviceToken", "Error generating token: \(error)"); return Void() } , getSGApiToken(context: context) |> mapError { _ -> Void in return Void() }).start(next: { deviceToken, apiToken in
-                apiRequestSignal = getSGAPIRegDate(token: apiToken, deviceToken: deviceToken, userId: peerId).start(next: { regDate in
+        } else if EGSimpleSettings.shared.showRegDate {
+            tokensRequestSignal = combineLatest(getDeviceToken() |> mapError { error -> Void in EGLogger.shared.log("SGDeviceToken", "Error generating token: \(error)"); return Void() } , getEGApiToken(context: context) |> mapError { _ -> Void in return Void() }).start(next: { deviceToken, apiToken in
+                apiRequestSignal = getEGAPIRegDate(token: apiToken, deviceToken: deviceToken, userId: peerId).start(next: { regDate in
                     if let data = try? JSONEncoder().encode(regDate) {
-                        SGSimpleSettings.shared.regDateCache[String(peerId)] = data
+                        EGSimpleSettings.shared.regDateCache[String(peerId)] = data
                     }
                     subscriber.putNext(regDate)
                     subscriber.putCompletion()

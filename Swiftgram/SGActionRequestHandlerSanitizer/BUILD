@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGActionRequestHandlerSanitizer",
-    module_name = "SGActionRequestHandlerSanitizer",
+    name = "EGActionRequestHandlerSanitizer",
+    module_name = "EGActionRequestHandlerSanitizer",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

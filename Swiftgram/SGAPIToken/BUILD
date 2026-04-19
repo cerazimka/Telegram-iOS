@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGAPIToken",
-    module_name = "SGAPIToken",
+    name = "EGAPIToken",
+    module_name = "EGAPIToken",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -13,10 +13,10 @@ swift_library(
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
         "//submodules/AccountContext:AccountContext",
         "//submodules/TelegramCore:TelegramCore",
-        "//Swiftgram/SGLogging:SGLogging",
-        "//Swiftgram/SGWebSettingsScheme:SGWebSettingsScheme",
-        "//Swiftgram/SGConfig:SGConfig",
-        "//Swiftgram/SGWebAppExtensions:SGWebAppExtensions",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGWebSettingsScheme:EGWebSettingsScheme",
+        "//exteraGram/EGConfig:EGConfig",
+        "//exteraGram/EGWebAppExtensions:EGWebAppExtensions",
     ],
     visibility = [
         "//visibility:public",

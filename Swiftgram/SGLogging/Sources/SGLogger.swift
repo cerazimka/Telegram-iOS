@@ -4,7 +4,7 @@ import ManagedFile
 
 private let queue = DispatchQueue(label: "app.exteragram.ios.trace", qos: .utility)
 
-private var sharedLogger: SGLogger?
+private var sharedLogger: EGLogger?
 
 private let binaryEventMarker: UInt64 = 0xcadebabef00dcafe
 
@@ -12,7 +12,7 @@ private func rootPathForBasePath(_ appGroupPath: String) -> String {
     return appGroupPath + "/telegram-data"
 }
 
-public class SGLogger {
+public class EGLogger {
     public let queue = Queue(name: "app.exteragram.ios.log", qos: .utility)
     private let maxLength: Int = 2 * 1024 * 1024
     private let maxShortLength: Int = 1 * 1024 * 1024
@@ -29,34 +29,34 @@ public class SGLogger {
     public var logToConsole: Bool = true
     public var redactSensitiveData: Bool = true
     
-    public static func setSharedLogger(_ logger: SGLogger) {
+    public static func setSharedLogger(_ logger: EGLogger) {
         sharedLogger = logger
     }
     
-    public static var shared: SGLogger {
+    public static var shared: EGLogger {
         if let sharedLogger = sharedLogger {
             return sharedLogger
         } else {
-            print("SGLogger setup...")
+            print("EGLogger setup...")
             guard let baseAppBundleId = Bundle.main.bundleIdentifier else {
                 print("Can't setup logger (1)!")
-                return SGLogger(rootPath: "", basePath: "")
+                return EGLogger(rootPath: "", basePath: "")
             }
             let appGroupName = "group.\(baseAppBundleId)"
             let maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
             guard let appGroupUrl = maybeAppGroupUrl else {
                 print("Can't setup logger (2)!")
-                return SGLogger(rootPath: "", basePath: "")
+                return EGLogger(rootPath: "", basePath: "")
             }
             let newRootPath = rootPathForBasePath(appGroupUrl.path)
             let newLogsPath = newRootPath + sgLogsPath
             let _ = try? FileManager.default.createDirectory(atPath: newLogsPath, withIntermediateDirectories: true, attributes: nil)
-            self.setSharedLogger(SGLogger(rootPath: newRootPath, basePath: newLogsPath))
+            self.setSharedLogger(EGLogger(rootPath: newRootPath, basePath: newLogsPath))
             if let sharedLogger = sharedLogger {
                 return sharedLogger
             } else {
                 print("Can't setup logger (3)!")
-                return SGLogger(rootPath: "", basePath: "")
+                return EGLogger(rootPath: "", basePath: "")
             }
         }
     }

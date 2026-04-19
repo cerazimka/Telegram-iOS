@@ -7,9 +7,9 @@ import Display
 import SwiftSignalKit
 import TelegramPresentationData
 import PresentationDataUtils
-import SGSimpleSettings
-import SGLogging
-import SGKeychainBackupManager
+import EGSimpleSettings
+import EGLogging
+import EGKeychainBackupManager
 
 struct SessionBackup: Codable {
     var name: String? = nil
@@ -33,9 +33,9 @@ struct SessionBackup: Codable {
 }
 
 import SwiftUI
-import SGSwiftUI
+import EGSwiftUI
 import LegacyUI
-import SGStrings
+import EGStrings
 
 
 @available(iOS 13.0, *)
@@ -178,7 +178,7 @@ struct SessionBackupManagerView: View {
                 }
                 
                 if existingRecord != nil {
-                    SGLogger.shared.log("SessionBackup", "Record \(backup.userId) already exists, skipping")
+                    EGLogger.shared.log("SessionBackup", "Record \(backup.userId) already exists, skipping")
                     importNextBackup(index: index + 1)
                     return
                 }
@@ -202,7 +202,7 @@ struct SessionBackupManagerView: View {
                     }).max() ?? 0) + 1
                     importAttributes.append(.sortOrder(AccountSortOrderAttribute(order: nextSortOrder)))
                     let accountRecordId = transaction.createRecord(importAttributes)
-                    SGLogger.shared.log("SessionBackup", "Imported record \(accountRecordId) for \(backup.userId)")
+                    EGLogger.shared.log("SessionBackup", "Imported record \(accountRecordId) for \(backup.userId)")
                     restoredSessions += 1
                 }
                 |> deliverOnMainQueue
@@ -233,7 +233,7 @@ struct SessionBackupManagerView: View {
                     }
                     controller.dismiss()
                 } catch let e {
-                    SGLogger.shared.log("SessionBackup", "Error deleting all sessions: \(e)")
+                    EGLogger.shared.log("SessionBackup", "Error deleting all sessions: \(e)")
                 }
             }),
             TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_Cancel, action: {})
@@ -256,7 +256,7 @@ struct SessionBackupManagerView: View {
                     }
                     controller.dismiss()
                 } catch let e {
-                    SGLogger.shared.log("SessionBackup", "Error deleting session: \(e)")
+                    EGLogger.shared.log("SessionBackup", "Error deleting session: \(e)")
                 }
             }),
             TextAlertAction(type: .defaultAction, title: presentationData.strings.Common_Cancel, action: {})
@@ -409,9 +409,9 @@ struct SessionBackupManagerView: View {
                     }
                 }
   
-                SGLogger.shared.log("SessionBackup", "Logged in accounts: \(result)")
+                EGLogger.shared.log("SessionBackup", "Logged in accounts: \(result)")
                 if loggedInPeerIDs != result {
-                    SGLogger.shared.log("SessionBackup", "Updating logged in accounts: \(result)")
+                    EGLogger.shared.log("SessionBackup", "Updating logged in accounts: \(result)")
                     loggedInPeerIDs = result
                 }
             })
@@ -434,11 +434,11 @@ func getBackedSessions() -> [SessionBackup] {
                 let backup = try JSONDecoder().decode(SessionBackup.self, from: sessionBackupData)
                 sessions.append(backup)
             } catch let e {
-                SGLogger.shared.log("SessionBackup", "IMPORT ERROR: \(e)")
+                EGLogger.shared.log("SessionBackup", "IMPORT ERROR: \(e)")
             }
         }
     } catch let e {
-        SGLogger.shared.log("SessionBackup", "Error getting all sessions: \(e)")
+        EGLogger.shared.log("SessionBackup", "Error getting all sessions: \(e)")
     }
     return sessions
 }
@@ -486,7 +486,7 @@ func backupSessionsFromView(_ view: AccountRecordsView<TelegramAccountManagerTyp
             let data = try JSONEncoder().encode(backup)
             try KeychainBackupManager.shared.saveSession(id: "\(backup.peerIdInternal)", data)
         } catch let e {
-            SGLogger.shared.log("SessionBackup", "BACKUP ERROR: \(e)")
+            EGLogger.shared.log("SessionBackup", "BACKUP ERROR: \(e)")
         }
     }
 }
@@ -506,7 +506,7 @@ public func sgSessionBackupManagerController(context: AccountContext, presentati
         .statusBarStyle.style
     legacyController.title = "SessionBackup.Title".i18n(strings.baseLanguageCode)
 
-    let swiftUIView = SGSwiftUIView<SessionBackupManagerView>(
+    let swiftUIView = EGSwiftUIView<SessionBackupManagerView>(
         legacyController: legacyController,
         manageSafeArea: true,
         content: {

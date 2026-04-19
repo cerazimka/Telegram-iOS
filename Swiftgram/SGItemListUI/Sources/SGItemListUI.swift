@@ -1,8 +1,8 @@
 // MARK: exteraGram
-import SGLogging
-import SGSimpleSettings
-import SGStrings
-import SGAPIToken
+import EGLogging
+import EGSimpleSettings
+import EGStrings
+import EGAPIToken
 
 import Foundation
 import UIKit
@@ -22,7 +22,7 @@ import AppBundle
 import WebKit
 import PeerNameColorScreen
 
-public class SGItemListCounter {
+public class EGItemListCounter {
     private var _count = 0
     
     public init() {}
@@ -43,11 +43,11 @@ public class SGItemListCounter {
 }
 
 
-public protocol SGItemListSection: Equatable {
+public protocol EGItemListSection: Equatable {
     var rawValue: Int32 { get }
 }
 
-public final class SGItemListArguments<BoolSetting: Hashable, SliderSetting: Hashable, OneFromManySetting: Hashable, DisclosureLink: Hashable, ActionType: Hashable> {
+public final class EGItemListArguments<BoolSetting: Hashable, SliderSetting: Hashable, OneFromManySetting: Hashable, DisclosureLink: Hashable, ActionType: Hashable> {
     let context: AccountContext
     //
     let setBoolValue: (BoolSetting, Bool) -> Void
@@ -79,7 +79,7 @@ public final class SGItemListArguments<BoolSetting: Hashable, SliderSetting: Has
     }
 }
 
-public enum SGItemListUIEntry<Section: SGItemListSection, BoolSetting: Hashable, SliderSetting: Hashable, OneFromManySetting: Hashable, DisclosureLink: Hashable, ActionType: Hashable>: ItemListNodeEntry {
+public enum EGItemListUIEntry<Section: EGItemListSection, BoolSetting: Hashable, SliderSetting: Hashable, OneFromManySetting: Hashable, DisclosureLink: Hashable, ActionType: Hashable>: ItemListNodeEntry {
     case header(id: Int, section: Section, text: String, badge: String?)
     case toggle(id: Int, section: Section, settingName: BoolSetting, value: Bool, text: String, enabled: Bool)
     case notice(id: Int, section: Section, text: String)
@@ -141,11 +141,11 @@ public enum SGItemListUIEntry<Section: SGItemListSection, BoolSetting: Hashable,
         }
     }
     
-    public static func <(lhs: SGItemListUIEntry, rhs: SGItemListUIEntry) -> Bool {
+    public static func <(lhs: EGItemListUIEntry, rhs: EGItemListUIEntry) -> Bool {
         return lhs.stableId < rhs.stableId
     }
     
-    public static func ==(lhs: SGItemListUIEntry, rhs: SGItemListUIEntry) -> Bool {
+    public static func ==(lhs: EGItemListUIEntry, rhs: EGItemListUIEntry) -> Bool {
         switch (lhs, rhs) {
         case let (.header(id1, section1, text1, badge1), .header(id2, section2, text2, badge2)):
             return id1 == id2 && section1 == section2 && text1 == text2 && badge1 == badge2
@@ -180,7 +180,7 @@ public enum SGItemListUIEntry<Section: SGItemListSection, BoolSetting: Hashable,
 
     
     public func item(presentationData: ItemListPresentationData, arguments: Any) -> ListViewItem {
-        let arguments = arguments as! SGItemListArguments<BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>
+        let arguments = arguments as! EGItemListArguments<BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>
         switch self {
         case let .header(_, _, string, badge):
             return ItemListSectionHeaderItem(presentationData: presentationData, text: string, badge: badge, sectionId: self.section)
@@ -228,10 +228,10 @@ public enum SGItemListUIEntry<Section: SGItemListSection, BoolSetting: Hashable,
 }
 
 
-public func filterSGItemListUIEntrires<Section: SGItemListSection & Hashable, BoolSetting: Hashable, SliderSetting: Hashable, OneFromManySetting: Hashable, DisclosureLink: Hashable, ActionType: Hashable>(
-    entries: [SGItemListUIEntry<Section, BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>],
+public func filterSGItemListUIEntrires<Section: EGItemListSection & Hashable, BoolSetting: Hashable, SliderSetting: Hashable, OneFromManySetting: Hashable, DisclosureLink: Hashable, ActionType: Hashable>(
+    entries: [EGItemListUIEntry<Section, BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>],
     by searchQuery: String?
-) -> [SGItemListUIEntry<Section, BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>] {
+) -> [EGItemListUIEntry<Section, BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>] {
     
     guard let query = searchQuery?.lowercased(), !query.isEmpty else {
         return entries
@@ -239,9 +239,9 @@ public func filterSGItemListUIEntrires<Section: SGItemListSection & Hashable, Bo
     
     var sectionIdsForEntireIncludion: Set<ItemListSectionId> = []
     var sectionIdsWithMatches: Set<ItemListSectionId> = []
-    var filteredEntries: [SGItemListUIEntry<Section, BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>] = []
+    var filteredEntries: [EGItemListUIEntry<Section, BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>] = []
     
-    func entryMatches(_ entry: SGItemListUIEntry<Section, BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>, query: String) -> Bool {
+    func entryMatches(_ entry: EGItemListUIEntry<Section, BoolSetting, SliderSetting, OneFromManySetting, DisclosureLink, ActionType>, query: String) -> Bool {
         switch entry {
         case .header(_, _, let text, _):
             return text.lowercased().contains(query)

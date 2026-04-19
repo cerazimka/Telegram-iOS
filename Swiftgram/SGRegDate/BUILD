@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGRegDate",
-    module_name = "SGRegDate",
+    name = "EGRegDate",
+    module_name = "EGRegDate",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -10,12 +10,12 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGRegDateScheme:SGRegDateScheme",
-        "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-        "//Swiftgram/SGAPI:SGAPI",
-        "//Swiftgram/SGAPIToken:SGAPIToken",
-        "//Swiftgram/SGDeviceToken:SGDeviceToken",
-        "//Swiftgram/SGStrings:SGStrings",
+        "//exteraGram/EGRegDateScheme:EGRegDateScheme",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGAPI:EGAPI",
+        "//exteraGram/EGAPIToken:EGAPIToken",
+        "//exteraGram/EGDeviceToken:EGDeviceToken",
+        "//exteraGram/EGStrings:EGStrings",
 
         "//submodules/AccountContext:AccountContext",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",

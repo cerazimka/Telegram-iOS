@@ -1,8 +1,8 @@
-import SGSimpleSettings
+import EGSimpleSettings
 import Foundation
 import SwiftSignalKit
 
-public func sgSimpleSettingsBoolSignal(_ key: SGSimpleSettings.Keys, defaultValue: Bool) -> Signal<Bool, NoError> {
+public func sgSimpleSettingsBoolSignal(_ key: EGSimpleSettings.Keys, defaultValue: Bool) -> Signal<Bool, NoError> {
     let initial = Signal<Bool, NoError>.single(UserDefaults.standard.object(forKey: key.rawValue) as? Bool ?? defaultValue)
     let changes = Signal<Bool, NoError> { subscriber in
         let observer = NotificationCenter.default.addObserver(

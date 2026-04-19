@@ -1,5 +1,5 @@
-import SGConfig
-import SGLogging
+import EGConfig
+import EGLogging
 import CryptoKit
 import Foundation
 import MtProtoKit
@@ -9,7 +9,7 @@ import SwiftSignalKit
 import TelegramApi
 
 
-public struct SGIQTPResponse {
+public struct EGIQTPResponse {
     public let status: Int
     public let value: String
 }
@@ -49,7 +49,7 @@ public func makeIqtpQuery(_ method: String, _ args: [String] = []) -> String {
     return baseQuery + ":" + queryArgs.joined(separator: ":")
 }
 
-public func sgIqtpQuery(engine: TelegramEngine, query: String, incompleteResults: Bool = false, staleCachedResults: Bool = false) -> Signal<SGIQTPResponse?, NoError> {
+public func egIqtpQuery(engine: TelegramEngine, query: String, incompleteResults: Bool = false, staleCachedResults: Bool = false) -> Signal<EGIQTPResponse?, NoError> {
     let queryId = arc4random()
     func sgVerifySignedAnswer(query: String, answer: String, peerId: PeerId) -> String? {
         func sgBase64UrlDecode(_ value: String) -> Data? {
@@ -90,122 +90,122 @@ public func sgIqtpQuery(engine: TelegramEngine, query: String, incompleteResults
 
         let sgQueryParts = query.split(separator: ":", omittingEmptySubsequences: false)
         guard sgQueryParts.count >= 4, sgQueryParts[0] == "tp" else {
-            SGLogger.shared.log("SGIQTP", "Missing IQTP query info")
+            EGLogger.shared.log("SGIQTP", "Missing IQTP query info")
             return nil
         }
         guard let sgQueryVersion = Int(sgQueryParts[1]), sgQueryVersion == 1 else {
-            SGLogger.shared.log("SGIQTP", "Unsupported IQTP version")
+            EGLogger.shared.log("SGIQTP", "Unsupported IQTP version")
             return nil
         }
         let sgQueryBuild = String(sgQueryParts[2])
         let sgQueryMethod = String(sgQueryParts[3])
         let sgQueryArgs = sgQueryParts.count > 4 ? sgQueryParts[4...].map { String($0) } : []
         guard let sgNonce = sgQueryArgs.first, !sgNonce.isEmpty else {
-            SGLogger.shared.log("SGIQTP", "Missing IQTP nonce")
+            EGLogger.shared.log("SGIQTP", "Missing IQTP nonce")
             return nil
         }
 
-        guard let sgPublicKey = SG_CONFIG.publicKey, !sgPublicKey.isEmpty else {
-            SGLogger.shared.log("SGIQTP", "Missing public key")
+        guard let sgPublicKey = EG_CONFIG.publicKey, !sgPublicKey.isEmpty else {
+            EGLogger.shared.log("SGIQTP", "Missing public key")
             return nil
         }
         guard let sgToken = sgExtractSignedToken(from: answer) else {
-            SGLogger.shared.log("SGIQTP", "Missing signed IQTP token")
+            EGLogger.shared.log("SGIQTP", "Missing signed IQTP token")
             return nil
         }
         guard let sgAnswerData = sgBase64UrlDecode(sgToken.payload) else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer encoding")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer encoding")
             return nil
         }
         guard let sgSignatureData = sgBase64UrlDecode(sgToken.signature) else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP signature encoding")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP signature encoding")
             return nil
         }
         guard let sgPublicKeyData = sgDecodePublicKey(sgPublicKey) else {
-            SGLogger.shared.log("SGIQTP", "Invalid public key")
+            EGLogger.shared.log("SGIQTP", "Invalid public key")
             return nil
         }
         guard let sgSigningKey = try? Curve25519.Signing.PublicKey(rawRepresentation: sgPublicKeyData) else {
-            SGLogger.shared.log("SGIQTP", "Invalid public key bytes")
+            EGLogger.shared.log("SGIQTP", "Invalid public key bytes")
             return nil
         }
         guard sgSigningKey.isValidSignature(sgSignatureData, for: sgAnswerData) else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP signature")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP signature")
             return nil
         }
         guard let sgAnswerString = String(data: sgAnswerData, encoding: .utf8) else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer string")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer string")
             return nil
         }
         let sgAnswerParts = sgAnswerString.split(separator: ":", omittingEmptySubsequences: false)
         guard sgAnswerParts.count == 8 else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer parts count")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer parts count")
             return nil
         }
         guard let sgAnswerVersion = Int(sgAnswerParts[0]), sgAnswerVersion == 1 else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer version")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer version")
             return nil
         }
         let sgAnswerMethod = String(sgAnswerParts[1])
         guard sgAnswerMethod == sgQueryMethod else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer method")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer method")
             return nil
         }
         guard let sgAnswerPeerId = Int64(sgAnswerParts[2]) else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer peer id")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer peer id")
             return nil
         }
         let sgAnswerNonce = String(sgAnswerParts[3])
         guard sgAnswerNonce == sgNonce else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer nonce")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer nonce")
             return nil
         }
         guard let sgIat = Int64(sgAnswerParts[4]), let sgExp = Int64(sgAnswerParts[5]) else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer timing")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer timing")
             return nil
         }
         let sgValue = String(sgAnswerParts[6])
         let sgAnswerBuild = String(sgAnswerParts[7])
         guard sgAnswerBuild == sgQueryBuild else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer build number")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer build number")
             return nil
         }
         let sgNow = Int64(Date().timeIntervalSince1970)
         guard sgExp >= sgNow - sgIqtpTokenMaxPastSkew else {
-            SGLogger.shared.log("SGIQTP", "Expired IQTP answer")
+            EGLogger.shared.log("SGIQTP", "Expired IQTP answer")
             return nil
         }
         guard sgExp <= sgNow + sgIqtpTokenMaxFutureSkew else {
-            SGLogger.shared.log("SGIQTP", "IQTP answer exp too far in future")
+            EGLogger.shared.log("SGIQTP", "IQTP answer exp too far in future")
             return nil
         }
         guard sgIat <= sgExp else {
-            SGLogger.shared.log("SGIQTP", "Invalid IQTP answer timing order")
+            EGLogger.shared.log("SGIQTP", "Invalid IQTP answer timing order")
             return nil
         }
         let sgCurrentPeerId = peerId.id._internalGetInt64Value()
         guard sgAnswerPeerId == sgCurrentPeerId else {
-            SGLogger.shared.log("SGIQTP", "IQTP answer peer id mismatch")
+            EGLogger.shared.log("SGIQTP", "IQTP answer peer id mismatch")
             return nil
         }
         return sgValue
     }
     #if DEBUG
-    SGLogger.shared.log("SGIQTP", "[\(queryId)] Query: \(query)")
+    EGLogger.shared.log("SGIQTP", "[\(queryId)] Query: \(query)")
     #else
-    SGLogger.shared.log("SGIQTP", "[\(queryId)] Query")
+    EGLogger.shared.log("SGIQTP", "[\(queryId)] Query")
     #endif
-    return engine.peers.resolvePeerByName(name: SG_CONFIG.botUsername, referrer: nil)
+    return engine.peers.resolvePeerByName(name: EG_CONFIG.botUsername, referrer: nil)
         |> mapToSignal { result -> Signal<EnginePeer?, NoError> in
             guard case let .result(result) = result else {
-                SGLogger.shared.log("SGIQTP", "[\(queryId)] Failed to resolve peer \(SG_CONFIG.botUsername)")
+                EGLogger.shared.log("SGIQTP", "[\(queryId)] Failed to resolve peer \(EG_CONFIG.botUsername)")
                 return .complete()
             }
             return .single(result)
         }
         |> mapToSignal { peer -> Signal<ChatContextResultCollection?, NoError> in
             guard let peer = peer else {
-                SGLogger.shared.log("SGIQTP", "[\(queryId)] Empty peer")
+                EGLogger.shared.log("SGIQTP", "[\(queryId)] Empty peer")
                 return .single(nil)
             }
             return engine.messages.requestChatContextResults(IQTP: true, botId: peer.id, peerId: engine.account.peerId, query: query, offset: "", incompleteResults: incompleteResults, staleCachedResults: staleCachedResults)
@@ -213,13 +213,13 @@ public func sgIqtpQuery(engine: TelegramEngine, query: String, incompleteResults
                 return results?.results
             }
             |> `catch` { error -> Signal<ChatContextResultCollection?, NoError> in
-                SGLogger.shared.log("SGIQTP", "[\(queryId)] Failed to request inline results")
+                EGLogger.shared.log("SGIQTP", "[\(queryId)] Failed to request inline results")
                 return .single(nil)
             }
         }
-        |> map { contextResult -> SGIQTPResponse? in
+        |> map { contextResult -> EGIQTPResponse? in
             guard let contextResult, let firstResult = contextResult.results.first else {
-                SGLogger.shared.log("SGIQTP", "[\(queryId)] Empty inline result")
+                EGLogger.shared.log("SGIQTP", "[\(queryId)] Empty inline result")
                 return nil
             }
             
@@ -229,14 +229,14 @@ public func sgIqtpQuery(engine: TelegramEngine, query: String, incompleteResults
             }
 
             guard let t else {
-                SGLogger.shared.log("SGIQTP", "[\(queryId)] Missing signed IQTP answer")
+                EGLogger.shared.log("SGIQTP", "[\(queryId)] Missing signed IQTP answer")
                 return nil
             }
             let sgValue: String
             if let sgVerifiedValue = sgVerifySignedAnswer(query: query, answer: t, peerId: engine.account.peerId) {
                 sgValue = sgVerifiedValue
             } else {
-                SGLogger.shared.log("SGIQTP", "[\(queryId)] Invalid signed IQTP token")
+                EGLogger.shared.log("SGIQTP", "[\(queryId)] Invalid signed IQTP token")
                 return nil
             }
 
@@ -244,8 +244,8 @@ public func sgIqtpQuery(engine: TelegramEngine, query: String, incompleteResults
             if let title = firstResult.title {
                 status = Int(title) ?? 400
             }
-            let response = SGIQTPResponse(status: status, value: sgValue)
-            SGLogger.shared.log("SGIQTP", "[\(queryId)] Response status: \(status)")
+            let response = EGIQTPResponse(status: status, value: sgValue)
+            EGLogger.shared.log("SGIQTP", "[\(queryId)] Response status: \(status)")
             return response
         }
 }

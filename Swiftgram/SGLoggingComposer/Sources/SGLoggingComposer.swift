@@ -1,9 +1,9 @@
 import Foundation
-import SGLogging
+import EGLogging
 import SwiftSignalKit
 
 
-extension SGLogger {
+extension EGLogger {
     public func collectLogs(prefix: String? = nil) -> Signal<[(String, String)], NoError> {
         return Signal { subscriber in
             self.queue.async {

@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGGHSettings",
-    module_name = "SGGHSettings",
+    name = "EGGHSettings",
+    module_name = "EGGHSettings",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -10,8 +10,8 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGGHSettingsScheme:SGGHSettingsScheme",
-        "//Swiftgram/SGLogging:SGLogging",
+        "//exteraGram/EGGHSettingsScheme:EGGHSettingsScheme",
+        "//exteraGram/EGLogging:EGLogging",
         "//submodules/AccountContext:AccountContext",
         "//submodules/TelegramCore:TelegramCore",
     ],

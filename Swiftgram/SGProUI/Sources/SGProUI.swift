@@ -1,6 +1,6 @@
 import Foundation
 import UniformTypeIdentifiers
-import SGItemListUI
+import EGItemListUI
 import UndoUI
 import AccountContext
 import Display
@@ -14,52 +14,52 @@ import TelegramUIPreferences
 import SettingsUI
 
 // Optional
-import SGSimpleSettings
-import SGLogging
+import EGSimpleSettings
+import EGLogging
 
 
-private enum SGProControllerSection: Int32, SGItemListSection {
+private enum EGProControllerSection: Int32, EGItemListSection {
     case base
     case appearance
     case notifications
     case footer
 }
 
-private enum SGProDisclosureLink: String {
+private enum EGProDisclosureLink: String {
     case sessionBackupManager
     case messageFilter
     case appIcons
     case appBages
 }
 
-private enum SGProToggles: String {
+private enum EGProToggles: String {
     case inputToolbar
 }
 
-private enum SGProOneFromManySetting: String {
+private enum EGProOneFromManySetting: String {
     case pinnedMessageNotifications
     case mentionsAndRepliesNotifications
 }
 
-private enum SGProAction {
+private enum EGProAction {
     case resetIAP
 }
 
-private typealias SGProControllerEntry = SGItemListUIEntry<SGProControllerSection, SGProToggles, AnyHashable, SGProOneFromManySetting, SGProDisclosureLink, SGProAction>
+private typealias EGProControllerEntry = EGItemListUIEntry<EGProControllerSection, EGProToggles, AnyHashable, EGProOneFromManySetting, EGProDisclosureLink, EGProAction>
 
-private func SGProControllerEntries(presentationData: PresentationData) -> [SGProControllerEntry] {
-    var entries: [SGProControllerEntry] = []
+private func EGProControllerEntries(presentationData: PresentationData) -> [EGProControllerEntry] {
+    var entries: [EGProControllerEntry] = []
     let lang = presentationData.strings.baseLanguageCode
     
-    let id = SGItemListCounter()
+    let id = EGItemListCounter()
     
     entries.append(.disclosure(id: id.count, section: .base, link: .sessionBackupManager, text: "SessionBackup.Title".i18n(lang)))
     entries.append(.disclosure(id: id.count, section: .base, link: .messageFilter, text: "MessageFilter.Title".i18n(lang)))
-    entries.append(.toggle(id: id.count, section: .base, settingName: .inputToolbar, value: SGSimpleSettings.shared.inputToolbar, text: "InputToolbar.Title".i18n(lang), enabled: true))
+    entries.append(.toggle(id: id.count, section: .base, settingName: .inputToolbar, value: EGSimpleSettings.shared.inputToolbar, text: "InputToolbar.Title".i18n(lang), enabled: true))
     
     entries.append(.header(id: id.count, section: .notifications, text: presentationData.strings.Notifications_Title.uppercased(), badge: nil))
-    entries.append(.oneFromManySelector(id: id.count, section: .notifications, settingName: .pinnedMessageNotifications, text: "Notifications.PinnedMessages.Title".i18n(lang), value: "Notifications.PinnedMessages.value.\(SGSimpleSettings.shared.pinnedMessageNotifications)".i18n(lang), enabled: true))
-    entries.append(.oneFromManySelector(id: id.count, section: .notifications, settingName: .mentionsAndRepliesNotifications, text: "Notifications.MentionsAndReplies.Title".i18n(lang), value: "Notifications.MentionsAndReplies.value.\(SGSimpleSettings.shared.mentionsAndRepliesNotifications)".i18n(lang), enabled: true))
+    entries.append(.oneFromManySelector(id: id.count, section: .notifications, settingName: .pinnedMessageNotifications, text: "Notifications.PinnedMessages.Title".i18n(lang), value: "Notifications.PinnedMessages.value.\(EGSimpleSettings.shared.pinnedMessageNotifications)".i18n(lang), enabled: true))
+    entries.append(.oneFromManySelector(id: id.count, section: .notifications, settingName: .mentionsAndRepliesNotifications, text: "Notifications.MentionsAndReplies.Title".i18n(lang), value: "Notifications.MentionsAndReplies.value.\(EGSimpleSettings.shared.mentionsAndRepliesNotifications)".i18n(lang), enabled: true))
     entries.append(.header(id: id.count, section: .appearance, text: presentationData.strings.Appearance_Title.uppercased(), badge: nil))
     entries.append(.disclosure(id: id.count, section: .appearance, link: .appIcons, text: presentationData.strings.Appearance_AppIcon))
     entries.append(.disclosure(id: id.count, section: .appearance, link: .appBages, text: "AppBadge.Title".i18n(lang)))
@@ -76,16 +76,16 @@ public func okUndoController(_ text: String, _ presentationData: PresentationDat
     return UndoOverlayController(presentationData: presentationData, content: .succeed(text: text, timeout: nil, customUndoText: nil), elevatedLayout: false, action: { _ in return false })
 }
 
-public func sgProController(context: AccountContext) -> ViewController {
+public func egProController(context: AccountContext) -> ViewController {
     var presentControllerImpl: ((ViewController, ViewControllerPresentationArguments?) -> Void)?
     var pushControllerImpl: ((ViewController) -> Void)?
 
     let simplePromise = ValuePromise(true, ignoreRepeated: false)
     
-    let arguments = SGItemListArguments<SGProToggles, AnyHashable, SGProOneFromManySetting, SGProDisclosureLink, SGProAction>(context: context, setBoolValue: { toggleName, value in
+    let arguments = EGItemListArguments<EGProToggles, AnyHashable, EGProOneFromManySetting, EGProDisclosureLink, EGProAction>(context: context, setBoolValue: { toggleName, value in
         switch toggleName {
             case .inputToolbar:
-                SGSimpleSettings.shared.inputToolbar = value
+                EGSimpleSettings.shared.inputToolbar = value
         }
     }, setOneFromManyValue: { setting in
         let presentationData = context.sharedContext.currentPresentationData.with { $0 }
@@ -96,12 +96,12 @@ public func sgProController(context: AccountContext) -> ViewController {
         switch (setting) {
             case .pinnedMessageNotifications:
                 let setAction: (String) -> Void = { value in
-                    SGSimpleSettings.shared.pinnedMessageNotifications = value
-                    SGSimpleSettings.shared.synchronizeShared()
+                    EGSimpleSettings.shared.pinnedMessageNotifications = value
+                    EGSimpleSettings.shared.synchronizeShared()
                     simplePromise.set(true)
                 }
 
-                for value in SGSimpleSettings.PinnedMessageNotificationsSettings.allCases {
+                for value in EGSimpleSettings.PinnedMessageNotificationsSettings.allCases {
                     items.append(ActionSheetButtonItem(title: "Notifications.PinnedMessages.value.\(value.rawValue)".i18n(lang), color: .accent, action: { [weak actionSheet] in
                         actionSheet?.dismissAnimated()
                         setAction(value.rawValue)
@@ -109,12 +109,12 @@ public func sgProController(context: AccountContext) -> ViewController {
                 }
             case .mentionsAndRepliesNotifications:
                 let setAction: (String) -> Void = { value in
-                    SGSimpleSettings.shared.mentionsAndRepliesNotifications = value
-                    SGSimpleSettings.shared.synchronizeShared()
+                    EGSimpleSettings.shared.mentionsAndRepliesNotifications = value
+                    EGSimpleSettings.shared.synchronizeShared()
                     simplePromise.set(true)
                 }
 
-                for value in SGSimpleSettings.MentionsAndRepliesNotificationsSettings.allCases {
+                for value in EGSimpleSettings.MentionsAndRepliesNotificationsSettings.allCases {
                     items.append(ActionSheetButtonItem(title: "Notifications.MentionsAndReplies.value.\(value.rawValue)".i18n(lang), color: .accent, action: { [weak actionSheet] in
                         actionSheet?.dismissAnimated()
                         setAction(value.rawValue)
@@ -150,8 +150,8 @@ public func sgProController(context: AccountContext) -> ViewController {
             case .resetIAP:
                 let updateSettingsSignal = updateSGStatusInteractively(accountManager: context.sharedContext.accountManager, { status in
                     var status = status
-                    status.status = SGStatus.default.status
-                    SGSimpleSettings.shared.primaryUserId = ""
+                    status.status = EGStatus.default.status
+                    EGSimpleSettings.shared.primaryUserId = ""
                     return status
                 })
                 let _ = (updateSettingsSignal |> deliverOnMainQueue).start(next: {
@@ -169,7 +169,7 @@ public func sgProController(context: AccountContext) -> ViewController {
     let signal = combineLatest(context.sharedContext.presentationData, simplePromise.get())
     |> map { presentationData, _ ->  (ItemListControllerState, (ItemListNodeState, Any)) in
         
-        let entries = SGProControllerEntries(presentationData: presentationData)
+        let entries = EGProControllerEntries(presentationData: presentationData)
         
         let controllerState = ItemListControllerState(presentationData: ItemListPresentationData(presentationData), title: .text("exteraGram Pro"), leftNavigationButton: nil, rightNavigationButton: nil, backNavigationButton: ItemListBackButton(title: presentationData.strings.Common_Back))
         

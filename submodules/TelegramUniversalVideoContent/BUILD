@@ -9,7 +9,7 @@ load("//build-system/bazel-utils:plist_fragment.bzl",
 )
 
 sgsrc = [
-    "//Swiftgram/SGExternalVideoPlayer:SGExternalVideoPlayer",
+    "//exteraGram/EGExternalVideoPlayer:EGExternalVideoPlayer",
 ]
 
 filegroup(

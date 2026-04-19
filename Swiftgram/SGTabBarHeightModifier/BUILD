@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGTabBarHeightModifier",
+    name = "EGTabBarHeightModifier",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

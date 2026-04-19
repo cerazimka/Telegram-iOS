@@ -1,14 +1,14 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 filegroup(
-    name = "SGPayWallAssets",
+    name = "EGPayWallAssets",
     srcs = glob(["Images.xcassets/**"]),
     visibility = ["//visibility:public"],
 )
 
 swift_library(
-    name = "SGPayWall",
-    module_name = "SGPayWall",
+    name = "EGPayWall",
+    module_name = "EGPayWall",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
@@ -16,11 +16,11 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//Swiftgram/SGIAP:SGIAP",
-        "//Swiftgram/SGLogging:SGLogging",
-        "//Swiftgram/SGSimpleSettings:SGSimpleSettings",
-        "//Swiftgram/SGSwiftUI:SGSwiftUI",
-        "//Swiftgram/SGStrings:SGStrings",
+        "//exteraGram/EGIAP:EGIAP",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGSwiftUI:EGSwiftUI",
+        "//exteraGram/EGStrings:EGStrings",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
     ],
     visibility = [

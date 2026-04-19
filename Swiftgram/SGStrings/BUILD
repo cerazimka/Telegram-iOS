@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGStrings",
-    module_name = "SGStrings",
+    name = "EGStrings",
+    module_name = "EGStrings",
     srcs = glob([
 		"Sources/**/*.swift",
     ]),
@@ -11,7 +11,7 @@ swift_library(
     ],
     deps = [
         "//submodules/AppBundle:AppBundle",
-        "//Swiftgram/SGLogging:SGLogging"
+        "//exteraGram/EGLogging:EGLogging"
     ],
     visibility = [
         "//visibility:public",
@@ -19,8 +19,8 @@ swift_library(
 )
 
 filegroup(
-    name = "SGLocalizableStrings",
-    srcs = glob(["Strings/*.lproj/SGLocalizable.strings"]),
+    name = "EGLocalizableStrings",
+    srcs = glob(["Strings/*.lproj/EGLocalizable.strings"]),
     visibility = [
         "//visibility:public",
     ],

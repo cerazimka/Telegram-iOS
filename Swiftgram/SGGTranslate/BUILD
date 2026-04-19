@@ -1,8 +1,8 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 swift_library(
-    name = "SGGTranslate",
-    module_name = "SGGTranslate",
+    name = "EGGTranslate",
+    module_name = "EGGTranslate",
     srcs = glob([
         "Sources/**/*.swift",
     ]),

@@ -1,10 +1,10 @@
 import Foundation
 import Display
-import SGSimpleSettings
+import EGSimpleSettings
 
 public func sgTabBarHeightModifier(tabBarHeight: CGFloat, layout: ContainerViewLayout, defaultBarSmaller: Bool) -> CGFloat {
     var tabBarHeight = tabBarHeight
-    guard !SGSimpleSettings.shared.showTabNames else {
+    guard !EGSimpleSettings.shared.showTabNames else {
         return tabBarHeight
     }
     

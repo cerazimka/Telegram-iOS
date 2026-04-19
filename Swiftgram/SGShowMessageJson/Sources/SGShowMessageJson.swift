@@ -1,6 +1,6 @@
 import Foundation
 import Wrap
-import SGLogging
+import EGLogging
 import ChatControllerInteraction
 import ChatPresentationInterfaceState
 import Postbox
@@ -24,7 +24,7 @@ public func showMessageJson(controllerInteraction: ChatControllerInteraction, ch
                 writingOptions: writingOptions
             )
         } catch {
-            SGLogger.shared.log("ShowMessageJSON", "Error parsing data: \(error)")
+            EGLogger.shared.log("ShowMessageJSON", "Error parsing data: \(error)")
             messageData = nil
         }
         

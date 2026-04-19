@@ -38,7 +38,7 @@ public struct EGUISettings: Equatable, Codable {
     }
 }
 
-public func updateSGUISettings(engine: TelegramEngine, _ f: @escaping (EGUISettings) -> EGUISettings) -> Signal<Never, NoError> {
+public func updateEGUISettings(engine: TelegramEngine, _ f: @escaping (EGUISettings) -> EGUISettings) -> Signal<Never, NoError> {
     return engine.preferences.update(id: ApplicationSpecificPreferencesKeys.EGUISettings, { entry in
         let currentSettings: EGUISettings
         if let entry = entry?.get(EGUISettings.self) {

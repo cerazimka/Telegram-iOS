@@ -761,7 +761,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         }
         if !isUITest {
             // MARK: exteraGram
-            if UserDefaults.standard.bool(forKey: "sg_db_hard_reset") {
+            if UserDefaults.standard.bool(forKey: "eg_db_hard_reset") {
                 self.window?.makeKeyAndVisible()
                 egHardReset(dataPath: rootPath, present: self.mainWindow?.presentNative)
                 return true
@@ -3493,15 +3493,15 @@ final class UpdateSettings: Codable, Equatable {
 extension AppDelegate {
 
     func setupIAP() {
-        NotificationCenter.default.addObserver(forName: .SGIAPHelperPurchaseNotification, object: nil, queue: nil) { [weak self] notification in
-            SGLogger.shared.log("SGIAP", "Got SGIAPHelperPurchaseNotification")
+        NotificationCenter.default.addObserver(forName: .EGIAPHelperPurchaseNotification, object: nil, queue: nil) { [weak self] notification in
+            EGLogger.shared.log("EGIAP", "Got EGIAPHelperPurchaseNotification")
             guard let strongSelf = self else { return }
             if let transactions = notification.object as? [SKPaymentTransaction] {
                 let _ = (strongSelf.context.get()
                 |> take(1)
                 |> deliverOnMainQueue).start(next: { [weak strongSelf] context in
                     guard let veryStrongSelf = strongSelf else {
-                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        EGLogger.shared.log("EGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
                         let defaultPaymentQueue = SKPaymentQueue.default()
                         for transaction in transactions {
                             defaultPaymentQueue.finishTransaction(transaction)
@@ -3509,21 +3509,21 @@ extension AppDelegate {
                         return
                     }
                     guard let context = context else {
-                        SGLogger.shared.log("SGIAP", "Empty app context (how?)")
+                        EGLogger.shared.log("EGIAP", "Empty app context (how?)")
                         
-                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        EGLogger.shared.log("EGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
                         let defaultPaymentQueue = SKPaymentQueue.default()
                         for transaction in transactions {
                             defaultPaymentQueue.finishTransaction(transaction)
                         }
                         return
                     }
-                    SGLogger.shared.log("SGIAP", "Got context for SGIAPHelperPurchaseNotification")
+                    EGLogger.shared.log("EGIAP", "Got context for EGIAPHelperPurchaseNotification")
                     let _ = Task {
                         await veryStrongSelf.sendReceiptForVerification(primaryContext: context.context)
                         await veryStrongSelf.fetchSGStatus(primaryContext: context.context)
                         
-                        SGLogger.shared.log("SGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
+                        EGLogger.shared.log("EGIAP", "Finishing transactions \(transactions.map({ $0.transactionIdentifier ?? "nil" }).joined(separator: ", "))")
                         let defaultPaymentQueue = SKPaymentQueue.default()
                         for transaction in transactions {
                             defaultPaymentQueue.finishTransaction(transaction)
@@ -3531,28 +3531,28 @@ extension AppDelegate {
                     }
                 })
             } else {
-                SGLogger.shared.log("SGIAP", "Wrong object in SGIAPHelperPurchaseNotification")
+                EGLogger.shared.log("EGIAP", "Wrong object in EGIAPHelperPurchaseNotification")
                 #if DEBUG
-                preconditionFailure("Wrong object in SGIAPHelperPurchaseNotification")
+                preconditionFailure("Wrong object in EGIAPHelperPurchaseNotification")
                 #endif
             }
         }
     }
     
     func getPrimaryContext(anyContext context: AccountContext, fallbackToCurrent: Bool = false) async -> AccountContext {
-        var primaryUserId: Int64 = Int64(SGSimpleSettings.shared.primaryUserId) ?? 0
+        var primaryUserId: Int64 = Int64(EGSimpleSettings.shared.primaryUserId) ?? 0
         if primaryUserId == 0 {
             primaryUserId = context.account.peerId.id._internalGetInt64Value()
         }
 
         var primaryContext = try? await getContextForUserId(context: context, userId: primaryUserId).awaitable()
         if let primaryContext = primaryContext {
-            SGLogger.shared.log("SGIAP", "Got primary context for user id: \(primaryContext.account.peerId.id._internalGetInt64Value())")
+            EGLogger.shared.log("EGIAP", "Got primary context for user id: \(primaryContext.account.peerId.id._internalGetInt64Value())")
             return primaryContext
         } else {
             primaryContext = context
             let newPrimaryUserId = context.account.peerId.id._internalGetInt64Value()
-            SGLogger.shared.log("SGIAP", "Primary context for user id \(primaryUserId) is nil! Falling back to current context with user id: \(newPrimaryUserId)")
+            EGLogger.shared.log("EGIAP", "Primary context for user id \(primaryUserId) is nil! Falling back to current context with user id: \(newPrimaryUserId)")
             return context
         }
     }
@@ -3572,7 +3572,7 @@ extension AppDelegate {
             
             (deviceToken, apiToken) = try await (deviceTokenTask, apiTokenTask)
         } catch {
-            SGLogger.shared.log("SGIAP", "Error getting device token or API token: \(error)")
+            EGLogger.shared.log("EGIAP", "Error getting device token or API token: \(error)")
             return
         }
 
@@ -3584,7 +3584,7 @@ extension AppDelegate {
             } catch let error as SignalCompleted {
                 let _ = error
             } catch {
-                SGLogger.shared.log("SGIAP", "Error: \(error)")
+                EGLogger.shared.log("EGIAP", "Error: \(error)")
             }
         }
     }
@@ -3598,27 +3598,27 @@ extension AppDelegate {
         }
         let currentShouldKeepConnection = false
         let userId = primaryContext.account.peerId.id._internalGetInt64Value()
-//        SGLogger.shared.log("SGIAP", "User id \(userId) currently keeps connection: \(currentShouldKeepConnection)")
+//        EGLogger.shared.log("EGIAP", "User id \(userId) currently keeps connection: \(currentShouldKeepConnection)")
         if !currentShouldKeepConnection {
-            SGLogger.shared.log("SGIAP", "Asking user id \(userId) to keep connection: true")
+            EGLogger.shared.log("EGIAP", "Asking user id \(userId) to keep connection: true")
             primaryContext.account.network.shouldKeepConnection.set(.single(true))
         }
         // MARK: exteraGram
-        let sgIqtpQueryString = makeIqtpQuery("s")
+        let egIqtpQueryString = makeIqtpQuery("s")
         //
-        let iqtpResponse = try? await sgIqtpQuery(engine: primaryContext.engine, query: sgIqtpQueryString).awaitable()
+        let iqtpResponse = try? await egIqtpQuery(engine: primaryContext.engine, query: egIqtpQueryString).awaitable()
         guard let iqtpResponse = iqtpResponse else {
-            SGLogger.shared.log("SGIAP", "IQTP response is nil!")
+            EGLogger.shared.log("EGIAP", "IQTP response is nil!")
 //            if !currentShouldKeepConnection {
-//                SGLogger.shared.log("SGIAP", "Setting user id \(userId) keep connection back to false")
+//                EGLogger.shared.log("EGIAP", "Setting user id \(userId) keep connection back to false")
 //                primaryContext.account.network.shouldKeepConnection.set(.single(false))
 //            }
             DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
+                NotificationCenter.default.post(name: .EGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
             }
             return
         }
-        SGLogger.shared.log("SGIAP", "Got IQTP response: \(iqtpResponse)")
+        EGLogger.shared.log("EGIAP", "Got IQTP response: \(iqtpResponse)")
         let _ = try? await updateSGStatusInteractively(accountManager: primaryContext.sharedContext.accountManager, { value in
             var value = value
 
@@ -3626,31 +3626,31 @@ extension AppDelegate {
             if let status = Int64(iqtpResponse.value) {
                 newStatus = status
             } else {
-                SGLogger.shared.log("SGIAP", "Can't parse IQTP response into status!")
+                EGLogger.shared.log("EGIAP", "Can't parse IQTP response into status!")
                 newStatus = value.status // unparseable
             }
             
             let userId = primaryContext.account.peerId.id._internalGetInt64Value()
             if value.status != newStatus {
-                SGLogger.shared.log("SGIAP", "Updating \(userId) status \(value.status) -> \(newStatus)")
+                EGLogger.shared.log("EGIAP", "Updating \(userId) status \(value.status) -> \(newStatus)")
                 if newStatus > 1 {
                     let stringUserId = String(userId)
-                    if SGSimpleSettings.shared.primaryUserId != stringUserId {
-                        SGLogger.shared.log("SGIAP", "Setting new primary user id: \(userId)")
-                        SGSimpleSettings.shared.primaryUserId = stringUserId
+                    if EGSimpleSettings.shared.primaryUserId != stringUserId {
+                        EGLogger.shared.log("EGIAP", "Setting new primary user id: \(userId)")
+                        EGSimpleSettings.shared.primaryUserId = stringUserId
                     }
                 } else {
-                    SGLogger.shared.log("SGIAP", "Status expired")
+                    EGLogger.shared.log("EGIAP", "Status expired")
                     DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.Expired"])
+                        NotificationCenter.default.post(name: .EGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.Expired"])
                     }
                 }
                 value.status = newStatus
             } else {
-                SGLogger.shared.log("SGIAP", "Status \(value.status) for \(userId) hasn't changed")
+                EGLogger.shared.log("EGIAP", "Status \(value.status) for \(userId) hasn't changed")
                 if newStatus < 2 {
                     DispatchQueue.main.async {
-                        NotificationCenter.default.post(name: .SGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
+                        NotificationCenter.default.post(name: .EGIAPHelperValidationErrorNotification, object: nil, userInfo: ["error": "PayWall.ValidationError.TryAgain"])
                     }
                 }
             }
@@ -3658,7 +3658,7 @@ extension AppDelegate {
         }).awaitable()
 
 //        if !currentShouldKeepConnection {
-//            SGLogger.shared.log("SGIAP", "Setting user id \(userId) keep connection back to false")
+//            EGLogger.shared.log("EGIAP", "Setting user id \(userId) keep connection back to false")
 //            primaryContext.account.network.shouldKeepConnection.set(.single(false))
 //        }
     }

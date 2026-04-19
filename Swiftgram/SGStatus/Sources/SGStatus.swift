@@ -2,11 +2,11 @@ import Foundation
 import SwiftSignalKit
 import TelegramCore
 
-public struct SGStatus: Equatable, Codable {
+public struct EGStatus: Equatable, Codable {
     public var status: Int64
     
-    public static var `default`: SGStatus {
-        return SGStatus(status: 1)
+    public static var `default`: EGStatus {
+        return EGStatus(status: 1)
     }
     
     public init(status: Int64) {
@@ -26,14 +26,14 @@ public struct SGStatus: Equatable, Codable {
     }
 }
 
-public func updateSGStatusInteractively(accountManager: AccountManager<TelegramAccountManagerTypes>, _ f: @escaping (SGStatus) -> SGStatus) -> Signal<Void, NoError> {
+public func updateSGStatusInteractively(accountManager: AccountManager<TelegramAccountManagerTypes>, _ f: @escaping (EGStatus) -> EGStatus) -> Signal<Void, NoError> {
     return accountManager.transaction { transaction -> Void in
-        transaction.updateSharedData(ApplicationSpecificSharedDataKeys.sgStatus, { entry in
-            let currentSettings: SGStatus
-            if let entry = entry?.get(SGStatus.self) {
+        transaction.updateSharedData(ApplicationSpecificSharedDataKeys.egStatus, { entry in
+            let currentSettings: EGStatus
+            if let entry = entry?.get(EGStatus.self) {
                 currentSettings = entry
             } else {
-                currentSettings = SGStatus.default
+                currentSettings = EGStatus.default
             }
             return SharedPreferencesEntry(f(currentSettings))
         })

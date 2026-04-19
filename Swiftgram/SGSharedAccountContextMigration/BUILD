@@ -1,5 +1,5 @@
 filegroup(
-    name = "SGSharedAccountContextMigration",
+    name = "EGSharedAccountContextMigration",
     srcs = glob([
         "Sources/**/*.swift",
     ]),
