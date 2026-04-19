@@ -1,13 +1,9 @@
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
-egsrcs = [
-    "//exteraGram/EGStatus:EGStatus"
-]
-
 swift_library(
     name = "TelegramUIPreferences",
     module_name = "TelegramUIPreferences",
-    srcs = egsrcs + glob([
+    srcs = glob([
         "Sources/**/*.swift",
     ]),
     copts = [
@@ -17,6 +13,7 @@ swift_library(
         "//submodules/TelegramCore:TelegramCore",
         "//submodules/Postbox:Postbox",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
+        "//exteraGram/EGStatus:EGStatus",
     ],
     visibility = [
         "//visibility:public",
