@@ -156,7 +156,7 @@ private final class SheetContent: CombinedComponent {
             
             super.init()
                         
-            self.translationDisposable.set((self.translate(text: text, entities: entities, fromLang: fromLanguage, toLang: toLanguage) |> deliverOnMainQueue).start(next: { [weak self] text in
+            self.translationDisposable.set((self.translate(text: text, fromLang: fromLanguage, toLang: toLanguage) |> deliverOnMainQueue).start(next: { [weak self] text in
                 guard let strongSelf = self else {
                     return
                 }
@@ -176,7 +176,7 @@ private final class SheetContent: CombinedComponent {
             if self.useAlternativeTranslation && EGSimpleSettings.shared.translationBackendEnum == .default {
                 return alternativeTranslateText(text: text, fromLang: fromLang, toLang: toLang)
             } else {
-                return self.context.engine.messages.translate(text: text, toLang: toLang, entities: entities, tone: self.tone)
+                return self.context.engine.messages.translate(text: text, toLang: toLang, entities: self.entities)
             }
         }
         
@@ -188,7 +188,7 @@ private final class SheetContent: CombinedComponent {
             self.translatedText = nil
             self.updated(transition: .immediate)
             
-            self.translationDisposable.set((self.translate(text: self.text, entities: self.entities, fromLang: self.fromLanguage, toLang: self.toLanguage) |> deliverOnMainQueue).start(next: { [weak self] text in
+            self.translationDisposable.set((self.translate(text: self.text, fromLang: self.fromLanguage, toLang: self.toLanguage) |> deliverOnMainQueue).start(next: { [weak self] text in
                 guard let strongSelf = self else {
                     return
                 }
@@ -208,7 +208,7 @@ private final class SheetContent: CombinedComponent {
             self.translatedText = nil
             self.updated(transition: .immediate)
             
-            self.translationDisposable.set((self.translate(text: self.text, entities: self.entities, fromLang: fromLanguage, toLang: toLanguage) |> deliverOnMainQueue).start(next: { [weak self] text in
+            self.translationDisposable.set((self.translate(text: self.text, fromLang: fromLanguage, toLang: toLanguage) |> deliverOnMainQueue).start(next: { [weak self] text in
                 guard let strongSelf = self else {
                     return
                 }
