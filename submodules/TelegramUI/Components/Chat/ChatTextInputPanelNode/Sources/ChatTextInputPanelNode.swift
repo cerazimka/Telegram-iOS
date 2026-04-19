@@ -256,6 +256,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
     private var inlineAiButtonAlpha: CGFloat = 0.0
     private var inlineAiButton: (button: HighlightTrackingButton, icon: UIImageView)?
     private let aiButtonMinTextLength: Int = 50
+    var isAIEnabled: Bool = false
     
     public let menuButton: HighlightTrackingButtonNode
     private let menuButtonBackgroundView: GlassBackgroundView
@@ -3667,11 +3668,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
         transition.updateFrame(view: self.glassBackgroundContainer, frame: containerFrame)
         self.glassBackgroundContainer.update(size: containerFrame.size, isDark: interfaceState.theme.overallDarkAppearance, transition: ComponentTransition(transition))
         
-        // MARK: exteraGram
-        var toolbarOffset: CGFloat = 0.0
-        toolbarOffset = layoutToolbar(transition: transition, panelHeight: contentHeight, width: width, leftInset: originalLeftInset, rightInset: rightInset, displayBotStartButton: displayBotStartButton)
-        
-        return contentHeight + toolbarOffset
+        return contentHeight
     }
     
     @objc private func slowModeButtonPressed() {
