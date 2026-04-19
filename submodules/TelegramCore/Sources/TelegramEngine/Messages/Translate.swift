@@ -26,6 +26,10 @@ public enum TranslationTone: String {
     case formal
 }
 
+func _internal_translate(network: Network, text: String, toLang: String, entities: [MessageTextEntity] = []) -> Signal<(String, [MessageTextEntity])?, TranslationError> {
+    var flags: Int32 = 0
+    flags |= (1 << 1)
+
     return network.request(Api.functions.messages.translateText(flags: flags, peer: nil, id: nil, text: [.textWithEntities(.init(text: text, entities: apiEntitiesFromMessageTextEntities(entities, associatedPeers: SimpleDictionary())))], toLang: egTranslationLangFix(toLang)))
     |> mapError { error -> TranslationError in
         if error.errorDescription.hasPrefix("FLOOD_WAIT") {
@@ -96,6 +100,139 @@ func _internal_composeMessageWithAI(network: Network, text: String, entities: [M
             case let .textWithEntities(textData):
                 return (textData.text, messageTextEntitiesFromApiEntities(textData.entities))
             }
+        }
+    }
+}
+
+// MARK: - AI Compose types (from upstream)
+
+public enum TelegramComposeAIMessageMode {
+    public enum StyleId: Hashable {
+        case neutral
+        case style(String)
+    }
+
+    public struct Style: Equatable {
+        public let type: String
+        public let title: String
+        public let emojiFileId: Int64?
+
+        public var id: StyleId {
+            return .style(self.type)
+        }
+
+        public init(type: String, title: String, emojiFileId: Int64?) {
+            self.type = type
+            self.title = title
+            self.emojiFileId = emojiFileId
+        }
+    }
+
+    case translate(toLanguage: String, emojify: Bool, style: StyleId)
+    case stylize(emojify: Bool, style: StyleId)
+    case proofread
+}
+
+public final class TelegramAIComposeMessageResult {
+    public let text: TextWithEntities
+    public let diffRanges: [Range<Int>]
+
+    public init(text: TextWithEntities, diffRanges: [Range<Int>]) {
+        self.text = text
+        self.diffRanges = diffRanges
+    }
+}
+
+extension TextWithEntities {
+    init(apiValue: Api.TextWithEntities) {
+        switch apiValue {
+        case let .textWithEntities(textWithEntities):
+            self.init(text: textWithEntities.text, entities: messageTextEntitiesFromApiEntities(textWithEntities.entities))
+        }
+    }
+}
+
+func _internal_composeAIMessageStyles(account: Account) -> Signal<[TelegramComposeAIMessageMode.Style], NoError> {
+    return account.postbox.transaction { transaction -> [TelegramComposeAIMessageMode.Style] in
+        var result: [TelegramComposeAIMessageMode.Style] = []
+        if let data = currentAppConfiguration(transaction: transaction).data, let value = data["ai_compose_styles"] as? [[String]] {
+            for item in value {
+                if item.count >= 3 {
+                    let emojiFileId: Int64? = Int64(item[1])
+                    result.append(TelegramComposeAIMessageMode.Style(type: item[0], title: item[2], emojiFileId: emojiFileId))
+                }
+            }
+        }
+        return result
+    }
+}
+
+public enum TelegramAIComposeMessageError {
+    case generic
+    case nonPremiumFlood
+}
+
+func _internal_composeAIMessage(account: Account, text: TextWithEntities, mode: TelegramComposeAIMessageMode) -> Signal<TelegramAIComposeMessageResult, TelegramAIComposeMessageError> {
+    var flags: Int32 = 0
+    var proofread: Bool = false
+    var emojify: Bool = false
+    var translateToLang: String?
+    var changeTone: String?
+
+    switch mode {
+    case let .translate(toLanguage, emojifyValue, style):
+        translateToLang = toLanguage
+        emojify = emojifyValue
+        if case let .style(name) = style {
+            changeTone = name
+        }
+    case let .stylize(emojifyValue, style):
+        emojify = emojifyValue
+        if case let .style(name) = style {
+            changeTone = name
+        }
+    case .proofread:
+        proofread = true
+    }
+
+    if proofread { flags |= (1 << 0) }
+    if translateToLang != nil { flags |= (1 << 1) }
+    if changeTone != nil { flags |= (1 << 2) }
+    if emojify { flags |= (1 << 3) }
+
+    let inputText: Api.TextWithEntities = .textWithEntities(Api.TextWithEntities.Cons_textWithEntities(text: text.text, entities: apiEntitiesFromMessageTextEntities(text.entities, associatedPeers: SimpleDictionary())))
+
+    return account.network.request(Api.functions.messages.composeMessageWithAI(flags: flags, text: inputText, translateToLang: translateToLang, changeTone: changeTone))
+    |> `catch` { error -> Signal<Api.messages.ComposedMessageWithAI, TelegramAIComposeMessageError> in
+        if error.errorDescription == "AICOMPOSE_FLOOD_PREMIUM" || error.errorDescription.hasPrefix("AICOMPOSE_FLOOD_PREMIUM ") {
+            return .fail(.nonPremiumFlood)
+        } else {
+            return .fail(.generic)
+        }
+    }
+    |> mapToSignal { result -> Signal<TelegramAIComposeMessageResult, TelegramAIComposeMessageError> in
+        switch result {
+        case let .composedMessageWithAI(composedMessageWithAI):
+            var diffRanges: [Range<Int>] = []
+            if let diffText = composedMessageWithAI.diffText {
+                switch diffText {
+                case let .textWithEntities(textWithEntities):
+                    for entity in textWithEntities.entities {
+                        switch entity {
+                        case let .messageEntityDiffReplace(e):
+                            if e.length >= 0 { diffRanges.append(Int(e.offset) ..< Int(e.offset + e.length)) }
+                        case let .messageEntityDiffInsert(e):
+                            if e.length >= 0 { diffRanges.append(Int(e.offset) ..< Int(e.offset + e.length)) }
+                        default:
+                            break
+                        }
+                    }
+                }
+            }
+            return .single(TelegramAIComposeMessageResult(
+                text: TextWithEntities(apiValue: composedMessageWithAI.resultText),
+                diffRanges: diffRanges
+            ))
         }
     }
 }

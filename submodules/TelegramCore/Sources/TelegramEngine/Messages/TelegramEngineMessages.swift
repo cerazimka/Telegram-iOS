@@ -666,11 +666,6 @@ public extension TelegramEngine {
             return _internal_translateMessages(account: self.account, messageIds: messageIds, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible, tone: tone)
         }
 
-        // MARK: Swiftgram
-        public func translateMessagesViaText(messagesDict: [EngineMessage.Id: String], fromLang: String?, toLang: String, generateEntitiesFunction: @escaping (String) -> [MessageTextEntity], enableLocalIfPossible: Bool) -> Signal<Never, TranslationError> {
-            return _internal_translateMessagesViaText(account: self.account, messagesDict: messagesDict, fromLang: fromLang, toLang: toLang, enableLocalIfPossible: enableLocalIfPossible, generateEntitiesFunction: generateEntitiesFunction)
-        }
-        
         public func togglePeerMessagesTranslationHidden(peerId: EnginePeer.Id, hidden: Bool) -> Signal<Never, NoError> {
             return _internal_togglePeerMessagesTranslationHidden(account: self.account, peerId: peerId, hidden: hidden)
         }
