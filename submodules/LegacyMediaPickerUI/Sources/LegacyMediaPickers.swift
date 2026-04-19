@@ -850,7 +850,7 @@ public func legacyAssetPickerEnqueueMessages(
                                 default:
                                     break
                             }
-                        case let .video(data, thumbnail, cover, adjustments, caption, asFile, asAnimation, stickers, isLivePhoto):
+                        case let .video(data, thumbnail, cover, adjustments, caption, asFile, asAnimation, stickers):
                             var adjustments = adjustments
                             var finalDimensions: CGSize
                             var finalDuration: Double
