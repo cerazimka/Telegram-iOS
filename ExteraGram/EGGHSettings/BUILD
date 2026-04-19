@@ -10,8 +10,8 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//ExteraGram/EGGHSettingsScheme:EGGHSettingsScheme",
-        "//ExteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGGHSettingsScheme:EGGHSettingsScheme",
+        "//exteraGram/EGLogging:EGLogging",
         "//submodules/AccountContext:AccountContext",
         "//submodules/TelegramCore:TelegramCore",
     ],

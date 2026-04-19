@@ -10,8 +10,8 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//ExteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier",
-        "//ExteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGAppGroupIdentifier:EGAppGroupIdentifier",
+        "//exteraGram/EGLogging:EGLogging",
     ],
     visibility = [
         "//visibility:public",

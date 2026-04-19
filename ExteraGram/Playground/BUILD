@@ -43,7 +43,7 @@ swift_library(
         "//submodules/LegacyUI:LegacyUI",
         "//submodules/LegacyComponents:LegacyComponents",
         "//submodules/MediaPlayer:UniversalMediaPlayer",
-        "//ExteraGram/EGSwiftUI:EGSwiftUI",
+        "//exteraGram/EGSwiftUI:EGSwiftUI",
     ],
     data = [
         "//Telegram:GeneratedPresentationStrings/Resources/PresentationStrings.data",

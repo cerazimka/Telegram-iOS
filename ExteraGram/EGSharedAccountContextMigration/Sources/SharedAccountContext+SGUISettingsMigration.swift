@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGLogging
 import EGAppGroupIdentifier
 import EGSimpleSettings
@@ -9,7 +9,7 @@ import Postbox
 import Foundation
 
 extension SharedAccountContextImpl {
-    // MARK: ExteraGram
+    // MARK: exteraGram
     func performSGUISettingsMigrationIfNecessary() {
         if self.didPerformSGUISettingsMigration {
             return

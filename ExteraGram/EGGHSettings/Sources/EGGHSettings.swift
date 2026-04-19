@@ -36,7 +36,7 @@ enum EGGHFetchError: Error {
 }
 
 func fetchSGGHSettings(locale: String) async throws -> EGGHSettings {
-    let baseURL = "https://raw.githubusercontent.com/ExteraGram/settings/refs/heads/main"
+    let baseURL = "https://raw.githubusercontent.com/exteraGram/settings/refs/heads/main"
     var candidates: [String] = []
     if let buildNumber = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String {
         if locale != "en" {

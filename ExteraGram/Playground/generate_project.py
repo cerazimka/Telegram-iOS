@@ -67,7 +67,7 @@ def main():
 
     # 5. Run xcodeproj generator
     working_dir = os.path.join(current_script_dir, "..", "..")
-    bazel_command = f'"{bazel_path}" run //ExteraGram/Playground:Playground_xcodeproj'
+    bazel_command = f'"{bazel_path}" run //exteraGram/Playground:Playground_xcodeproj'
     subprocess.run(bazel_command, shell=True, cwd=working_dir, check=True)
 
     # 5. Open Xcode project

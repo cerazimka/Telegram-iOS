@@ -287,11 +287,11 @@ struct EGProFeature: Identifiable {
         case .toolbar:
             FeatureIcon(icon: "bold.underline", backgroundColor: .blue, iconSize: 16)
         case .icons:
-            Image("ExteraGramSettings")
+            Image("exteraGramSettings")
                 .resizable()
                 .frame(width: 32, height: 32)
         @unknown default:
-            Image("ExteraGramPro")
+            Image("exteraGramPro")
                 .resizable()
                 .frame(width: 32, height: 32)
         }

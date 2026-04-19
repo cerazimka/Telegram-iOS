@@ -88,7 +88,7 @@ class SliderPercentageItemNode: ListViewItemNode {
     private var item: SliderPercentageItem?
     private var layoutParams: ListViewItemLayoutParams?
     
-    // MARK: ExteraGram
+    // MARK: exteraGram
     private let activateArea: AccessibilityAreaNode
     
     init() {
@@ -112,7 +112,7 @@ class SliderPercentageItemNode: ListViewItemNode {
         self.batteryBackgroundNode = ASImageNode()
         self.batteryForegroundNode = ASImageNode()
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         self.activateArea = AccessibilityAreaNode()
         
         super.init(layerBacked: false)
@@ -124,7 +124,7 @@ class SliderPercentageItemNode: ListViewItemNode {
         self.addSubnode(self.batteryForegroundNode)
         self.addSubnode(self.activateArea)
         
-        // MARK: ExteraGram
+        // MARK: exteraGram
         self.activateArea.increment = { [weak self] in
             if let self {
                 self.sliderView?.increase(by: 0.10)

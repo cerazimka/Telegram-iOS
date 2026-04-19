@@ -10,7 +10,7 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//ExteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGLogging:EGLogging",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
     ],
     visibility = [

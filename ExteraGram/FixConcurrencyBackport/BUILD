@@ -15,10 +15,10 @@
 # done
 
 # concurrency-dylib.patch must be applied in build-system/bazel-rules/rules_apple
-# cd ExteraGram/FixConcurrencyBackport
-# git apply ../../../ExteraGram/FixConcurrencyBackport/concurrency-dylib.patch
+# cd exteraGram/FixConcurrencyBackport
+# git apply ../../../exteraGram/FixConcurrencyBackport/concurrency-dylib.patch
 # # Make a build
-# git apply -R ../../../ExteraGram/FixConcurrencyBackport/concurrency-dylib.patch
+# git apply -R ../../../exteraGram/FixConcurrencyBackport/concurrency-dylib.patch
 
 # Refs:
 # https://stackoverflow.com/questions/79522371/when-building-the-project-with-xcode-16-2-the-app-crashes-due-to-an-incorrect-l
@@ -29,8 +29,8 @@ genrule(
     name = "CopyConcurrencyDylib",
     cmd_bash =
 """
-    echo 'ditto "$$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.5/iphoneos/libswift_Concurrency.dylib" "$$1/Payload/ExteraGram.app/Frameworks/libswift_Concurrency.dylib"' > $(location CopyConcurrencyDylib.sh)
-    echo 'ditto "$$1/Payload/ExteraGram.app/Frameworks/libswift_Concurrency.dylib" "$$1/SwiftSupport/iphoneos/libswift_Concurrency.dylib"' >> $(location CopyConcurrencyDylib.sh)
+    echo 'ditto "$$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.5/iphoneos/libswift_Concurrency.dylib" "$$1/Payload/exteraGram.app/Frameworks/libswift_Concurrency.dylib"' > $(location CopyConcurrencyDylib.sh)
+    echo 'ditto "$$1/Payload/exteraGram.app/Frameworks/libswift_Concurrency.dylib" "$$1/SwiftSupport/iphoneos/libswift_Concurrency.dylib"' >> $(location CopyConcurrencyDylib.sh)
     echo '' >> $(location CopyConcurrencyDylib.sh)
 """,
     outs = [

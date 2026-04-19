@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 
 import Foundation
 import SwiftUI

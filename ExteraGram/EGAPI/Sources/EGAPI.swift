@@ -146,7 +146,7 @@ public func getEGAPIRegDate(token: String, deviceToken: String, userId: Int64) -
 }
 
 
-/// Fetch the full profiles list from the ExteraGram API.
+/// Fetch the full profiles list from the exteraGram API.
 /// The result is used to populate `BadgesController.shared`.
 /// Returns an empty array (no error) if the endpoint is not yet deployed (404).
 public func getEGProfiles(token: String) -> Signal<[EGProfileDTO], EGAPIError> {

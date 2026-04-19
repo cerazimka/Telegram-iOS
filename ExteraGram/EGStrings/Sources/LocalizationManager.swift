@@ -119,7 +119,7 @@ public class EGLocalizationManager {
     }
 
     private func getStringsUrl(for locale: String) -> String {
-        return "https://raw.githubusercontent.com/ExteraGram/Telegram-iOS/master/ExteraGram/EGStrings/Strings/\(locale).lproj/EGLocalizable.strings"
+        return "https://raw.githubusercontent.com/exteraGram/Telegram-iOS/master/exteraGram/EGStrings/Strings/\(locale).lproj/EGLocalizable.strings"
     }
 
 }

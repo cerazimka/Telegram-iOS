@@ -11,7 +11,7 @@ swift_library(
     ],
     deps = [
         "//submodules/AppBundle:AppBundle",
-        "//ExteraGram/EGLogging:EGLogging"
+        "//exteraGram/EGLogging:EGLogging"
     ],
     visibility = [
         "//visibility:public",

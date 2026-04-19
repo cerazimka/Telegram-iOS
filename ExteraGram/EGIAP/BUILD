@@ -10,8 +10,8 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//ExteraGram/EGLogging:EGLogging",
-        "//ExteraGram/EGConfig:EGConfig",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGConfig:EGConfig",
         "//submodules/AppBundle:AppBundle",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
     ],

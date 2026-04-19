@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 import EGLogging
 import EGSimpleSettings
 import EGStrings

@@ -1,4 +1,4 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 
 import Foundation
 
@@ -44,7 +44,7 @@ public final class BadgesController {
         cache[key(peerIdValue)]?.status == .developer
     }
 
-    /// Returns true if the chat/channel is an official ExteraGram channel (developer status).
+    /// Returns true if the chat/channel is an official exteraGram channel (developer status).
     public func isExtera(peerIdValue: Int64) -> Bool {
         cache[key(peerIdValue)]?.status == .developer
     }

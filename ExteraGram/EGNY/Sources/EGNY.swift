@@ -24,8 +24,8 @@ class WallpaperNYNode: ASDisplayNode {
             let cell1 = CAEmitterCell()
             switch EGSimpleSettings.shared.nyStyle {
                 case EGSimpleSettings.NYStyle.lightning.rawValue:
-                    // cell1.contents = generateTintedImage(image: UIImage(bundleImageName: "ExteraGramContextMenu"), color: .white)
-                    if let image = UIImage(bundleImageName: "ExteraGramContextMenu") {
+                    // cell1.contents = generateTintedImage(image: UIImage(bundleImageName: "exteraGramContextMenu"), color: .white)
+                    if let image = UIImage(bundleImageName: "exteraGramContextMenu") {
                         cell1.contents = paintImage(image, to: UIColor.white.cgColor).cgImage
                     }
                     cell1.name = "lightning"

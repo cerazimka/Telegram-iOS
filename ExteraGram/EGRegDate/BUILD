@@ -10,12 +10,12 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//ExteraGram/EGRegDateScheme:EGRegDateScheme",
-        "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-        "//ExteraGram/EGAPI:EGAPI",
-        "//ExteraGram/EGAPIToken:EGAPIToken",
-        "//ExteraGram/EGDeviceToken:EGDeviceToken",
-        "//ExteraGram/EGStrings:EGStrings",
+        "//exteraGram/EGRegDateScheme:EGRegDateScheme",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGAPI:EGAPI",
+        "//exteraGram/EGAPIToken:EGAPIToken",
+        "//exteraGram/EGDeviceToken:EGDeviceToken",
+        "//exteraGram/EGStrings:EGStrings",
 
         "//submodules/AccountContext:AccountContext",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",

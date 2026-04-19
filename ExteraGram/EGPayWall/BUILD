@@ -16,11 +16,11 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//ExteraGram/EGIAP:EGIAP",
-        "//ExteraGram/EGLogging:EGLogging",
-        "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-        "//ExteraGram/EGSwiftUI:EGSwiftUI",
-        "//ExteraGram/EGStrings:EGStrings",
+        "//exteraGram/EGIAP:EGIAP",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGSwiftUI:EGSwiftUI",
+        "//exteraGram/EGStrings:EGStrings",
         "//submodules/SSignalKit/SwiftSignalKit:SwiftSignalKit",
     ],
     visibility = [

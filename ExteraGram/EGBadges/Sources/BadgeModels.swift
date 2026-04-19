@@ -1,10 +1,10 @@
-// MARK: ExteraGram
+// MARK: exteraGram
 
 import Foundation
 
 // MARK: - Public API models
 
-/// A single badge attached to an ExteraGram profile (developer / supporter).
+/// A single badge attached to an exteraGram profile (developer / supporter).
 /// The `documentId` references an animated emoji from the "exteraBadges" sticker pack.
 public struct EGBadgeDTO: Codable, Equatable, Hashable {
     public let documentId: Int64
@@ -38,7 +38,7 @@ extension EGProfileStatus: Codable {
     }
 }
 
-/// Full profile record returned by the ExteraGram API `/profiles` endpoint.
+/// Full profile record returned by the exteraGram API `/profiles` endpoint.
 /// All JSON keys are camelCase — no CodingKeys needed; unknown fields (e.g. nowPlaying) are ignored.
 public struct EGProfileDTO: Codable {
     public let id: Int64

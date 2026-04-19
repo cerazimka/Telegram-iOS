@@ -83,7 +83,7 @@ extension DeviceMetrics {
     }
     
     var egShowAppBadge: Bool {
-        return DEVICE_MODELS_WITH_APP_BADGE_SUPPORT.contains(DeviceModel.current) // MARK: ExteraGram
+        return DEVICE_MODELS_WITH_APP_BADGE_SUPPORT.contains(DeviceModel.current) // MARK: exteraGram
     }
 
 }

@@ -11,14 +11,14 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
-        "//ExteraGram/EGKeychainBackupManager:EGKeychainBackupManager",
-        "//ExteraGram/EGItemListUI:EGItemListUI",
-        "//ExteraGram/EGLogging:EGLogging",
-        "//ExteraGram/EGSimpleSettings:EGSimpleSettings",
-        "//ExteraGram/EGStrings:EGStrings",
-        "//ExteraGram/EGAPI:EGAPI",
-        "//ExteraGram/EGAPIToken:EGAPIToken",
-        "//ExteraGram/EGSwiftUI:EGSwiftUI",
+        "//exteraGram/EGKeychainBackupManager:EGKeychainBackupManager",
+        "//exteraGram/EGItemListUI:EGItemListUI",
+        "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGSimpleSettings:EGSimpleSettings",
+        "//exteraGram/EGStrings:EGStrings",
+        "//exteraGram/EGAPI:EGAPI",
+        "//exteraGram/EGAPIToken:EGAPIToken",
+        "//exteraGram/EGSwiftUI:EGSwiftUI",
         #
         "//submodules/SettingsUI:SettingsUI",
         #

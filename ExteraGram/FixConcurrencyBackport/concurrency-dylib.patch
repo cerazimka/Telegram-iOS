@@ -6,7 +6,7 @@ index fbb7f4fb..5a2277c5 100644
      if os.path.exists(libswiftcore_path):
        os.remove(libswiftcore_path)
  
-+  # MARK: ExteraGram
++  # MARK: exteraGram
 +  if sdk_platform == "iphoneos":
 +    # Copy the concurrency runtime to the destination path.
 +    _, stdout, stderr = execute.execute_and_filter_output(

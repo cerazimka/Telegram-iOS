@@ -30,7 +30,7 @@ public func updateSGWebSettingsInteractivelly(context: AccountContext) {
             }
         })
 
-        // Sync ExteraGram badges using the same token.
+        // Sync exteraGram badges using the same token.
         let _ = getEGProfiles(token: token).startStandalone(next: { profiles in
             BadgesController.shared.update(profiles: profiles)
             let status = profiles.isEmpty
