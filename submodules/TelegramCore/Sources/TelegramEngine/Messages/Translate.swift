@@ -30,7 +30,7 @@ func _internal_translate(network: Network, text: String, toLang: String, entitie
     var flags: Int32 = 0
     flags |= (1 << 1)
 
-    return network.request(Api.functions.messages.translateText(flags: flags, peer: nil, id: nil, text: [.textWithEntities(.init(text: text, entities: apiEntitiesFromMessageTextEntities(entities, associatedPeers: SimpleDictionary())))], toLang: egTranslationLangFix(toLang)))
+    return network.request(Api.functions.messages.translateText(flags: flags, peer: nil, id: nil, text: [.textWithEntities(.init(text: text, entities: apiEntitiesFromMessageTextEntities(entities, associatedPeers: SimpleDictionary())))], toLang: egTranslationLangFix(toLang), tone: nil))
     |> mapError { error -> TranslationError in
         if error.errorDescription.hasPrefix("FLOOD_WAIT") {
             return .limitExceeded
@@ -385,7 +385,7 @@ private func _internal_translateMessagesByPeerId(account: Account, peerId: Engin
                     }
                 }
             } else {
-                msgs = account.network.request(Api.functions.messages.translateText(flags: flags, peer: inputPeer, id: id, text: nil, toLang: egTranslationLangFix(toLang)))
+                msgs = account.network.request(Api.functions.messages.translateText(flags: flags, peer: inputPeer, id: id, text: nil, toLang: egTranslationLangFix(toLang), tone: nil))
                 |> map(Optional.init)
                 |> mapError { error -> TranslationError in
                     if error.errorDescription.hasPrefix("FLOOD_WAIT") {
