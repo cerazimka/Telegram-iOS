@@ -124,6 +124,16 @@ private final class EGStartupDiagnostics {
     }
 }
 
+// MARK: exteraGram
+private func updateEGStatusInteractively(accountManager: AccountManager<TelegramAccountManagerTypes>, _ f: @escaping (EGStatus) -> EGStatus) -> Signal<Void, NoError> {
+    return accountManager.transaction { transaction -> Void in
+        transaction.updateSharedData(ApplicationSpecificSharedDataKeys.egStatus, { entry in
+            let current = entry?.get(EGStatus.self) ?? EGStatus.default
+            return SharedPreferencesEntry(f(current))
+        })
+    }
+}
+
 private func isKeyboardWindow(window: NSObject) -> Bool {
     let typeName = NSStringFromClass(type(of: window))
     if #available(iOS 9.0, *) {
@@ -3619,7 +3629,7 @@ extension AppDelegate {
             return
         }
         EGLogger.shared.log("EGIAP", "Got IQTP response: \(iqtpResponse)")
-        let _ = try? await updateSGStatusInteractively(accountManager: primaryContext.sharedContext.accountManager, { value in
+        let _ = try? await updateEGStatusInteractively(accountManager: primaryContext.sharedContext.accountManager, { value in
             var value = value
 
             let newStatus: Int64
