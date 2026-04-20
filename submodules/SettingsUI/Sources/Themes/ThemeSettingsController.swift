@@ -650,20 +650,25 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
         }).start()
     }
     
-    let selectAppIconAction: (PresentationAppIcon) -> Void = { (icon: PresentationAppIcon) -> Void in
-        let _ = (context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: context.account.peerId))
-        |> deliverOnMainQueue).start(next: { (peer: EnginePeer?) -> Void in
+    let selectAppIconAction: (PresentationAppIcon) -> Void = { icon in
+        let peerItem = TelegramEngine.EngineData.Item.Peer.Peer(id: context.account.peerId)
+        let dataSignal = context.engine.data.get(peerItem)
+        let mainQueueSignal = dataSignal |> deliverOnMainQueue
+        
+        let _ = mainQueueSignal.start(next: { peer in
             let isPremium = peer?.isPremium ?? false
+            
             if icon.isPremium && !isPremium {
                 var replaceImpl: ((ViewController) -> Void)?
-                let controller = PremiumDemoScreen(context: context, subject: .appIcons, source: .other, action: {
-                    let controller = PremiumIntroScreen(context: context, source: .appIcons)
-                    replaceImpl?(controller)
+                let demoController = PremiumDemoScreen(context: context, subject: .appIcons, source: .other, action: {
+                    let introController = PremiumIntroScreen(context: context, source: .appIcons)
+                    replaceImpl?(introController)
                 })
-                replaceImpl = { [weak controller] c in
-                    controller?.replace(with: c)
+                replaceImpl = { [weak demoController] c in
+                    demoController?.replace(with: c)
                 }
-                pushControllerImpl?(controller)
+                pushControllerImpl?(demoController)
+                
             // MARK: exteraGram
             } else if icon.isSGPro && context.sharedContext.immediateSGStatus.status < 2 {
                 if let payWallController = context.sharedContext.makeSGPayWallController(context: context) {
@@ -673,8 +678,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                 }
             } else {
                 currentAppIconName.set(icon.name)
-                context.sharedContext.applicationBindings.requestSetAlternateIconName(icon.isDefault ? nil : icon.name, { _ in
-                })
+                context.sharedContext.applicationBindings.requestSetAlternateIconName(icon.isDefault ? nil : icon.name, { _ in })
             }
         })
     }
