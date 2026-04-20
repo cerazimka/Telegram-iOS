@@ -7,6 +7,7 @@ import ComponentFlow
 import SwiftSignalKit
 import AccountContext
 import TelegramPresentationData
+import TelegramUIPreferences
 import MultilineTextComponent
 import BalancedTextComponent
 import TelegramCore
@@ -128,7 +129,7 @@ final class EGStoryWarningComponent: Component {
             
             var authorName = i18n("Stories.Warning.Author", component.strings.baseLanguageCode)
             if let peer = component.peer {
-                authorName = peer.displayTitle(strings: component.strings, displayOrder: .firstLast)
+                authorName = peer.displayTitle(strings: component.strings, displayOrder: PresentationPersonNameOrder.firstLast)
             }
             
             let titleSize = self.titleLabel.update(
