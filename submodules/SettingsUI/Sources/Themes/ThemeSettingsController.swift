@@ -650,9 +650,9 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
         }).start()
     }
     
-    let selectAppIconAction: (PresentationAppIcon) -> Void = { icon in
+    let selectAppIconAction: (PresentationAppIcon) -> Void = { (icon: PresentationAppIcon) -> Void in
         let _ = (context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: context.account.peerId))
-        |> deliverOnMainQueue).start(next: { peer in
+        |> deliverOnMainQueue).start(next: { (peer: EnginePeer?) -> Void in
             let isPremium = peer?.isPremium ?? false
             if icon.isPremium && !isPremium {
                 var replaceImpl: ((ViewController) -> Void)?
