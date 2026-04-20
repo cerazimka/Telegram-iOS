@@ -1465,7 +1465,7 @@ private final class ChatMessagePollAddOptionNode: ASDisplayNode {
     }
     
     fileprivate func inputTextView() -> UITextView? {
-        return self.textFieldView?.inputTextView
+        return nil
     }
     
     private let _textFieldExternalState = TextFieldComponent.ExternalState()
