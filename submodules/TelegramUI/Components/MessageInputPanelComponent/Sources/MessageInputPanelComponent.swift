@@ -3077,9 +3077,6 @@ public final class MessageInputPanelComponent: Component {
                 }
             }
             
-            // MARK: exteraGram
-            size = self.layoutToolbar(transition: transition, layoutFromTop: layoutFromTop, size: size, availableSize: availableSize, defaultInsets: defaultInsets, textFieldSize: textFieldSize, previousComponent: previousComponent)
-            
             return size
         }
     }
