@@ -570,7 +570,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
         return animatedEmojiStickers
     }
     
-    let arguments = ThemeSettingsControllerArguments(context: context, selectTheme: { theme in
+    let arguments = ThemeSettingsControllerArguments(context: context, selectTheme: { (theme: PresentationThemeReference) in
         selectThemeImpl?(theme)
     }, openThemeSettings: {
         pushControllerImpl?(themePickerController(context: context))
@@ -578,11 +578,11 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
         pushControllerImpl?(ThemeGridController(context: context))
     }, openNameColorSettings: {
         pushControllerImpl?(UserAppearanceScreen(context: context))
-    }, selectAccentColor: { accentColor in
+    }, selectAccentColor: { (accentColor: PresentationThemeAccentColor?) in
         selectAccentColorImpl?(accentColor)
-    }, openAccentColorPicker: { themeReference, create in
+    }, openAccentColorPicker: { (themeReference: PresentationThemeReference, create: Bool) in
         openAccentColorPickerImpl?(themeReference, create)
-    }, toggleNightTheme: { value in
+    }, toggleNightTheme: { (value: Bool) in
         let _ = updatePresentationThemeSettingsInteractively(accountManager: context.sharedContext.accountManager, { current in
             var current = current
             current.automaticThemeSwitchSetting.force = value
@@ -612,15 +612,15 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             pushControllerImpl?(installedStickerPacksController(context: context, mode: .general, archivedPacks: archivedStickerPacks, updatedPacks: { _ in
             }))
         })
-    }, toggleSendWithCmdEnter: { value in
+    }, toggleSendWithCmdEnter: { (value: Bool) in
         let _ = updateChatSettingsInteractively(accountManager: context.sharedContext.accountManager, { current in
             return current.withUpdatedSendWithCmdEnter(value)
         }).start()
-    }, toggleShowNextMediaOnTap: { value in
+    }, toggleShowNextMediaOnTap: { (value: Bool) in
         let _ = updateMediaDisplaySettingsInteractively(accountManager: context.sharedContext.accountManager, { current in
             return current.withUpdatedShowNextMediaOnTap(value)
         }).start()
-    }, selectAppIcon: { icon in
+    }, selectAppIcon: { (icon: PresentationAppIcon) in
         let _ = (context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: context.account.peerId))
         |> deliverOnMainQueue).start(next: { peer in
             let isPremium = peer?.isPremium ?? false
@@ -638,8 +638,8 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             } else if icon.isSGPro && context.sharedContext.immediateSGStatus.status < 2 {
                 if let payWallController = context.sharedContext.makeSGPayWallController(context: context) {
                     presentControllerImpl?(payWallController, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
-                } else {
-                    presentControllerImpl?(context.sharedContext.makeSGUpdateIOSController(), nil)
+                } else if let updateController = context.sharedContext.makeSGUpdateIOSController() as? ViewController {
+                    presentControllerImpl?(updateController, nil)
                 }
             } else {
                 currentAppIconName.set(icon.name)
@@ -647,7 +647,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                 })
             }
         })
-    }, editTheme: { theme in
+    }, editTheme: { (theme: PresentationCloudTheme) in
         let controller = editThemeController(context: context, mode: .edit(theme), navigateToChat: { peerId in
             let _ = (context.engine.data.get(TelegramEngine.EngineData.Item.Peer.Peer(id: peerId))
             |> deliverOnMainQueue).start(next: { peer in
@@ -660,7 +660,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             })
         })
         pushControllerImpl?(controller)
-    }, themeContextAction: { isCurrent, reference, node, gesture in
+    }, themeContextAction: { (isCurrent: Bool, reference: PresentationThemeReference, node: ASDisplayNode, gesture: ContextGesture?) in
         let _ = (context.sharedContext.accountManager.transaction { transaction -> (PresentationThemeAccentColor?, TelegramWallpaper?) in
             let settings = transaction.getSharedData(ApplicationSpecificSharedDataKeys.presentationThemeSettings)?.get(PresentationThemeSettings.self) ?? PresentationThemeSettings.defaultSettings
             let accentColor = settings.themeSpecificAccentColors[reference.index]
@@ -849,7 +849,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             let contextController = makeContextController(presentationData: presentationData, source: .controller(ContextControllerContentSourceImpl(controller: themeController, sourceNode: node)), items: .single(ContextController.Items(content: .list(items))), gesture: gesture)
             presentInGlobalOverlayImpl?(contextController, nil)
         })
-    }, colorContextAction: { isCurrent, reference, accentColor, node, gesture in
+    }, colorContextAction: { (isCurrent: Bool, reference: PresentationThemeReference, accentColor: ThemeSettingsColorOption?, node: ASDisplayNode, gesture: ContextGesture?) in
         let _ = (context.sharedContext.accountManager.transaction { transaction -> (ThemeSettingsColorOption?, TelegramWallpaper?) in
             let settings = transaction.getSharedData(ApplicationSpecificSharedDataKeys.presentationThemeSettings)?.get(PresentationThemeSettings.self) ?? PresentationThemeSettings.defaultSettings
             var wallpaper: TelegramWallpaper?
