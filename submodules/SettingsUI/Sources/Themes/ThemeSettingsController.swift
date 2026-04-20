@@ -650,15 +650,18 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
         }).start()
     }
     
-    let selectAppIconAction: (PresentationAppIcon) -> Void = { icon in
+    let selectAppIconAction: (PresentationAppIcon) -> Void = { (icon: PresentationAppIcon) -> Void in
+        
         let peerItem = TelegramEngine.EngineData.Item.Peer.Peer(id: context.account.peerId)
         let dataSignal = context.engine.data.get(peerItem)
         let mainQueueSignal = dataSignal |> deliverOnMainQueue
         
-        let _ = mainQueueSignal.start(next: { peer in
-            let isPremium = peer?.isPremium ?? false
+        let _ = mainQueueSignal.start(next: { (peer: EnginePeer?) -> Void in
             
-            if icon.isPremium && !isPremium {
+            let isPremium: Bool = peer?.isPremium ?? false
+            let isPremiumIcon: Bool = icon.isPremium
+            
+            if isPremiumIcon && !isPremium {
                 var replaceImpl: ((ViewController) -> Void)?
                 let demoController = PremiumDemoScreen(context: context, subject: .appIcons, source: .other, action: {
                     let introController = PremiumIntroScreen(context: context, source: .appIcons)
@@ -671,11 +674,18 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                 
             // MARK: exteraGram
             } else if icon.isSGPro && context.sharedContext.immediateSGStatus.status < 2 {
-                if let payWallController = context.sharedContext.makeSGPayWallController(context: context) {
-                    presentControllerImpl?(payWallController, ViewControllerPresentationArguments(presentationAnimation: .modalSheet))
-                } else if let updateController = context.sharedContext.makeSGUpdateIOSController() as? ViewController {
-                    presentControllerImpl?(updateController, nil)
+                
+                let payWallOpt = context.sharedContext.makeSGPayWallController(context: context)
+                if let payWallController = payWallOpt as? ViewController {
+                    let args = ViewControllerPresentationArguments(presentationAnimation: .modalSheet)
+                    presentControllerImpl?(payWallController, args)
+                } else {
+                    let updateOpt = context.sharedContext.makeSGUpdateIOSController()
+                    if let updateController = updateOpt as? ViewController {
+                        presentControllerImpl?(updateController, nil)
+                    }
                 }
+                
             } else {
                 currentAppIconName.set(icon.name)
                 context.sharedContext.applicationBindings.requestSetAlternateIconName(icon.isDefault ? nil : icon.name, { _ in })
