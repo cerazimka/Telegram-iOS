@@ -673,7 +673,7 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
                 pushControllerImpl?(demoController)
                 
             // MARK: exteraGram
-            } else if icon.isSGPro && context.sharedContext.immediateSGStatus.status < 2 {
+            } else if icon.isEGPro && context.sharedContext.immediateSGStatus.status < 2 {
                 
                 let payWallOpt = context.sharedContext.makeSGPayWallController(context: context)
                 if let payWallController = payWallOpt as? ViewController {
