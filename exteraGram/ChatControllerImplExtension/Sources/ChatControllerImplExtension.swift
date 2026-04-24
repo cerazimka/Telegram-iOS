@@ -22,7 +22,7 @@ import DeviceLocationManager
 import ShareController
 import UrlEscaping
 import ContextUI
-import ComposePollUI
+import ComposePollScreen
 import AlertUI
 import PresentationDataUtils
 import UndoUI
