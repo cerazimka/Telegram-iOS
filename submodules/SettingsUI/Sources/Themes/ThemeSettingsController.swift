@@ -676,14 +676,12 @@ public func themeSettingsController(context: AccountContext, focusOnItemTag: The
             } else if icon.isEGPro && context.sharedContext.immediateSGStatus.status < 2 {
                 
                 let payWallOpt = context.sharedContext.makeSGPayWallController(context: context)
-                if let payWallController = payWallOpt as? ViewController {
+                if let payWallController = payWallOpt {
                     let args = ViewControllerPresentationArguments(presentationAnimation: .modalSheet)
                     presentControllerImpl?(payWallController, args)
                 } else {
-                    let updateOpt = context.sharedContext.makeSGUpdateIOSController()
-                    if let updateController = updateOpt as? ViewController {
-                        presentControllerImpl?(updateController, nil)
-                    }
+                    let updateController = context.sharedContext.makeSGUpdateIOSController()
+                    presentControllerImpl?(updateController, nil)
                 }
                 
             } else {
