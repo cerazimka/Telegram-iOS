@@ -256,7 +256,7 @@ public class ChatTextInputPanelNode: ChatInputPanelNode, ASEditableTextNodeDeleg
     private var inlineAiButtonAlpha: CGFloat = 0.0
     private var inlineAiButton: (button: HighlightTrackingButton, icon: UIImageView)?
     private let aiButtonMinTextLength: Int = 50
-    var isAIEnabled: Bool = false
+    public var isAIEnabled: Bool = false
     
     public let menuButton: HighlightTrackingButtonNode
     private let menuButtonBackgroundView: GlassBackgroundView

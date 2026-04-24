@@ -20,6 +20,7 @@ egdeps = [
     "//exteraGram/EGDebugUI:EGDebugUI",
     "//exteraGram/EGInputToolbar:EGInputToolbar",
     "//exteraGram/EGIAP:EGIAP",
+    "//exteraGram/EGAPI:EGAPI",
     "//exteraGram/EGPayWall:EGPayWall",
     "//exteraGram/EGProUI:EGProUI",
     "//exteraGram/EGKeychainBackupManager:EGKeychainBackupManager",

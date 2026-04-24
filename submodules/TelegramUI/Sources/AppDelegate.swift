@@ -1,5 +1,8 @@
 // MARK: exteraGram
 import EGAPIToken
+import EGIAP
+import EGDeviceToken
+import EGAPI
 
 import EGActionRequestHandlerSanitizer
 import EGGHSettings
@@ -3579,7 +3582,7 @@ extension AppDelegate {
         var apiToken: String?
         do {
             async let deviceTokenTask = getDeviceToken().awaitable()
-            async let apiTokenTask = getSGApiToken(context: primaryContext).awaitable()
+            async let apiTokenTask = getEGApiToken(context: primaryContext).awaitable()
             
             (deviceToken, apiToken) = try await (deviceTokenTask, apiTokenTask)
         } catch {

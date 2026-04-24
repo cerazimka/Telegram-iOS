@@ -1,6 +1,9 @@
 // MARK: exteraGram
 import EGSimpleSettings
 import EGStatus
+import EGIAP
+import EGProUI
+import EGPayWall
 //
 import Foundation
 import UIKit
@@ -279,6 +282,13 @@ public final class SharedAccountContextImpl: SharedAccountContext {
         return self.immediateExperimentalUISettingsValue.with { $0 }
     }
     private var experimentalUISettingsDisposable: Disposable?
+
+    // MARK: exteraGram
+    private var immediateSGStatusValue = Atomic<EGStatus>(value: EGStatus.default)
+    public var immediateSGStatus: EGStatus {
+        return self.immediateSGStatusValue.with { $0 }
+    }
+    public var EGIAP: EGIAPManager?
 
     public var presentGlobalController: (ViewController, Any?) -> Void = { _, _ in }
     public var presentCrossfadeController: () -> Void = {}
@@ -4583,11 +4593,7 @@ extension SharedAccountContextImpl {
             }
         }
         
-        var supportUrl: String? = nil
-        if let supportUrlString = egWebSettings.global.proSupportUrl, !supportUrlString.isEmpty, let data = Data(base64Encoded: supportUrlString), let decodedString = String(data: data, encoding: .utf8) {
-            supportUrl = decodedString
-        }
-        payWallController = egPayWallController(statusSignal: statusSignal, replacementController: proController, presentationData: presentationData, EGIAPManager: egIAP, openUrl: openUrl, paymentsEnabled: egWebSettings.global.paymentsEnabled, canBuyInBeta: egWebSettings.user.canBuyInBeta, openAppStorePage: self.applicationBindings.openAppStorePage, proSupportUrl: supportUrl)
+        payWallController = egPayWallController(statusSignal: statusSignal, replacementController: proController, presentationData: presentationData, EGIAPManager: egIAP, openUrl: openUrl, paymentsEnabled: true, canBuyInBeta: false, openAppStorePage: self.applicationBindings.openAppStorePage, proSupportUrl: nil)
         return payWallController
     }
     
