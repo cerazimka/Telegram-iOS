@@ -4580,7 +4580,6 @@ extension SharedAccountContextImpl {
         }
 
         let proController = self.makeSGProController(context: context)
-        let egWebSettings = context.currentAppConfiguration.with { $0 }.egWebSettings
         let presentationData = self.currentPresentationData.with { $0 }
         var payWallController: ViewController? = nil
         let openUrl: ((String, Bool) -> Void) = { [weak self, weak context] url, forceExternal in
