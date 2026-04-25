@@ -17,6 +17,9 @@ struct EGPluginFileMetadata {
     var author: String?
     var version: String?
     var icon: String?
+    var requirements: [String] = []
+    var appVersion: String?
+    var sdkVersion: String?
 
     var isEmpty: Bool {
         return id == nil && name == nil && description == nil && author == nil && version == nil
@@ -33,6 +36,12 @@ struct EGPluginFileMetadata {
             case "author":      meta.author = value
             case "version":     meta.version = value
             case "icon":        meta.icon = value
+            case "requirements":
+                meta.requirements = value.components(separatedBy: ",")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+            case "app_version": meta.appVersion = value
+            case "sdk_version": meta.sdkVersion = value
             default:            break
             }
         }
@@ -53,12 +62,60 @@ struct EGPluginFileMetadata {
     }
 }
 
+// MARK: - Activity Sheet
+
+@available(iOS 14.0, *)
+private struct ActivitySheet: UIViewControllerRepresentable {
+    let items: [Any]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items, applicationActivities: nil)
+    }
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Requirements Chips (matches Android PluginRequirementsView)
+
+@available(iOS 14.0, *)
+private struct RequirementChipsView: View {
+    let requirements: [String]
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(requirements, id: \.self) { req in
+                    Button(action: { openPyPI(req) }) {
+                        Text(req)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Color(UIColor.systemBlue))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color(UIColor.systemBlue).opacity(0.10))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+            .padding(.horizontal, 21)
+        }
+    }
+
+    private func openPyPI(_ spec: String) {
+        let pkg = spec.components(separatedBy: CharacterSet(charactersIn: "><=!~")).first?
+            .trimmingCharacters(in: .whitespaces) ?? spec
+        guard let url = URL(string: "https://pypi.org/project/\(pkg)/") else { return }
+        UIApplication.shared.open(url)
+    }
+}
+
 // MARK: - SwiftUI Bottom Sheet
 
 @available(iOS 14.0, *)
 private struct EGPluginInstallSheet: View {
     let metadata: EGPluginFileMetadata
+    let filePath: String
     @Environment(\.presentationMode) private var presentationMode
+    @State private var isInstalling = false
+    @State private var enableAfterInstall = true
+    @State private var showShareSheet = false
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -123,7 +180,20 @@ private struct EGPluginInstallSheet: View {
                     .padding(.vertical, 6)
                     .background(Color(UIColor.systemOrange).opacity(0.12))
                     .clipShape(Capsule())
-                    .padding(.bottom, 28)
+                    .padding(.bottom, 16)
+
+                    // Requirements chips
+                    if !metadata.requirements.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Requires:")
+                                .font(.system(size: 12))
+                                .foregroundColor(Color(UIColor.secondaryLabel))
+                                .padding(.horizontal, 21)
+                            RequirementChipsView(requirements: metadata.requirements)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, 20)
+                    }
 
                     // Description
                     if let description = metadata.description, !description.isEmpty {
@@ -133,31 +203,51 @@ private struct EGPluginInstallSheet: View {
                             .multilineTextAlignment(.leading)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 21)
-                            .padding(.bottom, 28)
+                            .padding(.bottom, 20)
                     }
 
                     // Install button
-                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                        Text("Install Plugin")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(Color.accentColor)
-                            .cornerRadius(12)
+                    Button(action: {
+                        isInstalling = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                            isInstalling = false
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                    }) {
+                        Group {
+                            if isInstalling {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text("Install Plugin")
+                                    .font(.system(size: 17, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(Color.accentColor)
+                        .cornerRadius(12)
                     }
+                    .disabled(isInstalling)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
+
+                    // Enable after installation toggle
+                    Toggle("Enable after installation", isOn: $enableAfterInstall)
+                        .font(.system(size: 15))
+                        .padding(.horizontal, 21)
+                        .padding(.bottom, 16)
 
                     // Safe area bottom padding
                     Color.clear.frame(height: 16)
                 }
             }
 
-            // Close button — top right, matches Android's "open in" position
-            Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .semibold))
+            // Top-right: share / open-in button
+            Button(action: { showShareSheet = true }) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(Color(UIColor.secondaryLabel))
                     .frame(width: 30, height: 30)
                     .background(Color(UIColor.tertiarySystemFill))
@@ -165,6 +255,11 @@ private struct EGPluginInstallSheet: View {
             }
             .padding(.top, 16)
             .padding(.trailing, 16)
+            .sheet(isPresented: $showShareSheet) {
+                if let url = URL(fileURLWithPath: filePath) {
+                    ActivitySheet(items: [url])
+                }
+            }
         }
         .background(Color(UIColor.systemBackground))
     }
@@ -190,7 +285,7 @@ func presentEGPluginMetadataIfAvailable(
         guard let rootController = navigationController?.view.window?.rootViewController else { return }
 
         if #available(iOS 14.0, *) {
-            let sheet = UIHostingController(rootView: EGPluginInstallSheet(metadata: metadata))
+            let sheet = UIHostingController(rootView: EGPluginInstallSheet(metadata: metadata, filePath: data.path))
             sheet.modalPresentationStyle = .overFullScreen
             sheet.view.backgroundColor = .clear
 
@@ -205,11 +300,12 @@ func presentEGPluginMetadataIfAvailable(
             rootController.present(sheet, animated: true)
         } else {
             // iOS 13 fallback: alert with key metadata
-            let lines = [
+            var lines = [
                 metadata.name.map { "Plugin: \($0)" },
                 metadata.author.map { "Author: \($0)" },
                 metadata.version.map { "Version: \($0)" },
-                metadata.description.map { "\($0)" }
+                metadata.description.map { "\($0)" },
+                metadata.requirements.isEmpty ? nil : "Requires: \(metadata.requirements.joined(separator: ", "))"
             ].compactMap { $0 }
             let alert = UIAlertController(
                 title: metadata.name ?? "Plugin Info",
