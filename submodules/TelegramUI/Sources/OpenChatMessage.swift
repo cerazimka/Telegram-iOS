@@ -235,6 +235,18 @@ func openChatMessageImpl(_ params: OpenChatMessageParams) -> Bool {
             case let .document(file, immediateShare):
                 params.dismissInput()
                 let presentationData = params.context.sharedContext.currentPresentationData.with { $0 }
+
+                // Plugin files: parse and display metadata
+                if let fileName = file.fileName,
+                   (fileName as NSString).pathExtension.lowercased() == "plugin" {
+                    presentEGPluginMetadataIfAvailable(
+                        file: file,
+                        context: params.context,
+                        navigationController: params.navigationController
+                    )
+                    return true
+                }
+
                 if immediateShare {
                     let controller = params.context.sharedContext.makeShareController(context: params.context, params: ShareControllerParams(subject: .media(.standalone(media: file), nil), immediateExternalShare: true))
                     params.present(controller, nil, .window(.root))
