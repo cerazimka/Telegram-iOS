@@ -158,10 +158,10 @@ private struct PluginsEmptyView: View {
 
 @available(iOS 14.0, *)
 private struct PluginRowView: View {
-    @Binding var plugin: EGPlugin
+    let plugin: EGPlugin
     let lang: String
     let isCompact: Bool
-    let onChanged: () -> Void
+    let onUpdate: (EGPlugin) -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
 
@@ -197,7 +197,11 @@ private struct PluginRowView: View {
                     if !plugin.isError && !plugin.isNotResponding {
                         Toggle("", isOn: Binding(
                             get: { plugin.isEnabled },
-                            set: { plugin.isEnabled = $0; onChanged() }
+                            set: { newVal in
+                                var updated = plugin
+                                updated.isEnabled = newVal
+                                onUpdate(updated)
+                            }
                         ))
                         .labelsHidden()
                         .fixedSize()
@@ -282,7 +286,9 @@ private struct PluginRowView: View {
             cellButton(image: "msg_share") { onShare() }
             cellButton(image: "msg_openin") {}
             cellButton(image: plugin.isPinned ? "msg_unpin" : "msg_pin") {
-                plugin.isPinned.toggle(); onChanged()
+                var updated = plugin
+                updated.isPinned.toggle()
+                onUpdate(updated)
             }
             if plugin.hasSettings && plugin.isEnabled && !plugin.isError && !plugin.isNotResponding {
                 cellButton(image: "msg_settings") {}
@@ -396,21 +402,23 @@ private struct EGPluginsView: View {
             // Each plugin = its own Section = its own rounded card (matches screenshot)
             if isEngineEnabled && !showEmptyState {
                 ForEach(displayPlugins) { plugin in
-                    if let idx = plugins.firstIndex(where: { $0.id == plugin.id }) {
-                        Section {
-                            PluginRowView(
-                                plugin: $plugins[idx],
-                                lang: lang,
-                                isCompact: isCompact,
-                                onChanged: { PluginsController.shared.plugins = plugins },
-                                onShare: { pluginToShare = plugins[idx] },
-                                onDelete: {
-                                    let id = plugins[idx].id
-                                    plugins.removeAll { $0.id == id }
+                    Section {
+                        PluginRowView(
+                            plugin: plugin,
+                            lang: lang,
+                            isCompact: isCompact,
+                            onUpdate: { updated in
+                                if let i = plugins.firstIndex(where: { $0.id == updated.id }) {
+                                    plugins[i] = updated
                                     PluginsController.shared.plugins = plugins
                                 }
-                            )
-                        }
+                            },
+                            onShare: { pluginToShare = plugin },
+                            onDelete: {
+                                plugins.removeAll { $0.id == plugin.id }
+                                PluginsController.shared.plugins = plugins
+                            }
+                        )
                     }
                 }
             }
