@@ -118,11 +118,16 @@ let colorViolet = UIColor(rgb: 0x5E5CE6)
 
 public struct PresentationResourcesSettings {
     public static let exteragram: UIImage? = {
-        guard let image = UIImage(bundleImageName: "exteraGramSettings") else { return nil }
+        // Always return a non-nil image so the settings row indent is preserved.
+        // UIGraphicsImageRenderer handles PDF-backed images where cgImage is nil.
+        // Try both capitalizations — asset catalog lookup is case-insensitive on device
+        // but case-sensitive in some build environments.
+        let image = UIImage(bundleImageName: "ExteraGramSettings")
+            ?? UIImage(bundleImageName: "exteraGramSettings")
         let size = CGSize(width: 30.0, height: 30.0)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: size))
+            image?.draw(in: CGRect(origin: .zero, size: size))
         }
     }()
     public static let proxy = renderSettingsIcon(name: "Item List/Icons/Proxy", backgroundColors: [colorGreen])

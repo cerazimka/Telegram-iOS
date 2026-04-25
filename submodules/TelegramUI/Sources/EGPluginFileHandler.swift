@@ -53,77 +53,120 @@ struct EGPluginFileMetadata {
     }
 }
 
-// MARK: - SwiftUI Sheet
+// MARK: - SwiftUI Bottom Sheet
 
 @available(iOS 14.0, *)
-private struct EGPluginMetadataSheet: View {
+private struct EGPluginInstallSheet: View {
     let metadata: EGPluginFileMetadata
     @Environment(\.presentationMode) private var presentationMode
 
     var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    HStack(spacing: 14) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.accentColor.opacity(0.12))
-                                .frame(width: 56, height: 56)
-                            Image(systemName: "puzzlepiece.extension")
-                                .font(.system(size: 26))
-                                .foregroundColor(.accentColor)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(metadata.name ?? "Plugin")
-                                .font(.headline)
+        ZStack(alignment: .topTrailing) {
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Drag handle
+                    Capsule()
+                        .fill(Color(UIColor.tertiaryLabel))
+                        .frame(width: 36, height: 4)
+                        .padding(.top, 8)
+                        .padding(.bottom, 20)
+
+                    // Plugin icon — 78pt circle with puzzle piece
+                    ZStack {
+                        Circle()
+                            .fill(Color.accentColor)
+                            .frame(width: 78, height: 78)
+                        Image(systemName: "puzzlepiece.extension.fill")
+                            .font(.system(size: 34))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.bottom, 16)
+
+                    // Plugin name
+                    Text(metadata.name ?? "Plugin")
+                        .font(.system(size: 18, weight: .bold))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                        .padding(.bottom, 4)
+
+                    // Version · Author
+                    if metadata.version != nil || metadata.author != nil {
+                        HStack(spacing: 0) {
+                            if let version = metadata.version {
+                                Text("v\(version)")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color(UIColor.secondaryLabel))
+                            }
+                            if metadata.version != nil && metadata.author != nil {
+                                Text(" · ")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color(UIColor.tertiaryLabel))
+                            }
                             if let author = metadata.author {
                                 Text(author)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color(UIColor.secondaryLabel))
                             }
                         }
-                        Spacer(minLength: 0)
+                        .padding(.bottom, 12)
                     }
-                    .padding(.vertical, 4)
-                }
 
-                if metadata.id != nil || metadata.version != nil {
-                    Section {
-                        if let id = metadata.id {
-                            metaRow(label: "ID", value: id)
-                        }
-                        if let version = metadata.version {
-                            metaRow(label: "Version", value: version)
-                        }
+                    // Trust badge — always "Unknown source" until we have verification
+                    HStack(spacing: 6) {
+                        Image(systemName: "questionmark.circle.fill")
+                            .font(.system(size: 12))
+                        Text("Unknown source")
+                            .font(.system(size: 13, weight: .medium))
                     }
-                }
+                    .foregroundColor(Color(UIColor.systemOrange))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color(UIColor.systemOrange).opacity(0.12))
+                    .clipShape(Capsule())
+                    .padding(.bottom, 28)
 
-                if let desc = metadata.description {
-                    Section(header: Text("Description")) {
-                        Text(desc)
-                            .font(.body)
+                    // Description
+                    if let description = metadata.description, !description.isEmpty {
+                        Text(description)
+                            .font(.system(size: 15))
+                            .foregroundColor(Color(UIColor.label))
+                            .multilineTextAlignment(.leading)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 21)
+                            .padding(.bottom, 28)
                     }
+
+                    // Install button
+                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                        Text("Install Plugin")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color.accentColor)
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+
+                    // Safe area bottom padding
+                    Color.clear.frame(height: 16)
                 }
             }
-            .listStyle(InsetGroupedListStyle())
-            .navigationTitle("Plugin Info")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationBarItems(
-                trailing: Button("Done") {
-                    presentationMode.wrappedValue.dismiss()
-                }
-            )
-        }
-    }
 
-    private func metaRow(label: String, value: String) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            Text(label)
-                .foregroundColor(.secondary)
-                .frame(width: 80, alignment: .leading)
-            Text(value)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // Close button — top right, matches Android's "open in" position
+            Button(action: { presentationMode.wrappedValue.dismiss() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(UIColor.secondaryLabel))
+                    .frame(width: 30, height: 30)
+                    .background(Color(UIColor.tertiarySystemFill))
+                    .clipShape(Circle())
+            }
+            .padding(.top, 16)
+            .padding(.trailing, 16)
         }
+        .background(Color(UIColor.systemBackground))
     }
 }
 
@@ -147,27 +190,34 @@ func presentEGPluginMetadataIfAvailable(
         guard let rootController = navigationController?.view.window?.rootViewController else { return }
 
         if #available(iOS 14.0, *) {
-            let sheet = UIHostingController(rootView: EGPluginMetadataSheet(metadata: metadata))
+            let sheet = UIHostingController(rootView: EGPluginInstallSheet(metadata: metadata))
+            sheet.modalPresentationStyle = .overFullScreen
+            sheet.view.backgroundColor = .clear
+
             if #available(iOS 16.0, *) {
+                sheet.modalPresentationStyle = .pageSheet
                 if let sheetController = sheet.sheetPresentationController {
                     sheetController.detents = [.medium(), .large()]
-                    sheetController.prefersGrabberVisible = true
+                    sheetController.prefersGrabberVisible = false  // we draw our own
+                    sheetController.preferredCornerRadius = 16
                 }
             }
             rootController.present(sheet, animated: true)
         } else {
+            // iOS 13 fallback: alert with key metadata
             let lines = [
-                metadata.name.map { "Name: \($0)" },
+                metadata.name.map { "Plugin: \($0)" },
                 metadata.author.map { "Author: \($0)" },
                 metadata.version.map { "Version: \($0)" },
-                metadata.description.map { "Description: \($0)" }
+                metadata.description.map { "\($0)" }
             ].compactMap { $0 }
             let alert = UIAlertController(
                 title: metadata.name ?? "Plugin Info",
                 message: lines.dropFirst().joined(separator: "\n"),
-                preferredStyle: .alert
+                preferredStyle: .actionSheet
             )
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            alert.addAction(UIAlertAction(title: "Install", style: .default))
+            alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
             rootController.present(alert, animated: true)
         }
     })
