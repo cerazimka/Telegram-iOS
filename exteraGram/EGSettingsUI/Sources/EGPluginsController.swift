@@ -8,6 +8,9 @@ import EGStrings
 import AccountContext
 import Display
 import TelegramPresentationData
+import TelegramCore
+import AnimatedStickerNode
+import TelegramAnimatedStickerNode
 
 // MARK: - Data Model
 
@@ -140,16 +143,105 @@ private struct ActivityView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
+// MARK: - Animated Emoji Sticker View
+// Mirrors Android's MediaDataController.setPlaceholderImage(..., "AnimatedEmojies", emoji, ...)
+// Loads the Telegram AnimatedEmojies pack, finds the matching sticker, plays it once.
+
+@available(iOS 14.0, *)
+private struct AnimatedEmojiStickerView: UIViewRepresentable {
+    let emoji: String
+    let size: CGFloat
+    let context: AccountContext
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(emoji: emoji, size: size, context: context)
+    }
+
+    func makeUIView(context uiCtx: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        uiCtx.coordinator.load(into: view)
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+
+    final class Coordinator {
+        private let emoji: String
+        private let size: CGFloat
+        private let context: AccountContext
+        private var disposable: Disposable?
+        private var retainedNode: AnyObject?
+
+        init(emoji: String, size: CGFloat, context: AccountContext) {
+            self.emoji = emoji
+            self.size = size
+            self.context = context
+        }
+
+        deinit { disposable?.dispose() }
+
+        func load(into container: UIView) {
+            let iconSize = CGSize(width: size, height: size)
+            let pixelSide = Int(size * UIScreen.main.scale)
+            let emoji = self.emoji
+
+            disposable = (context.engine.stickers.loadedStickerPack(
+                    reference: .name("AnimatedEmojies"),
+                    forceActualized: false)
+                |> filter { if case .result = $0 { return true }; return false }
+                |> take(1)
+                |> deliverOnMainQueue
+            ).startStandalone(next: { [weak container, weak self] result in
+                guard let self,
+                      let container,
+                      case .result(_, let items, _) = result,
+                      let item = items.first(where: {
+                          $0.getStringRepresentationsOfIndexKeys().contains(emoji)
+                      })
+                else { return }
+
+                let file = item.file._parse()
+                let node = DefaultAnimatedStickerNodeImpl()
+                node.setup(
+                    source: AnimatedStickerResourceSource(
+                        account: self.context.account,
+                        resource: file.resource,
+                        isVideo: file.isVideoSticker
+                    ),
+                    width: pixelSide,
+                    height: pixelSide,
+                    playbackMode: .once,
+                    mode: .cached
+                )
+                node.updateLayout(size: iconSize)
+                node.visibility = true
+                node.frame = CGRect(origin: .zero, size: iconSize)
+                node.view.frame = CGRect(origin: .zero, size: iconSize)
+                container.addSubview(node.view)
+                self.retainedNode = node
+
+                let _ = freeMediaFileResourceInteractiveFetched(
+                    account: self.context.account,
+                    userLocation: .other,
+                    fileReference: stickerPackFileReference(file),
+                    resource: file.resource
+                ).startStandalone()
+            })
+        }
+    }
+}
+
 // MARK: - Empty State View
 // Mirrors Android EmptyPluginsView: emoji sticker + descriptive text.
 // isSearching=true  → 🔎 + PluginsNotFound
-// isSearching=false → 📂 + PluginsInfo (no plugins installed)
+// isSearching=false → 📂 animated sticker + PluginsInfo
 
 @available(iOS 14.0, *)
 private struct PluginsEmptyView: View {
     let isSearching: Bool
     let lang: String
-    @State private var folderBounce: Bool = false
+    let context: AccountContext
 
     var body: some View {
         VStack(spacing: 16) {
@@ -164,16 +256,9 @@ private struct PluginsEmptyView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             } else {
-                // Animated folder emoji — float + scale breathing
-                Text("📂")
-                    .font(.system(size: 64))
-                    .scaleEffect(folderBounce ? 1.08 : 0.96)
-                    .offset(y: folderBounce ? -8 : 2)
-                    .animation(
-                        .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
-                        value: folderBounce
-                    )
-                    .onAppear { folderBounce = true }
+                // Animated 📂 sticker — mirrors Android setPlaceholderImage("AnimatedEmojies","📂")
+                AnimatedEmojiStickerView(emoji: "📂", size: 80, context: context)
+                    .frame(width: 80, height: 80)
 
                 // "Вы можете найти плагины в @vcvk1."  (period is non-clickable)
                 HStack(spacing: 0) {
@@ -468,7 +553,8 @@ private struct EGPluginsView: View {
                 if isEngineEnabled && showEmptyState {
                     PluginsEmptyView(
                         isSearching: !navState.searchText.isEmpty,
-                        lang: lang
+                        lang: lang,
+                        context: context
                     )
                 }
             }
