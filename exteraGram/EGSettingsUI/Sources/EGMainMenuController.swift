@@ -50,18 +50,23 @@ private struct EGMainMenuView: View {
             // ── Категории ────────────────────────────────────────────────
             Section {
                 categoryRow(bundleImageName: "msg_media",
+                            colors: [UIColor(rgb: 0xFF453A)],
                             text: i18n("Settings.Menu.General", lang)) {
                     push(egSettingsController(context: context))
                 }
                 categoryRow(bundleImageName: "msg_theme",
+                            colors: [UIColor(rgb: 0xAF52DE)],
                             text: i18n("Settings.Menu.Appearance", lang)) { }
                 categoryRow(bundleImageName: "msg_discussion",
+                            colors: [UIColor(rgb: 0x0079FF)],
                             text: i18n("Settings.Menu.Chats", lang)) { }
                 categoryRow(bundleImageName: "msg_plugins",
+                            colors: [UIColor(rgb: 0x00C7BE)],
                             text: i18n("Settings.Menu.Plugins", lang)) {
                     push(egPluginsController(context: context))
                 }
                 categoryRow(bundleImageName: "msg_fave",
+                            colors: [UIColor(rgb: 0xFF9F0A)],
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
                 sectionHeader(i18n("Settings.Menu.Categories", lang))
@@ -69,19 +74,19 @@ private struct EGMainMenuView: View {
 
             // ── Ссылки ────────────────────────────────────────────────────
             Section {
-                linkRow(icon: AnyView(telegramIcon("msg_channel")),
+                linkRow(icon: AnyView(telegramIcon("msg_channel", colors: [UIColor(rgb: 0x32ADE6)])),
                         text: i18n("Settings.Menu.Channel", lang),
                         label: "@exteraGram",
                         url: "https://t.me/exteraGram")
-                linkRow(icon: AnyView(telegramIcon("msg_groups")),
+                linkRow(icon: AnyView(telegramIcon("msg_groups", colors: [UIColor(rgb: 0x34C759)])),
                         text: i18n("Settings.Menu.Chat", lang),
                         label: "@exteraChat",
                         url: "https://t.me/exteraChat")
-                linkRow(icon: AnyView(telegramIcon("msg_translate")),
+                linkRow(icon: AnyView(telegramIcon("msg_translate", colors: [UIColor(rgb: 0x5E5CE6)])),
                         text: i18n("Settings.Menu.Translation", lang),
                         label: "Crowdin",
                         url: "https://crowdin.com/project/exteralocales")
-                linkRow(icon: AnyView(telegramIcon("msg_language")),
+                linkRow(icon: AnyView(telegramIcon("msg_language", colors: [UIColor(rgb: 0xFF9F0A)])),
                         text: i18n("Settings.Menu.Website", lang),
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
@@ -122,11 +127,12 @@ private struct EGMainMenuView: View {
 
     @ViewBuilder
     private func categoryRow(bundleImageName: String,
+                              colors: [UIColor],
                               text: String,
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 12) {
-                telegramIcon(bundleImageName)
+                telegramIcon(bundleImageName, colors: colors)
                 Text(text)
                     .foregroundColor(.primary)
                 Spacer()
@@ -156,17 +162,54 @@ private struct EGMainMenuView: View {
         }
     }
 
-    // Renders a 29×29 icon: red rounded-rect background + white-tinted symbol.
-    // Source PNGs are 24px declared @3x (= 8pt natural size). Drawing at a fixed
-    // 17pt keeps the icon proportional regardless of the image's declared scale.
-    private func telegramIcon(_ bundleImageName: String) -> some View {
+    // Renders a 29×29 icon with a gradient background (same plusLighter+overlay treatment
+    // as renderSettingsIcon) + white-tinted symbol centered at 16pt.
+    private func telegramIcon(_ bundleImageName: String, colors: [UIColor] = [UIColor(rgb: 0xFF453A)]) -> some View {
         let size = CGSize(width: 29, height: 29)
-        let iconPt: CGFloat = 17
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let result = renderer.image { _ in
-            UIColor.systemRed.setFill()
-            UIBezierPath(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 7).fill()
+        let iconPt: CGFloat = 16
+        let bounds = CGRect(origin: .zero, size: size)
 
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        let result = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            let cgCtx = ctx.cgContext
+
+            // Clip everything to the rounded rect shape
+            cgCtx.addPath(UIBezierPath(roundedRect: bounds, cornerRadius: 7).cgPath)
+            cgCtx.clip()
+
+            // Linear gradient background (top-right → bottom-left, same direction as Telegram)
+            let c0 = colors.first ?? UIColor(rgb: 0xFF453A)
+            let c1 = colors.count >= 2 ? colors[1] : c0
+            var locations: [CGFloat] = [0.0, 1.0]
+            if let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                     colors: [c0.cgColor, c1.cgColor] as CFArray,
+                                     locations: &locations) {
+                cgCtx.drawLinearGradient(grad,
+                                         start: CGPoint(x: size.width, y: size.height),
+                                         end: .zero,
+                                         options: [])
+            }
+
+            // plusLighter sheen overlay (same as renderSettingsIcon)
+            if let img = UIImage(bundleImageName: "Item List/Icons/Gradient"), let cg = img.cgImage {
+                cgCtx.saveGState()
+                cgCtx.setBlendMode(.plusLighter)
+                cgCtx.draw(cg, in: bounds)
+                cgCtx.restoreGState()
+            }
+
+            // overlay backdrop (depth / shadow effect)
+            if let img = UIImage(bundleImageName: "Item List/Icons/Backdrop"), let cg = img.cgImage {
+                cgCtx.saveGState()
+                cgCtx.setBlendMode(.overlay)
+                cgCtx.draw(cg, in: bounds)
+                cgCtx.restoreGState()
+            }
+
+            cgCtx.setBlendMode(.normal)
+
+            // White-tinted icon centered
             if let tinted = generateTintedImage(image: UIImage(bundleImageName: bundleImageName),
                                                 color: .white) {
                 let x = (size.width - iconPt) / 2
