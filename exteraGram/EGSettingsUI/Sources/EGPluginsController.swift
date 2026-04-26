@@ -8,6 +8,7 @@ import EGStrings
 import AccountContext
 import Display
 import TelegramPresentationData
+import SwiftSignalKit
 import TelegramCore
 import AnimatedStickerNode
 import TelegramAnimatedStickerNode
