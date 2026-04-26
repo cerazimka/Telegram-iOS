@@ -121,16 +121,24 @@ private final class PluginsNavState: ObservableObject {
     }
 }
 
-// MARK: - Nav Button Trampoline
-// UIBarButtonItem requires @objc target; using a trampoline avoids primaryAction: quirks.
+// MARK: - Nav Button Trampoline + Search Bar Delegate
 
-private final class PluginsBarHandler: NSObject {
+private final class PluginsBarHandler: NSObject, UISearchBarDelegate {
     var searchTapped: (() -> Void)?
     var infoTapped: (() -> Void)?
     var cancelTapped: (() -> Void)?
+    var onSearchTextChange: ((String) -> Void)?
+
     @objc func searchTappedObjc()  { searchTapped?()  }
     @objc func infoTappedObjc()   { infoTapped?()   }
     @objc func cancelTappedObjc() { cancelTapped?() }
+
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        onSearchTextChange?(searchText)
+    }
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
 }
 
 // MARK: - Share Sheet
@@ -243,6 +251,7 @@ private struct PluginsEmptyView: View {
     let isSearching: Bool
     let lang: String
     let context: AccountContext
+    let getNavigationController: () -> NavigationController?
 
     var body: some View {
         VStack(spacing: 16) {
@@ -261,13 +270,22 @@ private struct PluginsEmptyView: View {
                 AnimatedEmojiStickerView(emoji: "📂", size: 100, context: context)
                     .frame(width: 100, height: 100)
 
-                // "Вы можете найти плагины в @vcvk1."  (period is non-clickable)
+                // "Вы можете найти плагины в @exteraiPlugins."  (period is non-clickable)
                 HStack(spacing: 0) {
                     Text("Вы можете найти плагины в ")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                    Button("@vcvk1") {
-                        UIApplication.shared.open(URL(string: "tg://resolve?domain=vcvk1")!)
+                    Button("@exteraiPlugins") {
+                        let pd = context.sharedContext.currentPresentationData.with { $0 }
+                        context.sharedContext.openExternalUrl(
+                            context: context,
+                            urlContext: .generic,
+                            url: "https://t.me/exteraiPlugins",
+                            forceExternal: false,
+                            presentationData: pd,
+                            navigationController: getNavigationController(),
+                            dismissInput: {}
+                        )
                     }
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(.accentColor)
@@ -285,6 +303,86 @@ private struct PluginsEmptyView: View {
     }
 }
 
+// MARK: - Plugin Icon View
+// Loads a sticker from "packName/index" and displays it as an animated icon.
+
+@available(iOS 14.0, *)
+private struct EGPluginIconView: UIViewRepresentable {
+    let iconUrl: String
+    let size: CGFloat
+    let context: AccountContext
+
+    func makeCoordinator() -> Coordinator { Coordinator(iconUrl: iconUrl, size: size, context: context) }
+
+    func makeUIView(context uiCtx: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        uiCtx.coordinator.load(into: view)
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+
+    final class Coordinator {
+        private let iconUrl: String
+        private let size: CGFloat
+        private let context: AccountContext
+        private var loadDisposable: Disposable?
+        private var fetchDisposable: Disposable?
+        private var node: DefaultAnimatedStickerNodeImpl?
+
+        init(iconUrl: String, size: CGFloat, context: AccountContext) {
+            self.iconUrl = iconUrl; self.size = size; self.context = context
+        }
+
+        deinit { loadDisposable?.dispose(); fetchDisposable?.dispose() }
+
+        func load(into container: UIView) {
+            let parts = iconUrl.components(separatedBy: "/")
+            guard parts.count == 2, let index = Int(parts[1]) else { return }
+            let packName = parts[0]
+            let iconSize = CGSize(width: size, height: size)
+            let pixelSide = Int(size * UIScreen.main.scale)
+
+            loadDisposable = (context.engine.stickers.loadedStickerPack(
+                    reference: .name(packName), forceActualized: false)
+                |> filter { if case .result = $0 { return true }; return false }
+                |> take(1)
+                |> deliverOnMainQueue
+            ).startStandalone(next: { [weak container, weak self] result in
+                guard let self, let container,
+                      case .result(_, let items, _) = result,
+                      index < items.count else { return }
+
+                let file = items[index].file._parse()
+                let node = DefaultAnimatedStickerNodeImpl()
+                node.setup(
+                    source: AnimatedStickerResourceSource(
+                        account: self.context.account,
+                        resource: file.resource,
+                        isVideo: file.isVideoSticker
+                    ),
+                    width: pixelSide, height: pixelSide,
+                    playbackMode: .loop, mode: .cached
+                )
+                node.updateLayout(size: iconSize)
+                node.visibility = true
+                node.frame = CGRect(origin: .zero, size: iconSize)
+                node.view.frame = CGRect(origin: .zero, size: iconSize)
+                container.addSubview(node.view)
+                self.node = node
+
+                self.fetchDisposable = freeMediaFileResourceInteractiveFetched(
+                    account: self.context.account,
+                    userLocation: .other,
+                    fileReference: stickerPackFileReference(file),
+                    resource: file.resource
+                ).startStandalone()
+            })
+        }
+    }
+}
+
 // MARK: - Plugin Row
 // Layout mirrors Android PluginCell (FrameLayout overlay pattern):
 // - Content LinearLayout: margin l=16, t=16, r=16, b=8 (non-compact=VERTICAL header; compact=HORIZONTAL)
@@ -297,6 +395,7 @@ private struct PluginRowView: View {
     let plugin: EGPlugin
     let lang: String
     let isCompact: Bool
+    let context: AccountContext
     let onUpdate: (EGPlugin) -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
@@ -435,14 +534,20 @@ private struct PluginRowView: View {
 
     @ViewBuilder
     private func iconView(size: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
-            .fill(Color(UIColor.secondarySystemFill))
-            .frame(width: size, height: size)
-            .overlay(
-                Image(systemName: "puzzlepiece.extension")
-                    .foregroundColor(Color(UIColor.secondaryLabel))
-                    .font(.system(size: size * 0.4))
-            )
+        if let iconUrl = plugin.iconUrl, !iconUrl.isEmpty {
+            EGPluginIconView(iconUrl: iconUrl, size: size, context: context)
+                .frame(width: size, height: size)
+                .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
+        } else {
+            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                .fill(Color(UIColor.secondarySystemFill))
+                .frame(width: size, height: size)
+                .overlay(
+                    Image(systemName: "puzzlepiece.extension")
+                        .foregroundColor(Color(UIColor.secondaryLabel))
+                        .font(.system(size: size * 0.4))
+                )
+        }
     }
 
     @ViewBuilder
@@ -492,7 +597,7 @@ private struct EGPluginsView: View {
 
     var body: some View {
         List {
-            // Engine toggle — hidden while search is active (mirrors fillItems: only added when !searching)
+            // Engine toggle — hidden while search is active
             if !navState.isSearchActive {
                 Section {
                     Toggle(i18n("Plugins.Enable", lang), isOn: Binding(
@@ -503,27 +608,7 @@ private struct EGPluginsView: View {
                 }
             }
 
-            // Inline search field — own section when active
-            if isEngineEnabled && navState.isSearchActive {
-                Section {
-                    HStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-                        TextField(i18n("Plugins.Search", lang), text: $navState.searchText)
-                            .autocapitalization(.none)
-                            .disableAutocorrection(true)
-                        if !navState.searchText.isEmpty {
-                            Button(action: { navState.searchText = "" }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(Color(UIColor.tertiaryLabel))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-
-            // Each plugin = its own Section = its own rounded card (matches screenshot)
+            // Each plugin = its own Section = its own rounded card
             if isEngineEnabled && !showEmptyState {
                 ForEach(displayPlugins) { plugin in
                     Section {
@@ -531,6 +616,7 @@ private struct EGPluginsView: View {
                             plugin: plugin,
                             lang: lang,
                             isCompact: isCompact,
+                            context: context,
                             onUpdate: { updated in
                                 if let i = plugins.firstIndex(where: { $0.id == updated.id }) {
                                     plugins[i] = updated
@@ -555,7 +641,10 @@ private struct EGPluginsView: View {
                     PluginsEmptyView(
                         isSearching: !navState.searchText.isEmpty,
                         lang: lang,
-                        context: context
+                        context: context,
+                        getNavigationController: { [weak wrapperController] in
+                            wrapperController?.navigationController as? NavigationController
+                        }
                     )
                 }
             }
@@ -639,12 +728,26 @@ public func egPluginsController(context: AccountContext) -> ViewController {
         action: #selector(PluginsBarHandler.infoTappedObjc)
     )
 
-    handler.searchTapped = { [weak legacyController] in
+    // Nav bar search bar — replaces title+back+info when search is active
+    let navSearchBar = UISearchBar()
+    navSearchBar.placeholder = i18n("Plugins.Search", strings.baseLanguageCode)
+    navSearchBar.searchBarStyle = .minimal
+    navSearchBar.tintColor = iconColor
+    navSearchBar.sizeToFit()
+    navSearchBar.delegate = handler
+
+    handler.onSearchTextChange = { text in
+        navState.searchText = text
+    }
+
+    handler.searchTapped = { [weak legacyController, weak navSearchBar] in
         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
             navState.isSearchActive = true
         }
-        legacyController?.navigationItem.rightBarButtonItems =
-            [cancelButton].compactMap { $0 }
+        legacyController?.navigationItem.titleView = navSearchBar
+        legacyController?.navigationItem.setHidesBackButton(true, animated: false)
+        legacyController?.navigationItem.rightBarButtonItems = [cancelButton].compactMap { $0 }
+        navSearchBar?.becomeFirstResponder()
     }
 
     handler.infoTapped = { [weak legacyController] in
@@ -652,15 +755,21 @@ public func egPluginsController(context: AccountContext) -> ViewController {
             egPluginsInfoController(context: context), animated: true)
     }
 
-    handler.cancelTapped = { [weak legacyController] in
-        navState.deactivate()
-        legacyController?.navigationItem.rightBarButtonItems =
-            [infoButton, searchButton].compactMap { $0 }
+    let restoreNavBar = { [weak legacyController, weak navSearchBar] in
+        navSearchBar?.text = ""
+        navSearchBar?.resignFirstResponder()
+        legacyController?.navigationItem.titleView = nil
+        legacyController?.navigationItem.setHidesBackButton(false, animated: false)
+        legacyController?.navigationItem.rightBarButtonItems = [infoButton, searchButton].compactMap { $0 }
     }
 
-    navState.onSearchDeactivated = { [weak legacyController] in
-        legacyController?.navigationItem.rightBarButtonItems =
-            [infoButton, searchButton].compactMap { $0 }
+    handler.cancelTapped = {
+        navState.deactivate()
+        restoreNavBar()
+    }
+
+    navState.onSearchDeactivated = {
+        restoreNavBar()
     }
 
     legacyController.navigationItem.rightBarButtonItems =

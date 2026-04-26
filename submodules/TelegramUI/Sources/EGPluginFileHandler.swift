@@ -116,61 +116,69 @@ private struct RequirementChipsView: View {
 private struct EGStickerIconView: UIViewRepresentable {
     let file: TelegramMediaFile
     let context: AccountContext
+    let size: CGFloat
 
-    func makeUIView(context uiContext: Context) -> UIView {
-        let containerView = UIView()
-        containerView.backgroundColor = .clear
-        containerView.clipsToBounds = true
-
-        let iconSize = CGSize(width: 78, height: 78)
-        let pixelSide = Int(78 * UIScreen.main.scale)
-
-        let node = DefaultAnimatedStickerNodeImpl()
-        node.setup(
-            source: AnimatedStickerResourceSource(
-                account: self.context.account,
-                resource: file.resource,
-                isVideo: file.isVideoSticker
-            ),
-            width: pixelSide,
-            height: pixelSide,
-            playbackMode: .loop,
-            mode: .cached
-        )
-        node.updateLayout(size: iconSize)
-        node.visibility = true
-        node.frame = CGRect(origin: .zero, size: iconSize)
-        node.view.frame = CGRect(origin: .zero, size: iconSize)
-        containerView.addSubview(node.view)
-
-        // Retain node — UIView does not hold a strong reference to its ASDisplayNode
-        objc_setAssociatedObject(containerView, &EGStickerIconView.nodeKey, node, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-
-        // Trigger resource download using the correct stickerPack file reference
-        let fetchDisposable = freeMediaFileResourceInteractiveFetched(
-            account: self.context.account,
-            userLocation: .other,
-            fileReference: stickerPackFileReference(file),
-            resource: file.resource
-        ).startStandalone()
-        objc_setAssociatedObject(containerView, &EGStickerIconView.fetchKey, DisposableWrapper(fetchDisposable), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-
-        return containerView
+    func makeCoordinator() -> Coordinator {
+        Coordinator(file: file, context: context, size: size)
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {
-        guard let node = objc_getAssociatedObject(uiView, &EGStickerIconView.nodeKey) as? DefaultAnimatedStickerNodeImpl else { return }
-        node.view.frame = uiView.bounds
+    func makeUIView(context uiCtx: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        uiCtx.coordinator.setup(in: view)
+        return view
     }
 
-    private static var nodeKey: UInt8 = 0
-    private static var fetchKey: UInt8 = 1
+    func updateUIView(_ uiView: UIView, context: Context) {}
+
+    final class Coordinator {
+        private let file: TelegramMediaFile
+        private let context: AccountContext
+        private let size: CGFloat
+        private var node: DefaultAnimatedStickerNodeImpl?
+        private var fetchDisposable: Disposable?
+
+        init(file: TelegramMediaFile, context: AccountContext, size: CGFloat) {
+            self.file = file; self.context = context; self.size = size
+        }
+
+        deinit { fetchDisposable?.dispose() }
+
+        func setup(in container: UIView) {
+            let iconSize = CGSize(width: size, height: size)
+            let pixelSide = Int(size * UIScreen.main.scale)
+
+            let node = DefaultAnimatedStickerNodeImpl()
+            node.setup(
+                source: AnimatedStickerResourceSource(
+                    account: context.account,
+                    resource: file.resource,
+                    isVideo: file.isVideoSticker
+                ),
+                width: pixelSide,
+                height: pixelSide,
+                playbackMode: .loop,
+                mode: .cached
+            )
+            node.updateLayout(size: iconSize)
+            node.visibility = true
+            node.frame = CGRect(origin: .zero, size: iconSize)
+            node.view.frame = CGRect(origin: .zero, size: iconSize)
+            container.addSubview(node.view)
+            self.node = node
+
+            fetchDisposable = freeMediaFileResourceInteractiveFetched(
+                account: context.account,
+                userLocation: .other,
+                fileReference: stickerPackFileReference(file),
+                resource: file.resource
+            ).startStandalone()
+        }
+    }
 }
 
-// MARK: - Disposable lifetime wrapper for use with @State
-
 private final class DisposableWrapper {
-    private let inner: Disposable
+    let inner: Disposable
     init(_ d: Disposable) { inner = d }
     deinit { inner.dispose() }
 }
@@ -309,7 +317,7 @@ private struct EGPluginInstallSheet: View {
     private var iconView: some View {
         if let file = iconFile {
             // Sticker icon (matches Android BackupImageView with rounded rect + badge)
-            EGStickerIconView(file: file, context: context)
+            EGStickerIconView(file: file, context: context, size: 78)
                 .frame(width: 78, height: 78)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
@@ -473,16 +481,23 @@ func presentEGPluginMetadataIfAvailable(
 
         if #available(iOS 14.0, *) {
             let sheet = UIHostingController(rootView: EGPluginInstallSheet(metadata: metadata, filePath: data.path, context: context))
-            sheet.modalPresentationStyle = .overFullScreen
-            sheet.view.backgroundColor = .clear
 
             if #available(iOS 16.0, *) {
                 sheet.modalPresentationStyle = .pageSheet
-                if let sheetController = sheet.sheetPresentationController {
-                    sheetController.detents = [.medium(), .large()]
-                    sheetController.prefersGrabberVisible = false  // we draw our own
-                    sheetController.preferredCornerRadius = 24
+                if let sc = sheet.sheetPresentationController {
+                    let screenH = UIScreen.main.bounds.height
+                    let deviceRadius = (UIScreen.main.value(forKey: "_displayCornerRadius") as? CGFloat) ?? 44
+                    sc.detents = [
+                        .custom { _ in min(screenH * 0.58, 540) },
+                        .large()
+                    ]
+                    sc.prefersGrabberVisible = false
+                    sc.preferredCornerRadius = deviceRadius
+                    sc.prefersScrollingExpandsWhenScrolledToEdge = true
                 }
+            } else {
+                sheet.modalPresentationStyle = .overFullScreen
+                sheet.view.backgroundColor = .clear
             }
             rootController.present(sheet, animated: true)
         } else {
