@@ -180,6 +180,7 @@ private struct AnimatedEmojiStickerView: UIViewRepresentable {
         private let size: CGFloat
         private let context: AccountContext
         private var disposable: Disposable?
+        private var fetchDisposable: Disposable?
         private var retainedNode: AnyObject?
 
         init(emoji: String, size: CGFloat, context: AccountContext) {
@@ -188,7 +189,7 @@ private struct AnimatedEmojiStickerView: UIViewRepresentable {
             self.context = context
         }
 
-        deinit { disposable?.dispose() }
+        deinit { disposable?.dispose(); fetchDisposable?.dispose() }
 
         func load(into container: UIView) {
             let iconSize = CGSize(width: size, height: size)
@@ -224,13 +225,14 @@ private struct AnimatedEmojiStickerView: UIViewRepresentable {
                     mode: .cached
                 )
                 node.updateLayout(size: iconSize)
+                node.overrideVisibility = true
                 node.visibility = true
                 node.frame = CGRect(origin: .zero, size: iconSize)
                 node.view.frame = CGRect(origin: .zero, size: iconSize)
                 container.addSubview(node.view)
                 self.retainedNode = node
 
-                let _ = freeMediaFileResourceInteractiveFetched(
+                self.fetchDisposable = freeMediaFileResourceInteractiveFetched(
                     account: self.context.account,
                     userLocation: .other,
                     fileReference: stickerPackFileReference(file),
@@ -366,6 +368,7 @@ private struct EGPluginIconView: UIViewRepresentable {
                     playbackMode: .loop, mode: .cached
                 )
                 node.updateLayout(size: iconSize)
+                node.overrideVisibility = true
                 node.visibility = true
                 node.frame = CGRect(origin: .zero, size: iconSize)
                 node.view.frame = CGRect(origin: .zero, size: iconSize)
