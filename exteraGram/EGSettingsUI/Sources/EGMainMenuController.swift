@@ -55,18 +55,18 @@ private struct EGMainMenuView: View {
                     push(egSettingsController(context: context))
                 }
                 categoryRow(bundleImageName: "msg_theme",
-                            colors: [UIColor(rgb: 0xAF52DE)],
+                            colors: [UIColor(rgb: 0xFF453A)],
                             text: i18n("Settings.Menu.Appearance", lang)) { }
                 categoryRow(bundleImageName: "msg_discussion",
-                            colors: [UIColor(rgb: 0x0079FF)],
+                            colors: [UIColor(rgb: 0xFF453A)],
                             text: i18n("Settings.Menu.Chats", lang)) { }
                 categoryRow(bundleImageName: "msg_plugins",
-                            colors: [UIColor(rgb: 0x00C7BE)],
+                            colors: [UIColor(rgb: 0xFF453A)],
                             text: i18n("Settings.Menu.Plugins", lang)) {
                     push(egPluginsController(context: context))
                 }
                 categoryRow(bundleImageName: "msg_fave",
-                            colors: [UIColor(rgb: 0xFF9F0A)],
+                            colors: [UIColor(rgb: 0xFF453A)],
                             text: i18n("Settings.Menu.Other", lang)) { }
             } header: {
                 sectionHeader(i18n("Settings.Menu.Categories", lang))
@@ -74,19 +74,19 @@ private struct EGMainMenuView: View {
 
             // ── Ссылки ────────────────────────────────────────────────────
             Section {
-                linkRow(icon: AnyView(telegramIcon("msg_channel", colors: [UIColor(rgb: 0x32ADE6)])),
+                linkRow(icon: AnyView(telegramIcon("msg_channel", colors: [UIColor(rgb: 0xFF453A)])),
                         text: i18n("Settings.Menu.Channel", lang),
                         label: "@exteraGram",
                         url: "https://t.me/exteraGram")
-                linkRow(icon: AnyView(telegramIcon("msg_groups", colors: [UIColor(rgb: 0x34C759)])),
+                linkRow(icon: AnyView(telegramIcon("msg_groups", colors: [UIColor(rgb: 0xFF453A)])),
                         text: i18n("Settings.Menu.Chat", lang),
                         label: "@exteraChat",
                         url: "https://t.me/exteraChat")
-                linkRow(icon: AnyView(telegramIcon("msg_translate", colors: [UIColor(rgb: 0x5E5CE6)])),
+                linkRow(icon: AnyView(telegramIcon("msg_translate", colors: [UIColor(rgb: 0xFF453A)])),
                         text: i18n("Settings.Menu.Translation", lang),
                         label: "Crowdin",
                         url: "https://crowdin.com/project/exteralocales")
-                linkRow(icon: AnyView(telegramIcon("msg_language", colors: [UIColor(rgb: 0xFF9F0A)])),
+                linkRow(icon: AnyView(telegramIcon("msg_language", colors: [UIColor(rgb: 0xFF453A)])),
                         text: i18n("Settings.Menu.Website", lang),
                         label: "exteraGram.app",
                         url: "https://exteraGram.app")
