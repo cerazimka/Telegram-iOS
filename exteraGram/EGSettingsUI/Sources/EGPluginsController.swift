@@ -164,26 +164,30 @@ private struct PluginsEmptyView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 24)
             } else {
-                // Animated folder emoji — gentle float up/down
+                // Animated folder emoji — float + scale breathing
                 Text("📂")
                     .font(.system(size: 64))
-                    .offset(y: folderBounce ? -6 : 0)
+                    .scaleEffect(folderBounce ? 1.08 : 0.96)
+                    .offset(y: folderBounce ? -8 : 2)
                     .animation(
-                        .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
+                        .easeInOut(duration: 1.0).repeatForever(autoreverses: true),
                         value: folderBounce
                     )
                     .onAppear { folderBounce = true }
 
-                // "Вы можете найти плагины в @vcvk1"
+                // "Вы можете найти плагины в @vcvk1."  (period is non-clickable)
                 HStack(spacing: 0) {
                     Text("Вы можете найти плагины в ")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     Button("@vcvk1") {
-                        UIApplication.shared.open(URL(string: "https://t.me/vcvk1")!)
+                        UIApplication.shared.open(URL(string: "tg://resolve?domain=vcvk1")!)
                     }
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(.accentColor)
+                    Text(".")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)

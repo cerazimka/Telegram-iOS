@@ -117,10 +117,29 @@ let colorGray = UIColor(rgb: 0x8E8E93)
 let colorViolet = UIColor(rgb: 0x5E5CE6)
 
 public struct PresentationResourcesSettings {
-    // Gradient bottom-right→top-left: bright iOS red → deep crimson (redder than notifications 0xFF453A)
-    public static let exteragram: UIImage? =
-        renderSettingsIcon(name: "ExteraGramSettings", backgroundColors: [UIColor(rgb: 0xFF3B30), UIColor(rgb: 0xBF1000)])
-        ?? renderSettingsIcon(name: "exteraGramSettings", backgroundColors: [UIColor(rgb: 0xFF3B30), UIColor(rgb: 0xBF1000)])
+    // Gradient icon rendered via .luminosity blend: PDF white icon pixels (L=1) become pure white
+    // on the gradient; PDF's own red background (L≈0.35) darkens the gradient, creating contrast.
+    public static let exteragram: UIImage? = {
+        let size = CGSize(width: 30.0, height: 30.0)
+        guard let pdfIcon = UIImage(bundleImageName: "ExteraGramSettings")
+            ?? UIImage(bundleImageName: "exteraGramSettings")
+        else { return nil }
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { ctx in
+            let bounds = CGRect(origin: .zero, size: size)
+            let cgCtx = ctx.cgContext
+            UIBezierPath(roundedRect: bounds, cornerRadius: 8.0).addClip()
+            var locs: [CGFloat] = [0.0, 1.0]
+            let colors = [UIColor(rgb: 0xFF3B30).cgColor, UIColor(rgb: 0xBF1000).cgColor]
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                      colors: colors as CFArray, locations: &locs)!
+            cgCtx.drawLinearGradient(gradient,
+                start: CGPoint(x: size.width, y: size.height), end: .zero, options: [])
+            gradientImage?.draw(in: bounds, blendMode: .plusLighter, alpha: 1.0)
+            backdropImage?.draw(in: bounds, blendMode: .overlay, alpha: 1.0)
+            pdfIcon.draw(in: bounds, blendMode: .luminosity, alpha: 1.0)
+        }
+    }()
     public static let proxy = renderSettingsIcon(name: "Item List/Icons/Proxy", backgroundColors: [colorGreen])
     public static let savedMessages = renderSettingsIcon(name: "Item List/Icons/SavedMessages", backgroundColors: [colorBlue])
     public static let recentCalls = renderSettingsIcon(name: "Item List/Icons/Phone", backgroundColors: [colorGreen])

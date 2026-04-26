@@ -120,40 +120,51 @@ private struct EGStickerIconView: UIViewRepresentable {
     func makeUIView(context uiContext: Context) -> UIView {
         let containerView = UIView()
         containerView.backgroundColor = .clear
+        containerView.clipsToBounds = true
+
+        let iconSize = CGSize(width: 78, height: 78)
+        let pixelSide = Int(78 * UIScreen.main.scale)
 
         let node = DefaultAnimatedStickerNodeImpl()
         node.setup(
             source: AnimatedStickerResourceSource(
                 account: self.context.account,
                 resource: file.resource,
-                fitzModifier: nil
+                isVideo: file.isVideoSticker
             ),
-            width: Int(78 * UIScreen.main.scale),
-            height: Int(78 * UIScreen.main.scale),
+            width: pixelSide,
+            height: pixelSide,
             playbackMode: .loop,
-            mode: .direct(cachePathPrefix: nil)
+            mode: .cached
         )
-        node.updateLayout(size: CGSize(width: 78, height: 78))
+        node.updateLayout(size: iconSize)
         node.visibility = true
-        node.view.frame = CGRect(x: 0, y: 0, width: 78, height: 78)
+        node.frame = CGRect(origin: .zero, size: iconSize)
+        node.view.frame = CGRect(origin: .zero, size: iconSize)
         containerView.addSubview(node.view)
 
-        // Retain the ASDisplayNode — UIView does not hold a strong reference to its node
+        // Retain node — UIView does not hold a strong reference to its ASDisplayNode
         objc_setAssociatedObject(containerView, &EGStickerIconView.nodeKey, node, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
-        // Trigger download if not cached yet
-        let _ = freeMediaFileInteractiveFetched(
+        // Trigger resource download using the correct stickerPack file reference
+        let fetchDisposable = freeMediaFileResourceInteractiveFetched(
             account: self.context.account,
             userLocation: .other,
-            fileReference: .standalone(media: file)
+            fileReference: stickerPackFileReference(file),
+            resource: file.resource
         ).startStandalone()
+        objc_setAssociatedObject(containerView, &EGStickerIconView.fetchKey, DisposableWrapper(fetchDisposable), .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 
         return containerView
     }
 
-    func updateUIView(_ uiView: UIView, context: Context) {}
+    func updateUIView(_ uiView: UIView, context: Context) {
+        guard let node = objc_getAssociatedObject(uiView, &EGStickerIconView.nodeKey) as? DefaultAnimatedStickerNodeImpl else { return }
+        node.view.frame = uiView.bounds
+    }
 
     private static var nodeKey: UInt8 = 0
+    private static var fetchKey: UInt8 = 1
 }
 
 // MARK: - Disposable lifetime wrapper for use with @State
@@ -300,7 +311,7 @@ private struct EGPluginInstallSheet: View {
             // Sticker icon (matches Android BackupImageView with rounded rect + badge)
             EGStickerIconView(file: file, context: context)
                 .frame(width: 78, height: 78)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
                     // Puzzle piece badge at bottom-right (matches Android canvas overlay)
                     ZStack {
@@ -470,7 +481,7 @@ func presentEGPluginMetadataIfAvailable(
                 if let sheetController = sheet.sheetPresentationController {
                     sheetController.detents = [.medium(), .large()]
                     sheetController.prefersGrabberVisible = false  // we draw our own
-                    sheetController.preferredCornerRadius = 16
+                    sheetController.preferredCornerRadius = 24
                 }
             }
             rootController.present(sheet, animated: true)
