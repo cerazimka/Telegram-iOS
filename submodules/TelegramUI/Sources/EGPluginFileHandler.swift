@@ -161,6 +161,9 @@ private struct EGStickerIconView: UIViewRepresentable {
                 mode: .cached
             )
             node.updateLayout(size: iconSize)
+            // overrideVisibility bypasses didEnterHierarchy tracking; required when the node
+            // is embedded in a plain UIView (UIViewRepresentable) rather than an ASDisplayNode tree.
+            node.overrideVisibility = true
             node.visibility = true
             node.frame = CGRect(origin: .zero, size: iconSize)
             node.view.frame = CGRect(origin: .zero, size: iconSize)
