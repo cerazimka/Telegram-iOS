@@ -257,8 +257,8 @@ private struct PluginsEmptyView: View {
                     .padding(.horizontal, 24)
             } else {
                 // Animated 📂 sticker — mirrors Android setPlaceholderImage("AnimatedEmojies","📂")
-                AnimatedEmojiStickerView(emoji: "📂", size: 80, context: context)
-                    .frame(width: 80, height: 80)
+                AnimatedEmojiStickerView(emoji: "📂", size: 100, context: context)
+                    .frame(width: 100, height: 100)
 
                 // "Вы можете найти плагины в @vcvk1."  (period is non-clickable)
                 HStack(spacing: 0) {
