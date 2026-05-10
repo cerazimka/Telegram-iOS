@@ -52,17 +52,21 @@ struct EGPluginFileMetadata {
         return meta
     }
 
-    // Parses lines of the form:  __key__ = "value"
+    // Parses lines of the form:  __key__ = "value"  or  __key__ = 'value'
+    // Trailing inline comments are ignored.
     private static func parseLine(_ line: String) -> (key: String, value: String)? {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         guard trimmed.hasPrefix("__") else { return nil }
-        let separator = "__ = \""
-        guard let sepRange = trimmed.range(of: separator) else { return nil }
-        let key = String(trimmed[trimmed.index(trimmed.startIndex, offsetBy: 2)..<sepRange.lowerBound])
-        guard !key.isEmpty else { return nil }
-        let remaining = String(trimmed[sepRange.upperBound...])
-        guard remaining.hasSuffix("\"") else { return nil }
-        return (key, String(remaining.dropLast()))
+        for quote: Character in ["\"", "'"] {
+            let sep = "__ = \(quote)"
+            guard let sepRange = trimmed.range(of: sep) else { continue }
+            let key = String(trimmed[trimmed.index(trimmed.startIndex, offsetBy: 2)..<sepRange.lowerBound])
+            guard !key.isEmpty else { continue }
+            let afterOpen = trimmed[sepRange.upperBound...]
+            guard let closeRange = afterOpen.range(of: String(quote)) else { continue }
+            return (key, String(afterOpen[afterOpen.startIndex..<closeRange.lowerBound]))
+        }
+        return nil
     }
 }
 
@@ -214,7 +218,6 @@ private struct EGPluginInstallSheet: View {
                     // Plugin icon — sticker from pack if available, puzzle piece placeholder otherwise
                     iconView
                         .padding(.bottom, 16)
-                        .onAppear(perform: loadIcon)
 
                     // Plugin name
                     Text(metadata.name ?? "Plugin")
@@ -312,6 +315,7 @@ private struct EGPluginInstallSheet: View {
                 ActivitySheet(items: [URL(fileURLWithPath: filePath)])
             }
         }
+        .onAppear(perform: loadIcon)
     }
 
     // MARK: Icon view — sticker with badge overlay, or puzzle piece placeholder
@@ -445,6 +449,7 @@ private struct EGPluginInstallSheet: View {
     // MARK: Load sticker icon by "packName/index" from metadata
 
     private func loadIcon() {
+        guard iconLoader == nil else { return }
         guard let iconStr = metadata.icon else { return }
         let parts = iconStr.components(separatedBy: "/")
         guard parts.count == 2, let index = Int(parts[1]) else { return }
