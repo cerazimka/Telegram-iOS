@@ -121,80 +121,88 @@ private struct RequirementChipsView: View {
     }
 }
 
-// MARK: - Animated Sticker Icon (matches Android BackupImageView with setPlaceholderImageByIndex)
+// MARK: - Plugin Icon Loader (matches Android setPlaceholderImageByIndex pattern)
+// Fetches sticker pack by name, picks item at index, renders it — all inside the Coordinator
+// so no @State mutation is needed. Identical pattern to EGPluginIconView in EGPluginsController.
 
 @available(iOS 14.0, *)
-private struct EGStickerIconView: UIViewRepresentable {
-    let file: TelegramMediaFile
+private struct EGPluginIconLoader: UIViewRepresentable {
+    let iconStr: String   // "packName/index"
     let context: AccountContext
     let size: CGFloat
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(file: file, context: context, size: size)
-    }
+    func makeCoordinator() -> Coordinator { Coordinator(iconStr: iconStr, context: context, size: size) }
 
     func makeUIView(context uiCtx: Context) -> UIView {
-        let view = UIView()
-        view.backgroundColor = .clear
-        uiCtx.coordinator.setup(in: view)
-        return view
+        let v = UIView()
+        v.backgroundColor = .clear
+        uiCtx.coordinator.load(into: v)
+        return v
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {}
 
     final class Coordinator {
-        private let file: TelegramMediaFile
+        private let iconStr: String
         private let context: AccountContext
         private let size: CGFloat
         private var node: DefaultAnimatedStickerNodeImpl?
+        private var packDisposable: Disposable?
         private var fetchDisposable: Disposable?
 
-        init(file: TelegramMediaFile, context: AccountContext, size: CGFloat) {
-            self.file = file; self.context = context; self.size = size
+        init(iconStr: String, context: AccountContext, size: CGFloat) {
+            self.iconStr = iconStr; self.context = context; self.size = size
         }
 
-        deinit { fetchDisposable?.dispose() }
+        deinit { packDisposable?.dispose(); fetchDisposable?.dispose() }
 
-        func setup(in container: UIView) {
+        func load(into container: UIView) {
+            guard let slashIdx = iconStr.lastIndex(of: "/"),
+                  let index = Int(iconStr[iconStr.index(after: slashIdx)...]) else { return }
+            let packName = String(iconStr[iconStr.startIndex..<slashIdx])
             let iconSize = CGSize(width: size, height: size)
             let pixelSide = Int(size * UIScreen.main.scale)
 
-            let node = DefaultAnimatedStickerNodeImpl()
-            node.setup(
-                source: AnimatedStickerResourceSource(
-                    account: context.account,
-                    resource: file.resource,
-                    isVideo: file.isVideoSticker
-                ),
-                width: pixelSide,
-                height: pixelSide,
-                playbackMode: .loop,
-                mode: .cached
-            )
-            node.updateLayout(size: iconSize)
-            // overrideVisibility bypasses didEnterHierarchy tracking; required when the node
-            // is embedded in a plain UIView (UIViewRepresentable) rather than an ASDisplayNode tree.
-            node.overrideVisibility = true
-            node.visibility = true
-            node.frame = CGRect(origin: .zero, size: iconSize)
-            node.view.frame = CGRect(origin: .zero, size: iconSize)
-            container.addSubview(node.view)
-            self.node = node
+            packDisposable = (context.engine.stickers.loadedStickerPack(
+                    reference: .name(packName), forceActualized: false)
+                |> filter { if case .result = $0 { return true }; return false }
+                |> take(1)
+                |> deliverOnMainQueue
+            ).startStandalone(next: { [weak container, weak self] result in
+                guard let self, let container,
+                      case .result(_, let items, _) = result,
+                      index < items.count else { return }
 
-            fetchDisposable = freeMediaFileResourceInteractiveFetched(
-                account: context.account,
-                userLocation: .other,
-                fileReference: stickerPackFileReference(file),
-                resource: file.resource
-            ).startStandalone()
+                let file = items[index].file._parse()
+                let node = DefaultAnimatedStickerNodeImpl()
+                node.setup(
+                    source: AnimatedStickerResourceSource(
+                        account: self.context.account,
+                        resource: file.resource,
+                        isVideo: file.isVideoSticker
+                    ),
+                    width: pixelSide, height: pixelSide,
+                    playbackMode: .loop, mode: .cached
+                )
+                node.updateLayout(size: iconSize)
+                // overrideVisibility bypasses didEnterHierarchy tracking; required when the
+                // node is embedded in a plain UIView rather than an ASDisplayNode tree.
+                node.overrideVisibility = true
+                node.visibility = true
+                node.frame = CGRect(origin: .zero, size: iconSize)
+                node.view.frame = CGRect(origin: .zero, size: iconSize)
+                container.addSubview(node.view)
+                self.node = node
+
+                self.fetchDisposable = freeMediaFileResourceInteractiveFetched(
+                    account: self.context.account,
+                    userLocation: .other,
+                    fileReference: stickerPackFileReference(file),
+                    resource: file.resource
+                ).startStandalone()
+            })
         }
     }
-}
-
-private final class DisposableWrapper {
-    let inner: Disposable
-    init(_ d: Disposable) { inner = d }
-    deinit { inner.dispose() }
 }
 
 // MARK: - SwiftUI Bottom Sheet
@@ -208,8 +216,6 @@ private struct EGPluginInstallSheet: View {
     @State private var isInstalling = false
     @State private var enableAfterInstall = true
     @State private var showShareSheet = false
-    @State private var iconFile: TelegramMediaFile? = nil
-    @State private var iconLoader: DisposableWrapper? = nil
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -322,16 +328,15 @@ private struct EGPluginInstallSheet: View {
                 ActivitySheet(items: [URL(fileURLWithPath: filePath)])
             }
         }
-        .onAppear(perform: loadIcon)
     }
 
     // MARK: Icon view — sticker with badge overlay, or puzzle piece placeholder
 
     @ViewBuilder
     private var iconView: some View {
-        if let file = iconFile {
+        if let iconStr = metadata.icon, !iconStr.isEmpty {
             // Sticker icon (matches Android BackupImageView with rounded rect + badge)
-            EGStickerIconView(file: file, context: context, size: 78)
+            EGPluginIconLoader(iconStr: iconStr, context: context, size: 78)
                 .frame(width: 78, height: 78)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(
@@ -453,27 +458,6 @@ private struct EGPluginInstallSheet: View {
         }
     }
 
-    // MARK: Load sticker icon by "packName/index" from metadata
-
-    private func loadIcon() {
-        guard iconLoader == nil else { return }
-        guard let iconStr = metadata.icon else { return }
-        // Match Android's lastIndexOf('/') behavior
-        guard let slashIdx = iconStr.lastIndex(of: "/"),
-              let index = Int(iconStr[iconStr.index(after: slashIdx)...]) else { return }
-        let packName = String(iconStr[iconStr.startIndex..<slashIdx])
-
-        let d = (context.engine.stickers.loadedStickerPack(reference: .name(packName), forceActualized: false)
-            |> filter { if case .result = $0 { return true }; return false }
-            |> take(1)
-            |> deliverOnMainQueue
-        ).startStandalone(next: { pack in
-            if case .result(_, let items, _) = pack, index < items.count {
-                iconFile = items[index].file._parse()
-            }
-        })
-        iconLoader = DisposableWrapper(d)
-    }
 }
 
 // MARK: - Presentation Helper
