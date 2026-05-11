@@ -52,19 +52,26 @@ struct EGPluginFileMetadata {
         return meta
     }
 
-    // Parses lines of the form:  __key__ = "value"  or  __key__ = 'value'
-    // Trailing inline comments are ignored.
+    // Parses Python metadata assignment lines in all formats:
+    //   __key__ = "value"  /  __key__ = 'value'
+    //   __key = "value"    /  __key = 'value'
+    //   key = "value"      /  key = 'value'
     private static func parseLine(_ line: String) -> (key: String, value: String)? {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
-        guard trimmed.hasPrefix("__") else { return nil }
+        guard !trimmed.isEmpty, !trimmed.hasPrefix("#") else { return nil }
+        guard let eqIdx = trimmed.firstIndex(of: "=") else { return nil }
+        let rawKey = String(trimmed[trimmed.startIndex..<eqIdx])
+            .trimmingCharacters(in: .whitespaces)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "_"))
+        let valuePart = String(trimmed[trimmed.index(after: eqIdx)...])
+            .trimmingCharacters(in: .whitespaces)
+        guard !rawKey.isEmpty, !valuePart.isEmpty else { return nil }
         for quote: Character in ["\"", "'"] {
-            let sep = "__ = \(quote)"
-            guard let sepRange = trimmed.range(of: sep) else { continue }
-            let key = String(trimmed[trimmed.index(trimmed.startIndex, offsetBy: 2)..<sepRange.lowerBound])
-            guard !key.isEmpty else { continue }
-            let afterOpen = trimmed[sepRange.upperBound...]
-            guard let closeRange = afterOpen.range(of: String(quote)) else { continue }
-            return (key, String(afterOpen[afterOpen.startIndex..<closeRange.lowerBound]))
+            let q = String(quote)
+            guard valuePart.hasPrefix(q) else { continue }
+            let afterOpen = String(valuePart.dropFirst())
+            guard let closeRange = afterOpen.range(of: q) else { continue }
+            return (rawKey, String(afterOpen[afterOpen.startIndex..<closeRange.lowerBound]))
         }
         return nil
     }
@@ -451,9 +458,10 @@ private struct EGPluginInstallSheet: View {
     private func loadIcon() {
         guard iconLoader == nil else { return }
         guard let iconStr = metadata.icon else { return }
-        let parts = iconStr.components(separatedBy: "/")
-        guard parts.count == 2, let index = Int(parts[1]) else { return }
-        let packName = parts[0]
+        // Match Android's lastIndexOf('/') behavior
+        guard let slashIdx = iconStr.lastIndex(of: "/"),
+              let index = Int(iconStr[iconStr.index(after: slashIdx)...]) else { return }
+        let packName = String(iconStr[iconStr.startIndex..<slashIdx])
 
         let d = (context.engine.stickers.loadedStickerPack(reference: .name(packName), forceActualized: false)
             |> filter { if case .result = $0 { return true }; return false }
