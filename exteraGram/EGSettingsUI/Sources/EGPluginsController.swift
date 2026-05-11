@@ -222,7 +222,7 @@ private struct AnimatedEmojiStickerView: UIViewRepresentable {
                     width: pixelSide,
                     height: pixelSide,
                     playbackMode: .once,
-                    mode: .cached
+                    mode: .direct(cachePathPrefix: nil)
                 )
                 node.updateLayout(size: iconSize)
                 node.overrideVisibility = true
@@ -363,7 +363,7 @@ private struct EGPluginIconView: UIViewRepresentable {
                         isVideo: file.isVideoSticker
                     ),
                     width: pixelSide, height: pixelSide,
-                    playbackMode: .loop, mode: .cached
+                    playbackMode: .loop, mode: .direct(cachePathPrefix: nil)
                 )
                 node.updateLayout(size: iconSize)
                 node.overrideVisibility = true

@@ -180,7 +180,7 @@ private struct EGPluginIconLoader: UIViewRepresentable {
                         isVideo: file.isVideoSticker
                     ),
                     width: pixelSide, height: pixelSide,
-                    playbackMode: .loop, mode: .cached
+                    playbackMode: .loop, mode: .direct(cachePathPrefix: nil)
                 )
                 node.updateLayout(size: iconSize)
                 // overrideVisibility bypasses didEnterHierarchy tracking; required when the
