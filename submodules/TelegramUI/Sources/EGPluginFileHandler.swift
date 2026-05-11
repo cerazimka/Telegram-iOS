@@ -165,13 +165,11 @@ private struct EGPluginIconLoader: UIViewRepresentable {
 
             packDisposable = (context.engine.stickers.loadedStickerPack(
                     reference: .name(packName), forceActualized: false)
-                |> filter { if case .result = $0 { return true }; return false }
-                |> take(1)
                 |> deliverOnMainQueue
             ).startStandalone(next: { [weak container, weak self] result in
-                guard let self, let container,
-                      case .result(_, let items, _) = result,
-                      index < items.count else { return }
+                guard let self, let container else { return }
+                guard self.node == nil else { return }
+                guard case .result(_, let items, _) = result, index < items.count else { return }
 
                 let file = items[index].file._parse()
                 let node = DefaultAnimatedStickerNodeImpl()

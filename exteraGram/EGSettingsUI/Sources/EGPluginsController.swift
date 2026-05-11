@@ -340,21 +340,19 @@ private struct EGPluginIconView: UIViewRepresentable {
         deinit { loadDisposable?.dispose(); fetchDisposable?.dispose() }
 
         func load(into container: UIView) {
-            let parts = iconUrl.components(separatedBy: "/")
-            guard parts.count == 2, let index = Int(parts[1]) else { return }
-            let packName = parts[0]
+            guard let slashIdx = iconUrl.lastIndex(of: "/"),
+                  let index = Int(iconUrl[iconUrl.index(after: slashIdx)...]) else { return }
+            let packName = String(iconUrl[iconUrl.startIndex..<slashIdx])
             let iconSize = CGSize(width: size, height: size)
             let pixelSide = Int(size * UIScreen.main.scale)
 
             loadDisposable = (context.engine.stickers.loadedStickerPack(
                     reference: .name(packName), forceActualized: false)
-                |> filter { if case .result = $0 { return true }; return false }
-                |> take(1)
                 |> deliverOnMainQueue
             ).startStandalone(next: { [weak container, weak self] result in
-                guard let self, let container,
-                      case .result(_, let items, _) = result,
-                      index < items.count else { return }
+                guard let self, let container else { return }
+                guard self.node == nil else { return }
+                guard case .result(_, let items, _) = result, index < items.count else { return }
 
                 let file = items[index].file._parse()
                 let node = DefaultAnimatedStickerNodeImpl()
