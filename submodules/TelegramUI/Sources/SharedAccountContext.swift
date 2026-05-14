@@ -110,6 +110,25 @@ import RankChatPreviewItem
 import TextProcessingScreen
 import CreateBotScreen
 
+private func isAPNSSandboxEnvironment() -> Bool {
+    #if targetEnvironment(simulator)
+    return true
+    #else
+    guard let profilePath = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision"),
+          let profileData = try? Data(contentsOf: URL(fileURLWithPath: profilePath)),
+          let profileString = String(data: profileData, encoding: .isoLatin1),
+          let keyRange = profileString.range(of: "<key>aps-environment</key>") else {
+        return false
+    }
+    let rest = profileString[keyRange.upperBound...]
+    if let start = rest.range(of: "<string>"),
+       let end = rest.range(of: "</string>", range: start.upperBound..<rest.endIndex) {
+        return String(rest[start.upperBound..<end.lowerBound]) == "development"
+    }
+    return false
+    #endif
+}
+
 private final class AccountUserInterfaceInUseContext {
     let subscribers = Bag<(Bool) -> Void>()
     let tokens = Bag<Void>()
@@ -337,12 +356,7 @@ public final class SharedAccountContextImpl: SharedAccountContext {
             guard let data else {
                 return nil
             }
-            let sandbox: Bool
-            #if DEBUG
-            sandbox = true
-            #else
-            sandbox = false
-            #endif
+            let sandbox = isAPNSSandboxEnvironment()
             return AuthorizationCodePushNotificationConfiguration(
                 token: hexString(data),
                 isSandbox: sandbox
@@ -1641,13 +1655,8 @@ public final class SharedAccountContextImpl: SharedAccountContext {
     }
     
     public func updateNotificationTokensRegistration() {
-        let sandbox: Bool
-        #if DEBUG
-        sandbox = true
-        #else
-        sandbox = false
-        #endif
-        
+        let sandbox = isAPNSSandboxEnvironment()
+
         let settings = self.accountManager.sharedData(keys: [ApplicationSpecificSharedDataKeys.inAppNotificationSettings])
         |> map { sharedData -> (allAccounts: Bool, includeMuted: Bool) in
             let settings = sharedData.entries[ApplicationSpecificSharedDataKeys.inAppNotificationSettings]?.get(InAppNotificationSettings.self) ?? InAppNotificationSettings.defaultSettings
