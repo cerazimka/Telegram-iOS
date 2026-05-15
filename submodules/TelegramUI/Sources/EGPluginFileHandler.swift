@@ -39,7 +39,13 @@ struct EGPluginFileMetadata {
             case "description": meta.description = value
             case "author":      meta.author = value
             case "version":     meta.version = value
-            case "icon":        meta.icon = value
+            case "icon":
+                // Mirror Android Plugin.setIcon() / isIconValid(): only accept "packName/N" format.
+                // Bare icon names like "msg_reactions" from plugin code bodies are silently ignored.
+                if let slash = value.lastIndex(of: "/"),
+                   Int(value[value.index(after: slash)...]) != nil {
+                    meta.icon = value
+                }
             case "requirements":
                 meta.requirements = value.components(separatedBy: ",")
                     .map { $0.trimmingCharacters(in: .whitespaces) }
