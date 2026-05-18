@@ -295,7 +295,7 @@ private final class EGPluginInstallSheetContent: CombinedComponent {
 
             y += max(closeBtn.size.height, shareBtn.size.height) + 16.0
 
-            // ── Plugin icon ─────────────────────────────────────────
+            // ── Plugin icon ───────────────────────────────────────
             let iconSide: CGFloat = 80.0
             let bg = iconBg.update(
                 component: RoundedRectangle(color: UIColor.systemBlue, cornerRadius: iconSide / 2, size: CGSize(width: iconSide, height: iconSide)),
@@ -311,7 +311,7 @@ private final class EGPluginInstallSheetContent: CombinedComponent {
             context.add(sym.position(CGPoint(x: width / 2, y: y + iconSide / 2)))
             y += iconSide + 18.0
 
-            // ── Plugin name (bold 24pt, centered) ───────────────────
+            // ── Plugin name (bold 24pt, centered) ─────────────────────
             let nameStr = component.metadata.name ?? "Plugin"
             let title = titleText.update(
                 component: BalancedTextComponent(
@@ -362,7 +362,7 @@ private final class EGPluginInstallSheetContent: CombinedComponent {
                 y += meta.size.height + 10.0
             }
 
-            // ── "Unknown source" red pill (centered) ─────────────────
+            // ── "Unknown source" red pill (centered) ────────────────
             let pill = sourcePill.update(
                 component: EGSourcePillComponent(),
                 availableSize: CGSize(width: width - hPad * 2, height: 30),
