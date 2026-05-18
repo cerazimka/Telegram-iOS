@@ -11,6 +11,8 @@ import AnimatedStickerNode
 import TelegramAnimatedStickerNode
 import StickerResources
 import EGSettingsUI
+import ComponentFlow
+import GlassBackgroundComponent
 
 // MARK: - Metadata Model
 
@@ -77,7 +79,115 @@ struct EGPluginFileMetadata {
     }
 }
 
-// MARK: - Plugin Install Alert (same presentation as SavedTagNameAlertController)
+// MARK: - Glass circle button (same component as ChatRankInfoScreen close button)
+
+private final class EGGlassCircleButtonView: UIView {
+    private let glass = GlassBackgroundView()
+    private let imageView: UIImageView
+    var tapAction: (() -> Void)?
+
+    init(systemImage: String) {
+        let cfg = UIImage.SymbolConfiguration(pointSize: 15, weight: .semibold)
+        imageView = UIImageView(image: UIImage(systemName: systemImage, withConfiguration: cfg))
+        super.init(frame: .zero)
+        glass.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        addSubview(glass)
+        imageView.tintColor = .white
+        imageView.contentMode = .center
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        addSubview(imageView)
+        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped)))
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    @objc private func tapped() { tapAction?() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let sz = bounds.size
+        guard sz.width > 0, sz.height > 0 else { return }
+        glass.frame = bounds
+        imageView.frame = bounds
+        glass.update(
+            size: sz, cornerRadius: sz.height / 2,
+            isDark: traitCollection.userInterfaceStyle == .dark,
+            tintColor: .init(kind: .panel),
+            isInteractive: true, transition: .immediate
+        )
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        setNeedsLayout()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil { setNeedsLayout() }
+    }
+}
+
+// MARK: - Glass install button (same style as ChatRankInfoScreen action button)
+
+private final class EGGlassInstallButtonView: UIView {
+    private let glass = GlassBackgroundView()
+    private let label = UILabel()
+    private let spinner = UIActivityIndicatorView(style: .medium)
+    var tapAction: (() -> Void)?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        glass.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        addSubview(glass)
+        label.text = "Install"
+        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+        label.textColor = .white
+        label.textAlignment = .center
+        label.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        addSubview(label)
+        spinner.color = .white
+        spinner.hidesWhenStopped = true
+        addSubview(spinner)
+        addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(tapped)))
+    }
+    required init?(coder: NSCoder) { fatalError() }
+
+    @objc private func tapped() { tapAction?() }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        let sz = bounds.size
+        guard sz.width > 0, sz.height > 0 else { return }
+        glass.frame = bounds
+        label.frame = bounds
+        spinner.center = CGPoint(x: sz.width / 2, y: sz.height / 2)
+        glass.update(
+            size: sz, cornerRadius: sz.height / 2,
+            isDark: traitCollection.userInterfaceStyle == .dark,
+            tintColor: .init(kind: .panel, innerColor: UIColor.systemBlue.withAlphaComponent(0.45)),
+            isInteractive: true, transition: .immediate
+        )
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        setNeedsLayout()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        if window != nil { setNeedsLayout() }
+    }
+
+    func setInstalling(_ installing: Bool) {
+        isUserInteractionEnabled = !installing
+        alpha = installing ? 0.6 : 1.0
+        label.isHidden = installing
+        if installing { spinner.startAnimating() } else { spinner.stopAnimating() }
+    }
+}
+
+// MARK: - Plugin Install Alert
 
 private final class EGPluginAlertViewController: UIViewController {
     private let metadata: EGPluginFileMetadata
@@ -87,6 +197,11 @@ private final class EGPluginAlertViewController: UIViewController {
     private let dimView = UIView()
     private let cardView = UIView()
 
+    // Top glass buttons (like ChatRankInfoScreen)
+    private let closeButton = EGGlassCircleButtonView(systemImage: "xmark")
+    private let shareButton = EGGlassCircleButtonView(systemImage: "square.and.arrow.up")
+
+    // Content
     private let iconContainerView = UIView()
     private let nameLabel = UILabel()
     private let authorLabel = UILabel()
@@ -95,13 +210,8 @@ private final class EGPluginAlertViewController: UIViewController {
     private let pillTextLabel = UILabel()
     private let requirementsLabel = UILabel()
 
-    private let hSeparator = UIView()
-    private let cancelButton = UIButton(type: .system)
-    private let shareButton = UIButton(type: .system)
-    private let installButton = UIButton(type: .system)
-    private let vSep1 = UIView()
-    private let vSep2 = UIView()
-    private let installSpinner = UIActivityIndicatorView(style: .medium)
+    // Bottom glass install button (like ChatRankInfoScreen action button)
+    private let installButton = EGGlassInstallButtonView()
 
     private var isInstalling = false
     private var stickerNode: DefaultAnimatedStickerNodeImpl?
@@ -144,12 +254,18 @@ private final class EGPluginAlertViewController: UIViewController {
         dimView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         dimView.frame = view.bounds
         view.addSubview(dimView)
-        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(cancelTapped)))
+        dimView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(closeTapped)))
 
         cardView.backgroundColor = UIColor.secondarySystemGroupedBackground
         cardView.layer.cornerRadius = 14
         cardView.layer.masksToBounds = true
         view.addSubview(cardView)
+
+        // Top glass buttons
+        closeButton.tapAction = { [weak self] in self?.closeTapped() }
+        shareButton.tapAction = { [weak self] in self?.shareTapped() }
+        cardView.addSubview(closeButton)
+        cardView.addSubview(shareButton)
 
         // Icon
         iconContainerView.backgroundColor = UIColor.systemBlue
@@ -205,26 +321,9 @@ private final class EGPluginAlertViewController: UIViewController {
         requirementsLabel.isHidden = metadata.requirements.isEmpty
         cardView.addSubview(requirementsLabel)
 
-        // Separators
-        [hSeparator, vSep1, vSep2].forEach { $0.backgroundColor = .separator; cardView.addSubview($0) }
-
-        // Buttons — same style as TextAlertContentActionNode
-        cancelButton.setTitle("Cancel", for: .normal)
-        cancelButton.titleLabel?.font = .systemFont(ofSize: 17)
-        cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
-
-        shareButton.setTitle("Share", for: .normal)
-        shareButton.titleLabel?.font = .systemFont(ofSize: 17)
-        shareButton.addTarget(self, action: #selector(shareTapped), for: .touchUpInside)
-
-        installButton.setTitle("Install", for: .normal)
-        installButton.titleLabel?.font = .boldSystemFont(ofSize: 17)
-        installButton.addTarget(self, action: #selector(installTapped), for: .touchUpInside)
-
-        [cancelButton, shareButton, installButton].forEach { cardView.addSubview($0) }
-
-        installSpinner.hidesWhenStopped = true
-        cardView.addSubview(installSpinner)
+        // Install button
+        installButton.tapAction = { [weak self] in self?.installTapped() }
+        cardView.addSubview(installButton)
     }
 
     override func viewDidLayoutSubviews() {
@@ -234,20 +333,27 @@ private final class EGPluginAlertViewController: UIViewController {
 
     private func layoutCard() {
         let cardW: CGFloat = 270
-        let btnH: CGFloat = 44
-        let iconSide: CGFloat = 60
         let hPad: CGFloat = 16
-        let px: CGFloat = 1.0 / UIScreen.main.scale
-        var y: CGFloat = 16
+        let btnSide: CGFloat = 44
+        let iconSide: CGFloat = 60
+        var y: CGFloat = 0
 
+        // Top glass buttons row
+        closeButton.frame = CGRect(x: hPad, y: hPad, width: btnSide, height: btnSide)
+        shareButton.frame = CGRect(x: cardW - hPad - btnSide, y: hPad, width: btnSide, height: btnSide)
+        y = hPad + btnSide + 12
+
+        // Icon
         iconContainerView.frame = CGRect(x: (cardW - iconSide) / 2, y: y, width: iconSide, height: iconSide)
         y += iconSide + 10
 
+        // Name
         let tw = cardW - hPad * 2
         let nameH = ceil(nameLabel.sizeThatFits(CGSize(width: tw, height: 200)).height)
         nameLabel.frame = CGRect(x: hPad, y: y, width: tw, height: nameH)
         y += nameH + 2
 
+        // Author
         if !authorLabel.isHidden {
             let ah = ceil(authorLabel.sizeThatFits(CGSize(width: tw, height: 100)).height)
             authorLabel.frame = CGRect(x: hPad, y: y, width: tw, height: ah)
@@ -267,34 +373,29 @@ private final class EGPluginAlertViewController: UIViewController {
         pillTextLabel.frame = CGRect(x: pp + iconW + 4, y: (pillH - tsz.height) / 2, width: tsz.width, height: tsz.height)
         y += pillH + 8
 
+        // Requirements
         if !requirementsLabel.isHidden {
             let rh = ceil(requirementsLabel.sizeThatFits(CGSize(width: tw, height: 100)).height)
             requirementsLabel.frame = CGRect(x: hPad, y: y, width: tw, height: rh)
             y += rh + 8
         }
 
-        y += 8
-        let cardH = y + btnH
+        y += 12
+        // Install button (capsule, full-width minus margins, 50pt tall)
+        let installH: CGFloat = 50
+        installButton.frame = CGRect(x: hPad, y: y, width: cardW - hPad * 2, height: installH)
+        y += installH + 20
 
+        let cardH = y
         cardView.frame = CGRect(
             x: (view.bounds.width - cardW) / 2,
             y: (view.bounds.height - cardH) / 2,
             width: cardW,
             height: cardH
         )
-
-        hSeparator.frame = CGRect(x: 0, y: y, width: cardW, height: px)
-
-        let bw = floor(cardW / 3)
-        cancelButton.frame  = CGRect(x: 0,      y: y, width: bw,           height: btnH)
-        shareButton.frame   = CGRect(x: bw,     y: y, width: bw,           height: btnH)
-        installButton.frame = CGRect(x: bw * 2, y: y, width: cardW - bw * 2, height: btnH)
-        vSep1.frame = CGRect(x: bw,     y: y, width: px, height: btnH)
-        vSep2.frame = CGRect(x: bw * 2, y: y, width: px, height: btnH)
-        installSpinner.center = CGPoint(x: bw * 2 + (cardW - bw * 2) / 2, y: y + btnH / 2)
     }
 
-    @objc private func cancelTapped() {
+    @objc private func closeTapped() {
         dismiss(animated: true)
     }
 
@@ -304,11 +405,10 @@ private final class EGPluginAlertViewController: UIViewController {
         present(avc, animated: true)
     }
 
-    @objc private func installTapped() {
+    private func installTapped() {
         guard !isInstalling else { return }
         isInstalling = true
-        installButton.isHidden = true
-        installSpinner.startAnimating()
+        installButton.setInstalling(true)
 
         let meta = metadata
         let fp = filePath
