@@ -178,6 +178,7 @@ private final class EGPluginIconComponent: Component {
             // Badge: offset (+3, +3) from bottom-right like SwiftUI .offset(x:3, y:3) at .bottomTrailing
             let badgeSize: CGFloat = 26
             badgeView.frame = CGRect(x: size - badgeSize + 3, y: size - badgeSize + 3, width: badgeSize, height: badgeSize)
+            badgeView.isHidden = (component.iconUrl == nil || component.iconUrl!.isEmpty)
 
             if loadedIconUrl != component.iconUrl {
                 loadedIconUrl = component.iconUrl
@@ -636,18 +637,6 @@ private final class EGPluginInstallSheetContent: CombinedComponent {
                 y += desc.size.height + 10.0
             }
 
-            // ── "Enable after installation" toggle (Fix 2) ──────────
-            let tog = toggleRow.update(
-                component: EGToggleRowComponent(
-                    isOn: state.isEnabled,
-                    valueChanged: { newVal in state.isEnabled = newVal; state.updated(transition: .immediate) }
-                ),
-                availableSize: CGSize(width: width - hPad * 2, height: 44),
-                transition: .immediate
-            )
-            context.add(tog.position(CGPoint(x: width / 2, y: y + tog.size.height / 2)))
-            y += tog.size.height + 12.0
-
             // ── "Unknown source" red pill (centered) ────────────────
             let pill = sourcePill.update(
                 component: EGSourcePillComponent(),
@@ -702,7 +691,19 @@ private final class EGPluginInstallSheetContent: CombinedComponent {
                 transition: .immediate
             )
             context.add(btn.position(CGPoint(x: width / 2, y: y + btn.size.height / 2)))
-            y += btn.size.height + buttonInsets.bottom
+            y += btn.size.height + 16.0
+
+            // ── "Enable after installation" toggle (below install button) ──
+            let tog = toggleRow.update(
+                component: EGToggleRowComponent(
+                    isOn: state.isEnabled,
+                    valueChanged: { newVal in state.isEnabled = newVal; state.updated(transition: .immediate) }
+                ),
+                availableSize: CGSize(width: width - hPad * 2, height: 44),
+                transition: .immediate
+            )
+            context.add(tog.position(CGPoint(x: width / 2, y: y + tog.size.height / 2)))
+            y += tog.size.height + buttonInsets.bottom
 
             return CGSize(width: width, height: y)
         }
@@ -717,11 +718,13 @@ private final class EGPluginInstallSheetComponent: CombinedComponent {
     let metadata: EGPluginFileMetadata
     let filePath: String
     let accountContext: AccountContext
+    let originalFileName: String?
 
-    init(metadata: EGPluginFileMetadata, filePath: String, accountContext: AccountContext) {
+    init(metadata: EGPluginFileMetadata, filePath: String, accountContext: AccountContext, originalFileName: String?) {
         self.metadata = metadata
         self.filePath = filePath
         self.accountContext = accountContext
+        self.originalFileName = originalFileName
     }
 
     static func ==(lhs: EGPluginInstallSheetComponent, rhs: EGPluginInstallSheetComponent) -> Bool {
@@ -749,10 +752,9 @@ private final class EGPluginInstallSheetComponent: CombinedComponent {
 
             let share: () -> Void = {
                 guard let vc = controller() as? EGPluginInstallScreen else { return }
-                // Fix 4: copy to a temp file with the original .plugin name before sharing
-                let rawName = context.component.metadata.name ?? "Plugin"
-                let safeName = rawName.components(separatedBy: CharacterSet(charactersIn: "/\\:*?\"<>|")).joined(separator: "_")
-                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(safeName).plugin")
+                let fileName = context.component.originalFileName ?? "\(context.component.metadata.name ?? "Plugin").plugin"
+                let safeName = fileName.components(separatedBy: CharacterSet(charactersIn: "/\\:*?\"<>|")).joined(separator: "_")
+                let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(safeName)
                 try? FileManager.default.removeItem(at: tempURL)
                 try? FileManager.default.copyItem(atPath: context.component.filePath, toPath: tempURL.path)
                 let avc = UIActivityViewController(activityItems: [tempURL], applicationActivities: nil)
@@ -852,13 +854,14 @@ private final class EGPluginInstallSheetComponent: CombinedComponent {
 // MARK: - View Controller
 
 final class EGPluginInstallScreen: ViewControllerComponentContainer {
-    init(metadata: EGPluginFileMetadata, filePath: String, context: AccountContext) {
+    init(metadata: EGPluginFileMetadata, filePath: String, context: AccountContext, originalFileName: String? = nil) {
         super.init(
             context: context,
             component: EGPluginInstallSheetComponent(
                 metadata: metadata,
                 filePath: filePath,
-                accountContext: context
+                accountContext: context,
+                originalFileName: originalFileName
             ),
             navigationBarAppearance: .none,
             statusBarStyle: .ignore,
@@ -898,7 +901,7 @@ func presentEGPluginMetadataIfAvailable(
               let text = try? String(contentsOfFile: data.path, encoding: .utf8) else { return }
         let metadata = EGPluginFileMetadata.parse(from: text)
         guard !metadata.isEmpty else { return }
-        let vc = EGPluginInstallScreen(metadata: metadata, filePath: data.path, context: context)
+        let vc = EGPluginInstallScreen(metadata: metadata, filePath: data.path, context: context, originalFileName: file.fileName)
         navigationController?.pushViewController(vc)
     })
 }
