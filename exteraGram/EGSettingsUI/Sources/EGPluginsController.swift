@@ -775,8 +775,8 @@ private struct EGPluginsView: View {
                             },
                             onShare: { pluginToShare = plugin },
                             onDelete: {
-                                plugins.removeAll { $0.id == plugin.id }
-                                PluginsController.shared.plugins = plugins
+                                PluginsController.shared.uninstall(plugin.id)
+                                plugins = PluginsController.shared.plugins
                             }
                         )
                     }
