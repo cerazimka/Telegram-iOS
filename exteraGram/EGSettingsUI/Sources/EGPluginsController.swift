@@ -147,6 +147,8 @@ public final class PluginsController {
         guard isEngineEnabled, !isSafeModeEnabled else {
             completion?(); return
         }
+        // Repair any filePaths that are empty (plugins installed before filePath field was added)
+        repairMissingFilePaths()
         let refs = plugins.filter { $0.isEnabled }.map { (id: $0.id, filePath: $0.filePath) }
         engine.start(plugins: refs) {
             DispatchQueue.main.async {
@@ -154,6 +156,21 @@ public final class PluginsController {
                 completion?()
             }
         }
+    }
+
+    /// Fill in empty filePath fields using the canonical Documents/EGPlugins/<id>.plugin path.
+    private func repairMissingFilePaths() {
+        let dir = EGPluginsDirectory.plugins.url
+        var updated = false
+        var list = plugins
+        for i in list.indices where list[i].filePath.isEmpty {
+            let candidate = dir.appendingPathComponent("\(list[i].id).plugin").path
+            if FileManager.default.fileExists(atPath: candidate) {
+                list[i].filePath = candidate
+                updated = true
+            }
+        }
+        if updated { plugins = list }
     }
 
     public func stopEngine(completion: (() -> Void)? = nil) {

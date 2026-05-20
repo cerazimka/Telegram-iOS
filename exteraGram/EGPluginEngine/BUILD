@@ -40,6 +40,13 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# Sample plugins shipped with the app (available in Settings → Plugins → Browse)
+filegroup(
+    name = "SamplePlugins",
+    srcs = glob(["Python/Plugins/**/*.plugin"]),
+    visibility = ["//visibility:public"],
+)
+
 # ---------------------------------------------------------------------------
 # Main Swift module
 # ---------------------------------------------------------------------------

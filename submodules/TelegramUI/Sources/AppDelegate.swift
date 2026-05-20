@@ -10,6 +10,7 @@ import EGAPIWebSettings
 import EGLogging
 import EGStrings
 import EGSimpleSettings
+import EGSettingsUI
 import EGStatus
 import UIKit
 import SwiftSignalKit
@@ -413,6 +414,11 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
 
         // MARK: exteraGram - startup diagnostic (writes to clipboard + Documents if stuck > 10s)
         EGStartupDiagnostics.shared.start()
+
+        // MARK: exteraGram — start plugin engine if previously enabled
+        if PluginsController.shared.isEngineEnabled {
+            PluginsController.shared.startEngine()
+        }
 
         let _ = voipTokenPromise.get().start(next: { token in
             self.voipDeviceToken.set(.single(token))

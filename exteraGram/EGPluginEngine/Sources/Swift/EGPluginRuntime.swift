@@ -56,6 +56,14 @@ public final class EGPluginRuntime {
         EGPythonBridge.withPython(block)
     }
 
+    /// Returns the bundle path for a sample plugin shipped with the app.
+    /// Example: samplePluginPath(id: "bigReactions") → ".../bigReactions.plugin"
+    public func samplePluginPath(id: String) -> String? {
+        return Bundle.main.path(forResource: id, ofType: "plugin", inDirectory: "Python/Plugins")
+            ?? Bundle.main.urls(forResourcesWithExtension: "plugin", subdirectory: nil)?
+               .first(where: { $0.deletingPathExtension().lastPathComponent == id })?.path
+    }
+
     // MARK: - Path discovery
 
     /// Find the directory whose `lib/python3.14/` subtree contains the stdlib.

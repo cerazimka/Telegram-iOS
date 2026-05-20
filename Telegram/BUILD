@@ -372,6 +372,7 @@ EGRESOURCES = [
     # EGPluginRuntime searches for python3.14/ in the bundle to locate it.
     "@python_apple_support//:PythonStdlib",
     "//exteraGram/EGPluginEngine:PythonSDK",
+    "//exteraGram/EGPluginEngine:SamplePlugins",
 ]
 
 swift_library(
