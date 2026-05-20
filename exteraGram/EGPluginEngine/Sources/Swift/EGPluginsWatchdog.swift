@@ -8,26 +8,30 @@ import EGLogging
 final class EGPluginsWatchdog {
     static let shared = EGPluginsWatchdog()
     private let timeout: TimeInterval = 5.0
-    private var timers: [String: Timer] = [:]
+    // DispatchWorkItem is safe from any thread; Timer requires a running RunLoop.
+    private var items: [String: DispatchWorkItem] = [:]
     private let lock = NSLock()
     private init() {}
 
-    /// Start a watchdog timer for a plugin execution. Call `end(pluginId:)` when done.
     func begin(pluginId: String, onTimeout: @escaping () -> Void) {
         lock.lock()
         defer { lock.unlock() }
-        timers[pluginId]?.invalidate()
-        let timer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
-            EGLogger.shared.log("Watchdog", "Plugin '\(pluginId)' timed out (>\(self?.timeout ?? 5)s)")
+        items[pluginId]?.cancel()
+        let item = DispatchWorkItem {
+            EGLogger.shared.log("Watchdog", "Plugin '\(pluginId)' timed out")
             onTimeout()
         }
-        timers[pluginId] = timer
+        items[pluginId] = item
+        DispatchQueue.global(qos: .background).asyncAfter(
+            deadline: .now() + timeout,
+            execute: item
+        )
     }
 
     func end(pluginId: String) {
         lock.lock()
         defer { lock.unlock() }
-        timers[pluginId]?.invalidate()
-        timers.removeValue(forKey: pluginId)
+        items[pluginId]?.cancel()
+        items.removeValue(forKey: pluginId)
     }
 }

@@ -236,6 +236,7 @@ static id py_to_ns(PyObject *obj) {
           sitePackagesPath:(NSString *)sitePkgs {
 #if EGPLUGIN_HAS_PYTHON
     if (g_initialized) return YES;
+    NSAssert([NSThread isMainThread], @"EGPythonBridge: initializeWithHome must be called on the main thread");
 
     // Register C extension BEFORE any initialization (required by CPython).
     PyImport_AppendInittab("_ios_bridge", &PyInit__ios_bridge);
@@ -291,7 +292,13 @@ static id py_to_ns(PyObject *obj) {
     }
     config.module_search_paths_set = 1;
 
-    status = Py_InitializeFromConfig(&config);
+    @try {
+        status = Py_InitializeFromConfig(&config);
+    } @catch (NSException *ex) {
+        PyConfig_Clear(&config);
+        plugin_log(@"PluginEngine", @"Py_InitializeFromConfig exception: %@", ex.reason);
+        return NO;
+    }
     PyConfig_Clear(&config);
 
     if (PyStatus_Exception(status)) {

@@ -35,17 +35,25 @@ public final class EGPluginRuntime {
         // Locate the Python SDK .py files (base_plugin, hook_utils, etc.)
         let sdkPath = findSDKPath()
 
-        let ok = EGPythonBridge.initialize(
-            withHome: pythonHome,
-            sdkPath: sdkPath ?? "",
-            pluginsPath: EGPluginsDirectory.plugins.path,
-            sitePackagesPath: EGPluginsDirectory.sitePackages.path
-        )
-
-        if ok {
-            EGLoggerBridge.shared.start()
-            EGLogger.shared.log("PluginRuntime",
-                "Engine ready. home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
+        // CPython must be initialized on the main thread.
+        // If we're already on main, call directly; otherwise dispatch synchronously.
+        let doInit = {
+            let ok = EGPythonBridge.initialize(
+                withHome: pythonHome,
+                sdkPath: sdkPath ?? "",
+                pluginsPath: EGPluginsDirectory.plugins.path,
+                sitePackagesPath: EGPluginsDirectory.sitePackages.path
+            )
+            if ok {
+                EGLoggerBridge.shared.start()
+                EGLogger.shared.log("PluginRuntime",
+                    "Engine ready. home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
+            }
+        }
+        if Thread.isMainThread {
+            doInit()
+        } else {
+            DispatchQueue.main.sync { doInit() }
         }
     }
 
