@@ -485,13 +485,13 @@ private final class EGPluginInstallSheetContent: CombinedComponent {
             DispatchQueue.global(qos: .userInitiated).async {
                 let fm = FileManager.default
                 let pluginId = meta.id ?? UUID().uuidString
-                if let supportDir = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first {
-                    let dir = supportDir.appendingPathComponent("EGPlugins", isDirectory: true)
-                    try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
-                    let dest = dir.appendingPathComponent("\(pluginId).plugin")
-                    try? fm.removeItem(at: dest)
-                    try? fm.copyItem(atPath: fp, toPath: dest.path)
-                }
+                // Store in Documents/EGPlugins/ (engine canonical location)
+                let docsDir = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("EGPlugins")
+                try? fm.createDirectory(at: docsDir, withIntermediateDirectories: true)
+                let dest = docsDir.appendingPathComponent("\(pluginId).plugin")
+                try? fm.removeItem(at: dest)
+                try? fm.copyItem(atPath: fp, toPath: dest.path)
                 let plugin = EGPlugin(
                     id: pluginId,
                     name: meta.name ?? "Unknown Plugin",
@@ -500,7 +500,8 @@ private final class EGPluginInstallSheetContent: CombinedComponent {
                     version: meta.version ?? "1.0",
                     iconUrl: meta.icon,
                     isEnabled: isEnabled,
-                    requiresPermissions: meta.requirements
+                    requiresPermissions: meta.requirements,
+                    filePath: dest.path
                 )
                 DispatchQueue.main.async {
                     var plugins = PluginsController.shared.plugins

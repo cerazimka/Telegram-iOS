@@ -16,6 +16,7 @@ swift_library(
         "-warnings-as-errors",
     ],
     deps = [
+        "//exteraGram/EGPluginEngine:EGPluginEngine",
         "//exteraGram/EGSwiftUI:EGSwiftUI",
         "//exteraGram/EGItemListUI:EGItemListUI",
         "//exteraGram/EGLogging:EGLogging",

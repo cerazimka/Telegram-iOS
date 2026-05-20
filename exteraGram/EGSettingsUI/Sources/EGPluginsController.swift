@@ -5,6 +5,7 @@ import SwiftUI
 import LegacyUI
 import EGSwiftUI
 import EGStrings
+import EGPluginEngine
 import AccountContext
 import Display
 import TelegramPresentationData
@@ -27,6 +28,13 @@ public struct EGPlugin: Identifiable, Codable {
     public var hasSettings: Bool
     public var requiresPermissions: [String]
 
+    // New fields (default values preserve Codable backward-compatibility)
+    public var os: [String] = ["ios"]
+    public var dependencies: [String] = []
+    public var filePath: String = ""
+    public var installedAt: Date = Date()
+
+    // Runtime-only (not persisted)
     public var isExpanded: Bool = false
     public var isError: Bool = false
     public var isNotResponding: Bool = false
@@ -35,6 +43,7 @@ public struct EGPlugin: Identifiable, Codable {
         case id, name, subtitle, version, iconUrl
         case pluginDescription = "description"
         case isEnabled, isPinned, hasSettings, requiresPermissions
+        case os, dependencies, filePath, installedAt
     }
 
     public init(
@@ -47,7 +56,11 @@ public struct EGPlugin: Identifiable, Codable {
         isEnabled: Bool = true,
         isPinned: Bool = false,
         hasSettings: Bool = false,
-        requiresPermissions: [String] = []
+        requiresPermissions: [String] = [],
+        os: [String] = ["ios"],
+        dependencies: [String] = [],
+        filePath: String = "",
+        installedAt: Date = Date()
     ) {
         self.id = id
         self.name = name
@@ -59,14 +72,40 @@ public struct EGPlugin: Identifiable, Codable {
         self.isPinned = isPinned
         self.hasSettings = hasSettings
         self.requiresPermissions = requiresPermissions
+        self.os = os
+        self.dependencies = dependencies
+        self.filePath = filePath
+        self.installedAt = installedAt
+    }
+
+    /// Convenience init from EGPluginEngine metadata
+    public init(from meta: EGFullPluginMetadata, filePath: String, isEnabled: Bool) {
+        self.id = meta.id
+        self.name = meta.name
+        self.subtitle = meta.author
+        self.pluginDescription = meta.description
+        self.version = meta.version
+        self.iconUrl = meta.iconUrl
+        self.isEnabled = isEnabled
+        self.isPinned = false
+        self.hasSettings = false
+        self.requiresPermissions = meta.permissions
+        self.os = meta.os
+        self.dependencies = meta.dependencies
+        self.filePath = filePath
+        self.installedAt = Date()
     }
 }
 
-// MARK: - Engine Stub
+// MARK: - Engine Controller
 
 public final class PluginsController {
     public static let shared = PluginsController()
     private init() {}
+
+    private let engine = EGPluginsEngineImpl()
+
+    // MARK: Persisted plugin list
 
     public var plugins: [EGPlugin] {
         get {
@@ -79,6 +118,8 @@ public final class PluginsController {
             UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: "eg_plugins_v1")
         }
     }
+
+    // MARK: Persisted flags
 
     public var isEngineEnabled: Bool {
         get { UserDefaults.standard.bool(forKey: "eg_engine_enabled") }
@@ -99,6 +140,97 @@ public final class PluginsController {
         get { UserDefaults.standard.bool(forKey: "eg_plugins_safe_mode") }
         set { UserDefaults.standard.set(newValue, forKey: "eg_plugins_safe_mode") }
     }
+
+    // MARK: - Lifecycle
+
+    public func startEngine(completion: (() -> Void)? = nil) {
+        guard isEngineEnabled, !isSafeModeEnabled else {
+            completion?(); return
+        }
+        let refs = plugins.filter { $0.isEnabled }.map { (id: $0.id, filePath: $0.filePath) }
+        engine.start(plugins: refs) {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: .egPluginsChanged, object: nil)
+                completion?()
+            }
+        }
+    }
+
+    public func stopEngine(completion: (() -> Void)? = nil) {
+        let ids = plugins.map { $0.id }
+        engine.stop(pluginIds: ids) {
+            DispatchQueue.main.async { completion?() }
+        }
+    }
+
+    // MARK: - Install
+
+    /// Install from a file path. Returns the new EGPlugin on success.
+    public func install(filePath: String, isEnabled: Bool = true) throws -> EGPlugin {
+        let meta = try engine.installPlugin(from: filePath)
+        let dest = EGPluginsDirectory.plugins.url.appendingPathComponent("\(meta.id).plugin")
+        let plugin = EGPlugin(from: meta, filePath: dest.path, isEnabled: isEnabled)
+        var all = plugins
+        all.removeAll { $0.id == meta.id }
+        all.append(plugin)
+        plugins = all
+        if isEnabled {
+            engine.loadPlugin(id: meta.id, filePath: dest.path)
+        }
+        NotificationCenter.default.post(name: .egPluginsChanged, object: nil)
+        return plugin
+    }
+
+    // MARK: - Uninstall
+
+    public func uninstall(_ pluginId: String) {
+        engine.unloadPlugin(pluginId)
+        var all = plugins
+        all.removeAll { $0.id == pluginId }
+        plugins = all
+        let file = EGPluginsDirectory.plugins.url.appendingPathComponent("\(pluginId).plugin")
+        try? FileManager.default.removeItem(at: file)
+        NotificationCenter.default.post(name: .egPluginsChanged, object: nil)
+    }
+
+    // MARK: - Enable / Disable
+
+    public func setEnabled(_ pluginId: String, enabled: Bool) {
+        if let plugin = plugins.first(where: { $0.id == pluginId }) {
+            if enabled {
+                engine.loadPlugin(id: pluginId, filePath: plugin.filePath)
+            } else {
+                engine.unloadPlugin(pluginId)
+            }
+            var all = plugins
+            if let idx = all.firstIndex(where: { $0.id == pluginId }) {
+                all[idx].isEnabled = enabled
+            }
+            plugins = all
+        }
+    }
+
+    // MARK: - Live state (from engine)
+
+    public func isPluginError(_ id: String) -> Bool { engine.isPluginError(id) }
+    public func isPluginNotResponding(_ id: String) -> Bool { engine.isPluginNotResponding(id) }
+    public func pluginHasSettings(_ id: String) -> Bool { engine.pluginHasSettings(id) }
+    public func pluginErrorMessage(_ id: String) -> String? { engine.pluginErrorMessage(id) }
+
+    // MARK: - Settings
+
+    public func getSetting(_ pluginId: String, key: String, default def: Any?) -> Any? {
+        engine.getPluginSetting(pluginId, key: key, default: def)
+    }
+    public func setSetting(_ pluginId: String, key: String, value: Any) {
+        engine.setPluginSetting(pluginId, key: key, value: value)
+    }
+}
+
+// MARK: - Notification names
+
+extension Notification.Name {
+    public static let egPluginsChanged = Notification.Name("app.exteragram.ios.pluginsChanged")
 }
 
 // MARK: - Search/Nav State Bridge
@@ -668,10 +800,15 @@ private struct EGPluginsView: View {
         if !enabling, navState.isSearchActive {
             navState.deactivate()
         }
-        // Stub: real engine calls PluginsController.init(runnable) / shutdown(runnable);
-        // the runnable clears isSwitchingEngineState after async work completes.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            isSwitchingEngine = false
+        if enabling {
+            PluginsController.shared.startEngine {
+                self.isSwitchingEngine = false
+                self.plugins = PluginsController.shared.plugins
+            }
+        } else {
+            PluginsController.shared.stopEngine {
+                self.isSwitchingEngine = false
+            }
         }
     }
 }
