@@ -74,11 +74,12 @@ http_archive(
     build_file_content = """
 load(
     "@build_bazel_rules_apple//apple:apple.bzl",
-    "apple_static_xcframework_import",
+    "apple_dynamic_xcframework_import",
 )
 
-# Static xcframework for device (ios-arm64) and simulator (ios-arm64_x86_64-simulator).
-apple_static_xcframework_import(
+# Dynamic xcframework — Python.framework/Python is a dylib, not a static archive.
+# Must use apple_dynamic_xcframework_import and embed in app Frameworks/ via Telegram/BUILD.
+apple_dynamic_xcframework_import(
     name = "Python",
     xcframework_imports = glob([
         "Python.xcframework/Info.plist",

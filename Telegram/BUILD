@@ -2079,6 +2079,7 @@ ios_application(
         ":PostboxFramework",
         ":TelegramCoreFramework",
         ":TelegramUIFramework",
+        "@python_apple_support//:Python",
     ],
     strings = [
         ":AppStringResources",
