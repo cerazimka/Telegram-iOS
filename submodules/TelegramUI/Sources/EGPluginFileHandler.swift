@@ -480,37 +480,12 @@ private final class EGPluginInstallSheetContent: CombinedComponent {
             guard !isInstalling else { return }
             isInstalling = true
             updated(transition: .immediate)
-            let meta = metadata
             let fp = filePath
+            let en = isEnabled
             DispatchQueue.global(qos: .userInitiated).async {
-                let fm = FileManager.default
-                let pluginId = meta.id ?? UUID().uuidString
-                // Store in Documents/EGPlugins/ (engine canonical location)
-                let docsDir = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
-                    .appendingPathComponent("EGPlugins")
-                try? fm.createDirectory(at: docsDir, withIntermediateDirectories: true)
-                let dest = docsDir.appendingPathComponent("\(pluginId).plugin")
-                try? fm.removeItem(at: dest)
-                try? fm.copyItem(atPath: fp, toPath: dest.path)
-                let plugin = EGPlugin(
-                    id: pluginId,
-                    name: meta.name ?? "Unknown Plugin",
-                    subtitle: meta.author ?? "",
-                    pluginDescription: meta.description ?? "",
-                    version: meta.version ?? "1.0",
-                    iconUrl: meta.icon,
-                    isEnabled: isEnabled,
-                    requiresPermissions: meta.requirements,
-                    filePath: dest.path
-                )
+                // Use PluginsController.install so engine.loadPlugin (on_load) is called.
+                _ = try? PluginsController.shared.install(filePath: fp, isEnabled: en)
                 DispatchQueue.main.async {
-                    var plugins = PluginsController.shared.plugins
-                    if let idx = plugins.firstIndex(where: { $0.id == pluginId }) {
-                        plugins[idx] = plugin
-                    } else {
-                        plugins.append(plugin)
-                    }
-                    PluginsController.shared.plugins = plugins
                     dismiss()
                 }
             }
