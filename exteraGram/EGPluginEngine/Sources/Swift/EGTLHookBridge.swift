@@ -2,6 +2,7 @@
 
 import Foundation
 import EGLogging
+import EGPluginEngineBridge
 
 /// Called from TelegramCore at TL dispatch points.
 /// Bridges Swift interception points → Python plugin callbacks via EGPythonBridge.

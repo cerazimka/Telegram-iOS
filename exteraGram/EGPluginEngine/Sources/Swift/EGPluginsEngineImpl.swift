@@ -2,6 +2,7 @@
 
 import Foundation
 import EGLogging
+import EGPluginEngineBridge
 import TelegramCore
 
 /// Core engine. Owned by EGSettingsUI's PluginsController.

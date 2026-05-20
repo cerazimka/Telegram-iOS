@@ -12,6 +12,8 @@ load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 
 objc_library(
     name = "EGPluginEngineBridge",
+    enable_modules = True,
+    module_name = "EGPluginEngineBridge",
     srcs = [
         "Sources/ObjC/EGIOSBridge.m",
         "Sources/ObjC/EGObjCSwizzler.m",

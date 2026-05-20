@@ -2,6 +2,7 @@
 
 import Foundation
 import EGLogging
+import EGPluginEngineBridge
 
 /// Manages CPython initialization and plugin directory layout.
 /// All interactions with Python must happen through `withPython {}` to ensure GIL safety.
