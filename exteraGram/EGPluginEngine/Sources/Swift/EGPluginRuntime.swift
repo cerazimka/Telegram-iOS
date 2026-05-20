@@ -8,7 +8,7 @@ import EGLogging
 public final class EGPluginRuntime {
     public static let shared = EGPluginRuntime()
 
-    public private(set) var isInitialized: Bool { EGPythonBridge.isInitialized }
+    public var isInitialized: Bool { EGPythonBridge.isInitialized }
 
     private init() {}
 
@@ -16,44 +16,38 @@ public final class EGPluginRuntime {
     public func initialize() {
         guard !EGPythonBridge.isInitialized else { return }
 
-        // Set up directories
+        // Set up writable plugin directories
         EGPluginsDirectory.plugins.create()
         EGPluginsDirectory.sitePackages.create()
 
         // Migrate any plugins from old AppSupport location
         migrateFromAppSupport()
 
-        // Locate the Python stdlib inside the bundled framework
-        guard let stdlibPath = Bundle.main.path(
-            forResource: "python3.12", ofType: nil,
-            inDirectory: "Frameworks/Python.framework/lib"
-        ) ?? Bundle.main.path(
-            forResource: "lib", ofType: nil,
-            inDirectory: "Frameworks/Python.framework"
-        ) else {
-            EGLogger.shared.log("PluginRuntime", "FATAL: Python stdlib not found in bundle — add Python.xcframework")
+        // Locate the Python 3.14 stdlib inside the app bundle.
+        // Bazel bundles data files at their workspace-relative path, so we
+        // search rather than hardcode the exact bundle path.
+        guard let pythonHome = findPythonHome() else {
+            EGLogger.shared.log("PluginRuntime",
+                "Python.xcframework stdlib not found in bundle. " +
+                "Run Bazel build with @python_apple_support//:PythonStdlib in data deps.")
             return
         }
 
-        // SDK .py files are shipped as Bazel `data` and land in the bundle root
-        let sdkPath = Bundle.main.bundlePath + "/Python/SDK"
+        // Locate the Python SDK .py files (base_plugin, hook_utils, etc.)
+        // Also searched because Bazel data path depends on build configuration.
+        let sdkPath = findSDKPath()
 
-        setenv("PYTHONPATH", [
-            stdlibPath,
-            sdkPath,
-            EGPluginsDirectory.plugins.path,
-            EGPluginsDirectory.sitePackages.path
-        ].joined(separator: ":"), 1)
-        setenv("PYTHONDONTWRITEBYTECODE", "1", 1)
-        setenv("PYTHONIOENCODING", "utf-8", 1)
-        setenv("PYTHONFAULTHANDLER", "1", 1)
-        // Prevent Python from trying to write to read-only bundle paths
-        setenv("PYTHONNOUSERSITE", "1", 1)
+        let ok = EGPythonBridge.initialize(
+            withHome: pythonHome,
+            sdkPath: sdkPath ?? "",
+            pluginsPath: EGPluginsDirectory.plugins.path,
+            sitePackagesPath: EGPluginsDirectory.sitePackages.path
+        )
 
-        let ok = EGPythonBridge.initialize()
         if ok {
             EGLoggerBridge.shared.start()
-            EGLogger.shared.log("PluginRuntime", "Engine ready. plugins=\(EGPluginsDirectory.plugins.path)")
+            EGLogger.shared.log("PluginRuntime",
+                "Engine ready. home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
         }
     }
 
@@ -62,7 +56,39 @@ public final class EGPluginRuntime {
         EGPythonBridge.withPython(block)
     }
 
-    // MARK: - One-time migration from Application Support to Documents
+    // MARK: - Path discovery
+
+    /// Find the directory whose `lib/python3.14/` subtree contains the stdlib.
+    /// Sets config.home = this directory, so Python finds stdlib at <home>/lib/python3.14/.
+    private func findPythonHome() -> String? {
+        let bundleURL = URL(fileURLWithPath: Bundle.main.bundlePath)
+        guard let enumerator = FileManager.default.enumerator(
+            at: bundleURL,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles, .skipsPackageDescendants]
+        ) else { return nil }
+
+        for case let url as URL in enumerator {
+            guard url.lastPathComponent == "python3.14" else { continue }
+            guard let isDir = try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory,
+                  isDir == true else { continue }
+            // url = <bundle>/.../lib/python3.14  →  home = <bundle>/.../
+            let libDir = url.deletingLastPathComponent()   // .../lib
+            let homeDir = libDir.deletingLastPathComponent()
+            return homeDir.path
+        }
+        return nil
+    }
+
+    /// Find the Python SDK directory (contains base_plugin.py, hook_utils.py, etc.)
+    private func findSDKPath() -> String? {
+        if let url = Bundle.main.url(forResource: "base_plugin", withExtension: "py") {
+            return url.deletingLastPathComponent().path
+        }
+        return nil
+    }
+
+    // MARK: - One-time migration from Application Support → Documents
 
     private func migrateFromAppSupport() {
         guard let appSupport = FileManager.default.urls(
@@ -84,16 +110,15 @@ public final class EGPluginRuntime {
                     try fm.copyItem(at: src, to: dst)
                 }
             }
-            // Remove old dir after successful migration
             try? fm.removeItem(at: oldDir)
-            EGLogger.shared.log("PluginRuntime", "Migrated plugins from AppSupport → Documents")
+            EGLogger.shared.log("PluginRuntime", "Migrated plugins AppSupport → Documents")
         } catch {
             EGLogger.shared.log("PluginRuntime", "Migration error: \(error)")
         }
     }
 }
 
-// MARK: - Plugin directory layout
+// MARK: - Plugin directory layout (Documents/EGPlugins/)
 
 public enum EGPluginsDirectory {
     case plugins

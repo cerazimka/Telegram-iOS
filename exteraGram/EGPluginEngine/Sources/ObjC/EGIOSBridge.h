@@ -8,9 +8,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// Uses CPython C API internally; public interface is pure ObjC.
 @interface EGPythonBridge : NSObject
 
-/// Initialize CPython runtime. Call once before any plugin operations.
-/// Returns YES if CPython started successfully.
-+ (BOOL)initialize;
+/// Initialize CPython 3.14 runtime using the modern PyConfig API.
+/// @param pythonHome  Path where lib/python3.14/ can be found (PyConfig.home).
+/// @param sdkPath     Path to Python SDK .py files (added to module search paths).
+/// @param pluginsPath Path to installed .plugin files.
+/// @param sitePkgs    Path to site-packages directory.
+/// @return YES if CPython started successfully.
++ (BOOL)initializeWithHome:(NSString *)pythonHome
+                   sdkPath:(NSString *)sdkPath
+               pluginsPath:(NSString *)pluginsPath
+          sitePackagesPath:(NSString *)sitePkgs;
 
 /// Whether CPython has been initialized.
 @property (class, nonatomic, readonly) BOOL isInitialized;
@@ -40,3 +47,4 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
+

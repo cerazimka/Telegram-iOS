@@ -229,28 +229,89 @@ static id py_to_ns(PyObject *obj) {
 
 @implementation EGPythonBridge
 
-+ (BOOL)initialize {
++ (BOOL)initializeWithHome:(NSString *)pythonHome
+                   sdkPath:(NSString *)sdkPath
+               pluginsPath:(NSString *)pluginsPath
+          sitePackagesPath:(NSString *)sitePkgs {
 #if EGPLUGIN_HAS_PYTHON
     if (g_initialized) return YES;
 
-    // PYTHONPATH must be set before Py_Initialize.
-    // Callers (EGPluginRuntime.swift) set the env vars beforehand.
+    // Register C extension BEFORE any initialization (required by CPython).
     PyImport_AppendInittab("_ios_bridge", &PyInit__ios_bridge);
-    Py_Initialize();
 
-    // Release GIL so other threads can acquire it normally.
+    // ---------------------------------------------------------------------------
+    // Python 3.14: use modern PyConfig API (replaces Py_Initialize() for embeds)
+    // ---------------------------------------------------------------------------
+    PyPreConfig preconfig;
+    PyPreConfig_InitIsolatedConfig(&preconfig);
+    preconfig.utf8_mode = 1;
+
+    PyStatus status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        plugin_log(@"PluginEngine", @"Py_PreInitialize failed: %s", status.err_msg);
+        return NO;
+    }
+
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+    config.write_bytecode = 0;        // can't modify signed bundle
+    config.install_signal_handlers = 1;
+    config.use_system_logger = 1;     // stdout/stderr → os_log
+
+    // Set PYTHONHOME (tells CPython where lib/python3.14 lives)
+    wchar_t *wHome = Py_DecodeLocale([pythonHome UTF8String], NULL);
+    if (wHome) {
+        status = PyConfig_SetString(&config, &config.home, wHome);
+        PyMem_RawFree(wHome);
+        if (PyStatus_Exception(status)) {
+            plugin_log(@"PluginEngine", @"PyConfig_SetString(home) failed: %s", status.err_msg);
+            PyConfig_Clear(&config);
+            return NO;
+        }
+    }
+
+    // Read stdlib paths from config.home before adding extras
+    status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        plugin_log(@"PluginEngine", @"PyConfig_Read failed: %s", status.err_msg);
+        PyConfig_Clear(&config);
+        return NO;
+    }
+
+    // Append extra search paths (SDK, plugins, site-packages)
+    NSArray<NSString *> *extraPaths = @[sdkPath, pluginsPath, sitePkgs];
+    for (NSString *p in extraPaths) {
+        if (p.length == 0) continue;
+        wchar_t *wp = Py_DecodeLocale([p UTF8String], NULL);
+        if (wp) {
+            PyWideStringList_Append(&config.module_search_paths, wp);
+            PyMem_RawFree(wp);
+        }
+    }
+    config.module_search_paths_set = 1;
+
+    status = Py_InitializeFromConfig(&config);
+    PyConfig_Clear(&config);
+
+    if (PyStatus_Exception(status)) {
+        plugin_log(@"PluginEngine", @"Py_InitializeFromConfig failed: %s", status.err_msg);
+        return NO;
+    }
+
+    // Release GIL (allows GILState acquire/release pattern on all threads)
     PyEval_SaveThread();
 
-    // Acquire GIL to do one-time setup.
+    // One-time global state setup
     PyGILState_STATE state = PyGILState_Ensure();
     g_tl_hooks = PyDict_New();
     g_loaded_modules = PyDict_New();
     PyGILState_Release(state);
 
     g_initialized = YES;
-    plugin_log(@"PluginEngine", @"CPython %s initialized", PY_VERSION);
+    plugin_log(@"PluginEngine", @"CPython %s ready. home=%@", PY_VERSION, pythonHome);
     return YES;
 #else
+    (void)pythonHome; (void)sdkPath; (void)pluginsPath; (void)sitePkgs;
     plugin_log(@"PluginEngine", @"Python.xcframework not present — engine disabled");
     return NO;
 #endif

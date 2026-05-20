@@ -363,7 +363,16 @@ objc_library(
     ],
 )
 
-EGRESOURCES = ["//exteraGram/EGSettingsUI:EGUIAssets", "//exteraGram/EGPayWall:EGPayWallAssets", "//exteraGram/EGAppBadgeAssets:EGAppBadgeAssets", "//exteraGram/EGNY:EGNYAssets"]
+EGRESOURCES = [
+    "//exteraGram/EGSettingsUI:EGUIAssets",
+    "//exteraGram/EGPayWall:EGPayWallAssets",
+    "//exteraGram/EGAppBadgeAssets:EGAppBadgeAssets",
+    "//exteraGram/EGNY:EGNYAssets",
+    # Python 3.14 standard library — required by EGPluginEngine at runtime.
+    # EGPluginRuntime searches for python3.14/ in the bundle to locate it.
+    "@python_apple_support//:PythonStdlib",
+    "//exteraGram/EGPluginEngine:PythonSDK",
+]
 
 swift_library(
     name = "Lib",

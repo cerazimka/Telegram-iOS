@@ -1,4 +1,5 @@
-http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+http_file    = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # MARK: exteraGram
 new_git_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:git.bzl", "new_git_repository")
 
@@ -60,6 +61,41 @@ http_file(
     name = "flatbuffers_zip",
     urls = ["https://github.com/google/flatbuffers/archive/refs/tags/v24.12.23.zip"],
     sha256 = "c5cd6a605ff20350c7faa19d8eeb599df6117ea4aabd16ac58a7eb5ba82df4e7",
+)
+
+# MARK: exteraGram — Python.xcframework for EGPluginEngine
+# Downloaded automatically by Bazel at build time (~33 MB tar.gz, extracts to ~120 MB).
+# Files are NOT committed to git (add to .gitignore if checking third-party/).
+http_archive(
+    name = "python_apple_support",
+    urls = ["https://github.com/beeware/Python-Apple-support/releases/download/3.14-b9/Python-3.14-iOS-support.b9.tar.gz"],
+    sha256 = "8e4123b543bf17fdae2e2c6c033434487752438431014eb12e6d833aa35927a8",
+    # No strip_prefix — xcframework is at Python.xcframework/ in the archive root.
+    build_file_content = """
+load(
+    "@build_bazel_rules_apple//apple:apple.bzl",
+    "apple_static_xcframework_import",
+)
+
+# Static xcframework for device (ios-arm64) and simulator (ios-arm64_x86_64-simulator).
+apple_static_xcframework_import(
+    name = "Python",
+    xcframework_imports = glob([
+        "Python.xcframework/Info.plist",
+        "Python.xcframework/ios-arm64/**",
+        "Python.xcframework/ios-arm64_x86_64-simulator/**",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+# Python 3.14 standard library (.py files).
+# Bundled into the app; at runtime EGPluginRuntime searches for python3.14/ directory.
+filegroup(
+    name = "PythonStdlib",
+    srcs = glob(["Python.xcframework/lib/python3.14/**"]),
+    visibility = ["//visibility:public"],
+)
+""",
 )
 
 provisioning_profile_repository = use_extension("@build_bazel_rules_apple//apple:apple.bzl", "provisioning_profile_repository_extension")
