@@ -1,6 +1,7 @@
 // MARK: exteraGram — EGPluginEngine ObjC/Python bridge implementation
 
 #import "EGIOSBridge.h"
+#import <UIKit/UIKit.h>
 #import <os/log.h>
 #import <ZipArchive/ZipArchive.h>
 
@@ -116,12 +117,52 @@ static PyObject *py_run_on_main_thread(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-// Minimal set for BigReactions milestone; expand as needed.
+// show_alert(title, message, button="OK")
+static PyObject *py_show_alert(PyObject *self, PyObject *args) {
+    const char *title   = "";
+    const char *message = "";
+    const char *button  = "OK";
+    if (!PyArg_ParseTuple(args, "ss|s", &title, &message, &button)) return NULL;
+    NSString *nsTitle   = [NSString stringWithUTF8String:title];
+    NSString *nsMessage = [NSString stringWithUTF8String:message];
+    NSString *nsButton  = [NSString stringWithUTF8String:button];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *root = [UIApplication sharedApplication].keyWindow.rootViewController;
+        while (root.presentedViewController) root = root.presentedViewController;
+        UIAlertController *alert = [UIAlertController
+            alertControllerWithTitle:nsTitle
+                             message:nsMessage
+                      preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:nsButton
+                                                  style:UIAlertActionStyleDefault
+                                                handler:nil]];
+        [root presentViewController:alert animated:YES completion:nil];
+    });
+    Py_RETURN_NONE;
+}
+
+// show_toast(message, duration=2.0)
+static PyObject *py_show_toast(PyObject *self, PyObject *args) {
+    const char *message = "";
+    double duration = 2.0;
+    if (!PyArg_ParseTuple(args, "s|d", &message, &duration)) return NULL;
+    NSString *nsMsg = [NSString stringWithUTF8String:message];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"EGPluginShowToastNotification"
+                          object:nil
+                        userInfo:@{@"message": nsMsg, @"duration": @(duration)}];
+    });
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef ios_bridge_methods[] = {
     {"log_text",           py_log_text,           METH_VARARGS, "log_text(msg, tag='Plugin')"},
     {"add_tl_hook",        py_add_tl_hook,        METH_VARARGS, "add_tl_hook(tl_type, callback)"},
     {"has_hook",           py_has_hook,           METH_VARARGS, "has_hook(tl_type) -> bool"},
     {"run_on_main_thread", py_run_on_main_thread, METH_VARARGS, "run_on_main_thread(fn)"},
+    {"show_alert",         py_show_alert,         METH_VARARGS, "show_alert(title, message, button='OK')"},
+    {"show_toast",         py_show_toast,         METH_VARARGS, "show_toast(message, duration=2.0)"},
     {NULL, NULL, 0, NULL}
 };
 

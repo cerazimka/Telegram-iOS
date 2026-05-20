@@ -1,0 +1,18 @@
+__id__          = "helloPlugin"
+__name__        = "Hello Plugin"
+__description__ = "Показывает алерт при установке. Тест движка плагинов."
+__author__      = "@exteraPlugins"
+__version__     = "1.0"
+__os__          = "ios"
+
+from ios_utils import show_alert
+from android_utils import log
+
+
+def on_load(plugin):
+    log("helloPlugin: on_load вызван")
+    show_alert("Плагин работает!", "Движок плагинов exteraGram активен.", "Отлично")
+
+
+def on_unload(plugin):
+    log("helloPlugin: on_unload вызван")
