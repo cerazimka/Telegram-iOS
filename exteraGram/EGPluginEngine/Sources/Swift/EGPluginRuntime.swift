@@ -23,18 +23,15 @@ public final class EGPluginRuntime {
         // Migrate any plugins from old AppSupport location
         migrateFromAppSupport()
 
-        // Locate the Python 3.14 stdlib inside the app bundle.
-        // Bazel bundles data files at their workspace-relative path, so we
-        // search rather than hardcode the exact bundle path.
-        guard let pythonHome = findPythonHome() else {
+        // Extract stdlib zip (python3.14.zip) from bundle to Caches on first launch.
+        // Returns the home dir where lib/python3.14/ was extracted.
+        guard let pythonHome = prepareStdlibAndGetHome() else {
             EGLogger.shared.log("PluginRuntime",
-                "Python.xcframework stdlib not found in bundle. " +
-                "Run Bazel build with @python_apple_support//:PythonStdlib in data deps.")
+                "Python stdlib extraction failed — engine disabled.")
             return
         }
 
         // Locate the Python SDK .py files (base_plugin, hook_utils, etc.)
-        // Also searched because Bazel data path depends on build configuration.
         let sdkPath = findSDKPath()
 
         let ok = EGPythonBridge.initialize(
@@ -66,26 +63,41 @@ public final class EGPluginRuntime {
 
     // MARK: - Path discovery
 
-    /// Find the directory whose `lib/python3.14/` subtree contains the stdlib.
-    /// Sets config.home = this directory, so Python finds stdlib at <home>/lib/python3.14/.
-    private func findPythonHome() -> String? {
-        let bundleURL = URL(fileURLWithPath: Bundle.main.bundlePath)
-        guard let enumerator = FileManager.default.enumerator(
-            at: bundleURL,
-            includingPropertiesForKeys: [.isDirectoryKey],
-            options: [.skipsHiddenFiles, .skipsPackageDescendants]
-        ) else { return nil }
+    /// Extract python3.14.zip from the app bundle to Library/Caches/EGPythonStdlib/ on first
+    /// launch (or when the app is updated). The zip contains lib/python3.14/** so after
+    /// extraction PyConfig.home = cacheDir → Python finds stdlib at cacheDir/lib/python3.14/.
+    private func prepareStdlibAndGetHome() -> String? {
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        let stdlibHome = caches.appendingPathComponent("EGPythonStdlib")
+        let markerPath = stdlibHome.appendingPathComponent(".extracted_version").path
 
-        for case let url as URL in enumerator {
-            guard url.lastPathComponent == "python3.14" else { continue }
-            guard let isDir = try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory,
-                  isDir == true else { continue }
-            // url = <bundle>/.../lib/python3.14  →  home = <bundle>/.../
-            let libDir = url.deletingLastPathComponent()   // .../lib
-            let homeDir = libDir.deletingLastPathComponent()
-            return homeDir.path
+        let currentVersion = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "1"
+        let extractedVersion = try? String(contentsOfFile: markerPath, encoding: .utf8)
+
+        if extractedVersion == currentVersion {
+            return stdlibHome.path
         }
-        return nil
+
+        guard let zipURL = Bundle.main.url(forResource: "python3.14", withExtension: "zip") else {
+            EGLogger.shared.log("PluginRuntime",
+                "python3.14.zip not found in bundle — " +
+                "ensure @python_apple_support//:PythonStdlibZip is in data deps.")
+            return nil
+        }
+
+        // Remove stale extraction and re-extract
+        try? FileManager.default.removeItem(at: stdlibHome)
+
+        let ok = EGPythonBridge.extractPythonStdlibZip(zipURL.path, toDirectory: stdlibHome.path)
+        guard ok else {
+            EGLogger.shared.log("PluginRuntime", "Failed to extract python3.14.zip")
+            return nil
+        }
+
+        // Stamp the version so we skip extraction on subsequent launches
+        try? currentVersion.write(toFile: markerPath, atomically: true, encoding: .utf8)
+        EGLogger.shared.log("PluginRuntime", "Python stdlib extracted to \(stdlibHome.path)")
+        return stdlibHome.path
     }
 
     /// Find the Python SDK directory (contains base_plugin.py, hook_utils.py, etc.)

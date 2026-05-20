@@ -88,15 +88,12 @@ apple_static_xcframework_import(
     visibility = ["//visibility:public"],
 )
 
-# Python 3.14 standard library (.py files only; no test suite or GUI toolkits).
-# rules_apple runs pngcrush on all PNGs and flattens them to a single directory,
-# causing "conflicting actions" when two files share the same name.
-# Excluded directories are not needed for running user plugins on iOS:
-#   test/       — Python's own ~10 MB test suite
-#   tkinter/    — GUI toolkit (unavailable on iOS)
-#   turtledemo/ — turtle graphics demo
-filegroup(
-    name = "PythonStdlib",
+# Python 3.14 standard library — bundled as a single zip to avoid rules_apple
+# resource-flattening conflicts (__init__.py from every package would collide).
+# EGPluginRuntime extracts this zip to Library/Caches/EGPythonStdlib/ at first launch.
+# Excluded: test suite, GUI toolkits, __pycache__, compiled extensions, images.
+genrule(
+    name = "PythonStdlibZip",
     srcs = glob(
         ["Python.xcframework/lib/python3.14/**"],
         exclude = [
@@ -104,7 +101,11 @@ filegroup(
             "Python.xcframework/lib/python3.14/tkinter/**",
             "Python.xcframework/lib/python3.14/turtledemo/**",
             "Python.xcframework/lib/python3.14/idlelib/**",
-            # Exclude all image formats that rules_apple processes through pngcrush / CopyBitmap
+            "Python.xcframework/lib/python3.14/**/__pycache__/**",
+            "**/*.so",
+            "**/*.dylib",
+            "**/*.pyc",
+            "**/*.pyo",
             "**/*.png",
             "**/*.gif",
             "**/*.jpg",
@@ -116,6 +117,16 @@ filegroup(
             "**/*.xbm",
         ],
     ),
+    outs = ["python3.14.zip"],
+    # Create zip with lib/python3.14/ prefix so PyConfig.home = extraction dir.
+    # $(OUTS) may be relative to execroot; convert to absolute before cd.
+    cmd = """
+        RAWOUT="$(OUTS)"
+        OUTPATH="$$(cd "$$(dirname "$$RAWOUT")" && pwd)/$$(basename "$$RAWOUT")"
+        ANCHOR="$(location Python.xcframework/lib/python3.14/os.py)"
+        XCFWDIR="$$(cd "$$(dirname "$$ANCHOR")/../.." && pwd)"
+        (cd "$$XCFWDIR" && zip -qr "$$OUTPATH" lib/python3.14)
+    """,
     visibility = ["//visibility:public"],
 )
 """,

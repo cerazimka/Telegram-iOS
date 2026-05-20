@@ -368,9 +368,9 @@ EGRESOURCES = [
     "//exteraGram/EGPayWall:EGPayWallAssets",
     "//exteraGram/EGAppBadgeAssets:EGAppBadgeAssets",
     "//exteraGram/EGNY:EGNYAssets",
-    # Python 3.14 standard library — required by EGPluginEngine at runtime.
-    # EGPluginRuntime searches for python3.14/ in the bundle to locate it.
-    "@python_apple_support//:PythonStdlib",
+    # Python 3.14 standard library — single zip to avoid rules_apple __init__.py conflicts.
+    # EGPluginRuntime extracts this zip to Library/Caches/ at first launch.
+    "@python_apple_support//:PythonStdlibZip",
     "//exteraGram/EGPluginEngine:PythonSDK",
     "//exteraGram/EGPluginEngine:SamplePlugins",
 ]

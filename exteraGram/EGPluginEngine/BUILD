@@ -26,6 +26,7 @@ objc_library(
     ],
     deps = [
         "@python_apple_support//:Python",
+        "//third-party/ZipArchive:ZipArchive",
     ],
     visibility = ["//visibility:public"],
 )

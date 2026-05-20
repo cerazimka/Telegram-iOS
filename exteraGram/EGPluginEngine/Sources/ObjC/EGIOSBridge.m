@@ -2,6 +2,7 @@
 
 #import "EGIOSBridge.h"
 #import <os/log.h>
+#import <ZipArchive/ZipArchive.h>
 
 // ---------------------------------------------------------------------------
 // CPython C API — only compiled when the framework is present.
@@ -491,6 +492,23 @@ static id py_to_ns(PyObject *obj) {
                           object:nil
                         userInfo:@{@"tag": tag, @"msg": message}];
     });
+}
+
++ (BOOL)extractPythonStdlibZip:(NSString *)zipPath toDirectory:(NSString *)destDir {
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSError *err = nil;
+    if (![fm createDirectoryAtPath:destDir
+          withIntermediateDirectories:YES
+                           attributes:nil
+                                error:&err]) {
+        plugin_log(@"PluginEngine", @"Could not create stdlib dir %@: %@", destDir, err);
+        return NO;
+    }
+    BOOL ok = [SSZipArchive unzipFileAtPath:zipPath toDestination:destDir];
+    if (!ok) {
+        plugin_log(@"PluginEngine", @"Failed to unzip %@ → %@", zipPath, destDir);
+    }
+    return ok;
 }
 
 @end
