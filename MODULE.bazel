@@ -118,9 +118,9 @@ genrule(
         ],
     ),
     outs = ["python3.14.zip"],
-    # Use ''' so this string doesn't close the outer build_file_content """.
-    # $$(pwd)/$(OUTS) — Bazel expands $(OUTS) to relative path, shell expands $(pwd) to absolute cwd.
-    # ANCHOR gives us the stdlib dir; two dirname steps up reach Python.xcframework/.
+    # cmd uses triple-single-quotes to avoid closing the outer build_file_content string.
+    # $$(pwd)/$(OUTS): Bazel expands $(OUTS) to relative path, shell expands $(pwd) to abs cwd.
+    # ANCHOR locates os.py; two dirname steps up reach Python.xcframework/.
     cmd = '''
         OUTPATH="$$(pwd)/$(OUTS)"
         ANCHOR="$(location Python.xcframework/lib/python3.14/os.py)"
