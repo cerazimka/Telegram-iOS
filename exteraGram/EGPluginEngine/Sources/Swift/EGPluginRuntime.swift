@@ -111,8 +111,18 @@ public final class EGPluginRuntime {
 
     /// Find the Python SDK directory (contains base_plugin.py, hook_utils.py, etc.)
     private func findSDKPath() -> String? {
-        if let url = Bundle.main.url(forResource: "base_plugin", withExtension: "py") {
-            return url.deletingLastPathComponent().path
+        // Bazel bundles Python/SDK/**/*.py preserving the directory structure.
+        for subdir in ["Python/SDK", "Python/SDK/", nil as String?] {
+            let url: URL?
+            if let subdir {
+                url = Bundle.main.url(forResource: "base_plugin", withExtension: "py",
+                                      subdirectory: subdir)
+            } else {
+                url = Bundle.main.url(forResource: "base_plugin", withExtension: "py")
+            }
+            if let url {
+                return url.deletingLastPathComponent().path
+            }
         }
         return nil
     }

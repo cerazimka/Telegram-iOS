@@ -152,6 +152,7 @@ public final class PluginsController {
         let refs = plugins.filter { $0.isEnabled }.map { (id: $0.id, filePath: $0.filePath) }
         engine.start(plugins: refs) {
             DispatchQueue.main.async {
+                self.refreshPluginStates()
                 NotificationCenter.default.post(name: .egPluginsChanged, object: nil)
                 completion?()
             }
@@ -193,6 +194,7 @@ public final class PluginsController {
         plugins = all
         if isEnabled {
             engine.loadPlugin(id: meta.id, filePath: dest.path)
+            refreshPluginStates()
         }
         NotificationCenter.default.post(name: .egPluginsChanged, object: nil)
         return plugin
@@ -224,10 +226,33 @@ public final class PluginsController {
                 all[idx].isEnabled = enabled
             }
             plugins = all
+            refreshPluginStates()
         }
     }
 
     // MARK: - Live state (from engine)
+
+    /// Sync engine error/not-responding states into the in-memory plugin structs so the UI reflects them.
+    public func refreshPluginStates() {
+        var all = plugins
+        var changed = false
+        for i in all.indices {
+            let id = all[i].id
+            let err = engine.isPluginError(id)
+            let nr  = engine.isPluginNotResponding(id)
+            let hs  = engine.pluginHasSettings(id)
+            if all[i].isError != err || all[i].isNotResponding != nr || all[i].hasSettings != hs {
+                all[i].isError = err
+                all[i].isNotResponding = nr
+                all[i].hasSettings = hs
+                changed = true
+            }
+        }
+        if changed {
+            plugins = all
+            NotificationCenter.default.post(name: .egPluginsChanged, object: nil)
+        }
+    }
 
     public func isPluginError(_ id: String) -> Bool { engine.isPluginError(id) }
     public func isPluginNotResponding(_ id: String) -> Bool { engine.isPluginNotResponding(id) }
