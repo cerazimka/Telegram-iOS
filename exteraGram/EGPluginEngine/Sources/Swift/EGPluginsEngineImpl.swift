@@ -77,15 +77,10 @@ public final class EGPluginsEngineImpl {
 
     public func loadPlugin(id: String, filePath: String) {
         guard !filePath.isEmpty else { errorStates[id] = "No file path"; return }
-        // Initialize Python on first plugin load if not yet done (e.g. engine toggle is off
-        // but a new plugin is being installed with isEnabled=true).
-        if !EGPythonBridge.isInitialized {
-            EGPluginRuntime.shared.initialize()
-        }
-        guard EGPythonBridge.isInitialized else {
-            errorStates[id] = "Python runtime not initialized"
-            return
-        }
+        // Python 3.14 fatal-errors if PyImport_AppendInittab is called after Py_Initialize.
+        // Never attempt on-demand init here — that path races with startEngine() and crashes.
+        // If the engine isn't running the plugin will be loaded by the next startEngine() call.
+        guard EGPythonBridge.isInitialized else { return }
         let watchdog = EGPluginsWatchdog.shared
         watchdog.begin(pluginId: id) { [weak self] in self?.notResponding[id] = true }
         let errMsg = EGPythonBridge.loadPlugin(id, fromPath: filePath)
