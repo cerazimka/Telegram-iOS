@@ -118,15 +118,15 @@ genrule(
         ],
     ),
     outs = ["python3.14.zip"],
-    # Create zip with lib/python3.14/ prefix so PyConfig.home = extraction dir.
-    # $(OUTS) may be relative to execroot; convert to absolute before cd.
-    cmd = """
-        RAWOUT="$(OUTS)"
-        OUTPATH="$$(cd "$$(dirname "$$RAWOUT")" && pwd)/$$(basename "$$RAWOUT")"
+    # Use ''' so this string doesn't close the outer build_file_content """.
+    # $$(pwd)/$(OUTS) — Bazel expands $(OUTS) to relative path, shell expands $(pwd) to absolute cwd.
+    # ANCHOR gives us the stdlib dir; two dirname steps up reach Python.xcframework/.
+    cmd = '''
+        OUTPATH="$$(pwd)/$(OUTS)"
         ANCHOR="$(location Python.xcframework/lib/python3.14/os.py)"
-        XCFWDIR="$$(cd "$$(dirname "$$ANCHOR")/../.." && pwd)"
-        (cd "$$XCFWDIR" && zip -qr "$$OUTPATH" lib/python3.14)
-    """,
+        XCFWDIR="$$(cd $$(dirname $$ANCHOR)/../.. && pwd)"
+        (cd $$XCFWDIR && zip -qr $$OUTPATH lib/python3.14)
+    ''',
     visibility = ["//visibility:public"],
 )
 """,
