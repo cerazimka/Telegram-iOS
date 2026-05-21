@@ -126,8 +126,8 @@ static PyObject *py_show_alert(PyObject *self, PyObject *args) {
     NSString *nsTitle   = [NSString stringWithUTF8String:title];
     NSString *nsMessage = [NSString stringWithUTF8String:message];
     NSString *nsButton  = [NSString stringWithUTF8String:button];
-    // Delay 0.5s so any presenting sheet / install flow can finish dismissing first.
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
+    // Delay 1.0s so any presenting sheet / install flow can finish dismissing first.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)),
                    dispatch_get_main_queue(), ^{
         // Find the topmost presented VC using connected scenes (iOS 13+).
         UIWindow *keyWin = nil;
@@ -142,7 +142,14 @@ static PyObject *py_show_alert(PyObject *self, PyObject *args) {
         }
         if (!keyWin) keyWin = [UIApplication sharedApplication].keyWindow;
         UIViewController *root = keyWin.rootViewController;
-        while (root.presentedViewController) root = root.presentedViewController;
+        // Skip VCs that are in the middle of being dismissed — presenting from them fails silently.
+        while (root.presentedViewController && !root.presentedViewController.isBeingDismissed) {
+            root = root.presentedViewController;
+        }
+        // If root itself is being dismissed, step back to its presenter.
+        while (root && root.isBeingDismissed && root.presentingViewController) {
+            root = root.presentingViewController;
+        }
         if (!root) return;
         UIAlertController *alert = [UIAlertController
             alertControllerWithTitle:nsTitle

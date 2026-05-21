@@ -36,6 +36,7 @@ public final class EGPluginsEngineImpl {
             }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {
+                // loadPlugin also calls EGPluginRuntime.initialize() — dispatch_once makes it safe.
                 self.loadPlugin(id: plugin.id, filePath: plugin.filePath)
             }
             EGLogger.shared.log("PluginEngine", "Engine started")
@@ -77,10 +78,13 @@ public final class EGPluginsEngineImpl {
 
     public func loadPlugin(id: String, filePath: String) {
         guard !filePath.isEmpty else { errorStates[id] = "No file path"; return }
-        // Python 3.14 fatal-errors if PyImport_AppendInittab is called after Py_Initialize.
-        // Never attempt on-demand init here — that path races with startEngine() and crashes.
-        // If the engine isn't running the plugin will be loaded by the next startEngine() call.
-        guard EGPythonBridge.isInitialized else { return }
+        // Ensure Python is initialized. dispatch_once in EGPythonBridge makes this safe to call
+        // from any thread, even concurrently — the second caller waits for the first to finish.
+        EGPluginRuntime.shared.initialize()
+        guard EGPythonBridge.isInitialized else {
+            errorStates[id] = "Python runtime unavailable"
+            return
+        }
         let watchdog = EGPluginsWatchdog.shared
         watchdog.begin(pluginId: id) { [weak self] in self?.notResponding[id] = true }
         let errMsg = EGPythonBridge.loadPlugin(id, fromPath: filePath)
