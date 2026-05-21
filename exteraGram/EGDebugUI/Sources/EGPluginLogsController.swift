@@ -96,7 +96,6 @@ private struct PluginLogsView: View {
                             Text(entry.message)
                                 .font(.system(size: 12, design: .monospaced))
                                 .foregroundColor(.primary)
-                                .textSelection(.enabled)
                         }
                         .padding(.vertical, 2)
                     }
