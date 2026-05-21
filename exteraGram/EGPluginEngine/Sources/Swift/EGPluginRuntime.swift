@@ -77,6 +77,68 @@ public final class EGPluginRuntime {
         } else {
             DispatchQueue.main.sync { doInit() }
         }
+
+        // After Python is live, ensure the `ui` package is importable regardless of
+        // how Bazel bundled the SDK files.  Bazel flattens python/SDK/**/*.py to the
+        // bundle root, so ui/settings.py lands as settings.py there — losing the ui/
+        // directory structure.  We recreate it in site-packages as thin re-exports.
+        if EGPythonBridge.isInitialized {
+            buildUiPackageInSitePackages(flatSDKPaths: sdkPaths)
+        }
+    }
+
+    // MARK: - ui/ package bootstrapper
+
+    /// Creates Documents/EGPlugins/site-packages/ui/{__init__, settings, bulletin}.py
+    /// each time the app version changes (or on first run).  The generated files simply
+    /// re-export from the flat modules that Bazel placed at the bundle root.
+    private func buildUiPackageInSitePackages(flatSDKPaths: [String]) {
+        let sp   = EGPluginsDirectory.sitePackages.url
+        let uiDir = sp.appendingPathComponent("ui")
+        let marker = uiDir.appendingPathComponent(".sdkVersion").path
+        let version = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "0"
+
+        // Only rebuild when the app version changed (avoids startup file I/O on each launch).
+        if (try? String(contentsOfFile: marker, encoding: .utf8)) == version { return }
+
+        let fm = FileManager.default
+        // Wipe stale ui/ if it exists so we start clean.
+        try? fm.removeItem(at: uiDir)
+
+        do {
+            try fm.createDirectory(at: uiDir, withIntermediateDirectories: true)
+
+            // __init__.py — re-exports from submodules so both
+            //   `import ui` and `from ui import PluginSettings` work.
+            try """
+from .settings import PluginSettings, SettingItem, show_settings_screen
+from .bulletin import show_bulletin
+
+__all__ = ['PluginSettings', 'SettingItem', 'show_settings_screen', 'show_bulletin']
+""".write(toFile: uiDir.appendingPathComponent("__init__.py").path,
+          atomically: true, encoding: .utf8)
+
+            // settings.py — re-export from flat settings module at SDK root.
+            // Works because sdk root is in sys.path and settings.py is there.
+            try """
+from settings import PluginSettings, SettingItem, show_settings_screen
+__all__ = ['PluginSettings', 'SettingItem', 'show_settings_screen']
+""".write(toFile: uiDir.appendingPathComponent("settings.py").path,
+          atomically: true, encoding: .utf8)
+
+            // bulletin.py — re-export from flat bulletin module.
+            try """
+from bulletin import show_bulletin
+__all__ = ['show_bulletin']
+""".write(toFile: uiDir.appendingPathComponent("bulletin.py").path,
+          atomically: true, encoding: .utf8)
+
+            try version.write(toFile: marker, atomically: true, encoding: .utf8)
+            EGPluginDebugLog.shared.append(tag: "Runtime",
+                "ui/ package bootstrapped in site-packages (v\(version))")
+        } catch {
+            EGLogger.shared.log("PluginRuntime", "ui package bootstrap error: \(error)")
+        }
     }
 
     /// Execute block with Python GIL held. No-op if Python not initialized.
