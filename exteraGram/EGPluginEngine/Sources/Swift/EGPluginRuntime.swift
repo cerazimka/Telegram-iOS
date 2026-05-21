@@ -33,7 +33,17 @@ public final class EGPluginRuntime {
         }
 
         // Locate the Python SDK .py files (base_plugin, hook_utils, etc.)
-        let sdkPath = findSDKPath()
+        // findSDKPath searches for base_plugin.py; if Bazel flattens data files to the
+        // bundle root, it returns the bundle root itself.  Always also add the
+        // Python/SDK subdirectory explicitly — if Bazel preserved the directory
+        // structure the ui/ package will be found there.
+        let foundSDKPath = findSDKPath()
+        let subSDKPath   = Bundle.main.bundlePath.appending("/Python/SDK")
+        // Deduplicate: if findSDKPath() already returned Python/SDK, don't add twice.
+        var sdkPaths: [String] = []
+        if let p = foundSDKPath, !p.isEmpty { sdkPaths.append(p) }
+        if !sdkPaths.contains(subSDKPath) { sdkPaths.append(subSDKPath) }
+        let sdkPath = sdkPaths.joined(separator: ":")
 
         // Log stdlib directory contents to help diagnose extraction issues.
         let stdlibContents = (try? FileManager.default.contentsOfDirectory(atPath: pythonHome))?
@@ -46,16 +56,16 @@ public final class EGPluginRuntime {
         // CPython must be initialized on the main thread.
         // If we're already on main, call directly; otherwise dispatch synchronously.
         let doInit = {
-            EGPluginDebugLog.shared.append(tag: "Runtime", "Initializing CPython… home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
+            EGPluginDebugLog.shared.append(tag: "Runtime", "Initializing CPython… home=\(pythonHome) sdk=\(sdkPath)")
             let ok = EGPythonBridge.initialize(
                 withHome: pythonHome,
-                sdkPath: sdkPath ?? "",
+                sdkPath: sdkPath,
                 pluginsPath: EGPluginsDirectory.plugins.path,
                 sitePackagesPath: EGPluginsDirectory.sitePackages.path
             )
             if ok {
                 EGLogger.shared.log("PluginRuntime",
-                    "Engine ready. home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
+                    "Engine ready. home=\(pythonHome) sdk=\(sdkPath)")
                 EGPluginDebugLog.shared.append(tag: "Runtime", "CPython ready ✓")
             } else {
                 EGPluginDebugLog.shared.append(tag: "Runtime", "CPython init FAILED ✗")

@@ -805,11 +805,16 @@ static id py_to_ns(PyObject *obj) {
         g_loaded_modules = PyDict_New();
 
         // Append SDK, plugins, and site-packages to sys.path now that Python is alive.
+        // sdkPath may be a colon-separated list of paths (Swift side joins them).
         PyObject *sysPath = PySys_GetObject("path"); // borrowed ref — never NULL post-init
         if (sysPath) {
-            NSArray<NSString *> *extraPaths = @[sdkPath, pluginsPath, sitePkgs];
+            NSMutableArray<NSString *> *extraPaths = [NSMutableArray new];
+            // Split colon-separated SDK paths
+            for (NSString *p in [sdkPath componentsSeparatedByString:@":"]) {
+                if (p.length > 0) [extraPaths addObject:p];
+            }
+            [extraPaths addObjectsFromArray:@[pluginsPath, sitePkgs]];
             for (NSString *p in extraPaths) {
-                if (p.length == 0) continue;
                 PyObject *pyPath = PyUnicode_FromString([p UTF8String]);
                 if (pyPath) { PyList_Append(sysPath, pyPath); Py_DECREF(pyPath); }
             }
