@@ -8,30 +8,37 @@ __os__          = "ios"
 import _ios_bridge
 
 
-# Tiny stdlib-free PRNG (random/math may not be bundled in the iOS CPython build).
-# Linear congruential generator, seeded from object identity each call to _shuffle.
-_rand_state = [0]
+# ---------------------------------------------------------------------------
+# Tiny stdlib-free PRNG. The iOS CPython build does not ship `math`, and any
+# import of `random` or anything else that pulls `math` will fail plugin load.
+# Use a small-int xorshift32 to keep arithmetic out of bignum paths too.
+# ---------------------------------------------------------------------------
 
-
-def _seed_once():
-    if _rand_state[0] == 0:
-        s = id(object()) ^ id(_rand_state) ^ 0x9E3779B97F4A7C15
-        _rand_state[0] = s & 0x7FFFFFFFFFFFFFFF or 1
+_rng = [0]
 
 
 def _rand():
-    _seed_once()
-    s = _rand_state[0]
-    s = (s * 6364136223846793005 + 1442695040888963407) & 0x7FFFFFFFFFFFFFFF
-    _rand_state[0] = s
+    s = _rng[0]
+    if s == 0:
+        s = (id(_rng) & 0xFFFFFFFF) ^ 0xDEADBEEF
+        if s == 0:
+            s = 2463534242
+    s = s ^ ((s << 13) & 0xFFFFFFFF)
+    s = s ^ (s >> 17)
+    s = s ^ ((s << 5) & 0xFFFFFFFF)
+    _rng[0] = s
     return s
 
 
 def _shuffle(lst):
     n = len(lst)
-    for i in range(n - 1, 0, -1):
+    i = n - 1
+    while i > 0:
         j = _rand() % (i + 1)
-        lst[i], lst[j] = lst[j], lst[i]
+        tmp = lst[i]
+        lst[i] = lst[j]
+        lst[j] = tmp
+        i -= 1
 
 
 # ---------------------------------------------------------------------------
@@ -41,16 +48,15 @@ def _shuffle(lst):
 MIN_BET = 5
 MAX_BET = 500
 START_BALANCE = 1000
-
-SUIT_SYMBOLS = {"Hearts": "♥️", "Diamonds": "♦️", "Clubs": "♣️", "Spades": "♠️"}
-SUITS = list(SUIT_SYMBOLS.keys())
-RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
-
 CMD_PREFIX = "/bj"
+
+SUITS = ["H", "D", "C", "S"]
+SUIT_SYM = {"H": "♥", "D": "♦", "C": "♣", "S": "♠"}
+RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 
 
 # ---------------------------------------------------------------------------
-# Tiny logging / UI shims — call _ios_bridge directly, swallow missing methods
+# Bridge wrappers — every call guarded
 # ---------------------------------------------------------------------------
 
 def _log(msg):
@@ -64,17 +70,17 @@ def _alert(title, message, button="OK"):
     try:
         _ios_bridge.show_alert(title, message, button)
     except Exception as e:
-        _log(f"show_alert failed: {e}")
+        _log("alert failed: " + str(e))
 
 
-def _toast(message, duration=2.0):
+def _toast(message):
     try:
-        _ios_bridge.show_toast(message, duration)
+        _ios_bridge.show_toast(message, 2.0)
     except Exception:
         pass
 
 
-def _haptic(style="medium"):
+def _haptic(style):
     try:
         _ios_bridge.haptic_feedback(style)
     except Exception:
@@ -84,7 +90,9 @@ def _haptic(style="medium"):
 def _get(key, default):
     try:
         v = _ios_bridge.get_plugin_setting(__id__, key, default)
-        return v if v is not None else default
+        if v is None:
+            return default
+        return v
     except Exception:
         return default
 
@@ -97,360 +105,381 @@ def _set(key, value):
 
 
 # ---------------------------------------------------------------------------
-# Game engine
+# Game state — module-level dicts/lists, no classes
 # ---------------------------------------------------------------------------
 
-class Card:
-    def __init__(self, suit, rank):
-        self.suit = suit
-        self.rank = rank
-        self.hidden = False
-        self.is_ace = rank == "A"
+# A card is a 3-tuple: (rank, suit, hidden)
+_deck = []
+_player = []
+_dealer = []
 
-    def value(self):
-        if self.rank in ("J", "Q", "K"):
-            return 10
-        if self.rank == "A":
-            return 11
-        return int(self.rank)
+# game dict keeps mutable counters/flags
+G = {
+    "bet": 0,
+    "player_score": 0,
+    "dealer_score": 0,
+    "game_over": True,
+    "player_turn": False,
+    "result": "",
+    "can_split": False,
+    "can_insure": False,
+    "player_bj": False,
+    "dealer_bj": False,
+}
 
-    def render(self):
-        return "🂠" if self.hidden else f"{self.rank}{SUIT_SYMBOLS[self.suit]}"
-
-
-class BlackjackGame:
-    def __init__(self):
-        self.deck = []
-        self.player_hand = []
-        self.dealer_hand = []
-        self.player_score = 0
-        self.dealer_score = 0
-        self.bet = 0
-        self.game_over = True
-        self.player_turn = False
-        self.result = ""
-        self.can_split = False
-        self.can_insure = False
-        self.player_has_blackjack = False
-        self.dealer_has_blackjack = False
-        self._reshuffle()
-
-    def _reshuffle(self, decks=6):
-        self.deck = [Card(s, r) for _ in range(decks) for s in SUITS for r in RANKS]
-        _shuffle(self.deck)
-
-    def _deal(self, hand, hidden=False):
-        if len(self.deck) < 20:
-            self._reshuffle()
-        card = self.deck.pop()
-        card.hidden = hidden
-        hand.append(card)
-        return card
-
-    def _score(self, hand, ignore_hidden=True):
-        score, aces = 0, 0
-        for c in hand:
-            if ignore_hidden and c.hidden:
-                continue
-            score += c.value()
-            if c.is_ace:
-                aces += 1
-        while score > 21 and aces:
-            score -= 10
-            aces -= 1
-        return score
-
-    def start(self, bet):
-        self.player_hand = []
-        self.dealer_hand = []
-        self.bet = bet
-        self.result = ""
-        self.game_over = False
-        self.player_turn = True
-        self._deal(self.player_hand)
-        self._deal(self.dealer_hand, hidden=True)
-        self._deal(self.player_hand)
-        self._deal(self.dealer_hand)
-        self.player_score = self._score(self.player_hand)
-        self.dealer_score = self._score(self.dealer_hand)
-        self.player_has_blackjack = self.player_score == 21 and len(self.player_hand) == 2
-        self.dealer_has_blackjack = (
-            self._score(self.dealer_hand, ignore_hidden=False) == 21
-            and len(self.dealer_hand) == 2
-        )
-        self.can_split = (
-            len(self.player_hand) == 2
-            and self.player_hand[0].rank == self.player_hand[1].rank
-        )
-        self.can_insure = (
-            not self.player_has_blackjack and self.dealer_hand[1].rank == "A"
-        )
-        if self.player_has_blackjack or self.dealer_has_blackjack:
-            return self._finish()
-        return None
-
-    def hit(self):
-        if not self.player_turn or self.game_over:
-            return None
-        self._deal(self.player_hand)
-        self.player_score = self._score(self.player_hand)
-        self.can_split = False
-        self.can_insure = False
-        if self.player_score > 21:
-            return self._finish()
-        return None
-
-    def stand(self):
-        if not self.player_turn or self.game_over:
-            return None
-        self.player_turn = False
-        self._dealer_play()
-        return self._finish()
-
-    def double(self):
-        if not self.player_turn or self.game_over or len(self.player_hand) != 2:
-            return None
-        self._deal(self.player_hand)
-        self.player_score = self._score(self.player_hand)
-        self.bet *= 2
-        self.can_split = False
-        self.can_insure = False
-        if self.player_score > 21:
-            return self._finish()
-        self.player_turn = False
-        self._dealer_play()
-        return self._finish()
-
-    def split(self):
-        if not self.player_turn or self.game_over or not self.can_split:
-            return None
-        self._deal(self.player_hand)
-        self.player_score = self._score(self.player_hand)
-        self.bet *= 2
-        self.can_split = False
-        self.can_insure = False
-        return None
-
-    def insurance(self):
-        if not self.player_turn or self.game_over or not self.can_insure:
-            return None
-        self.can_insure = False
-        return None
-
-    def _dealer_play(self):
-        for c in self.dealer_hand:
-            c.hidden = False
-        self.dealer_score = self._score(self.dealer_hand)
-        while self.dealer_score < 17:
-            self._deal(self.dealer_hand)
-            self.dealer_score = self._score(self.dealer_hand)
-
-    def _finish(self):
-        for c in self.dealer_hand:
-            c.hidden = False
-        self.dealer_score = self._score(self.dealer_hand)
-        self.game_over = True
-        self.player_turn = False
-        if self.player_has_blackjack and not self.dealer_has_blackjack:
-            self.result = "БЛЭКДЖЕК! 🏆"
-            return int(self.bet * 2.5)
-        if self.dealer_has_blackjack and not self.player_has_blackjack:
-            self.result = "ПОРАЖЕНИЕ 💔"
-            return 0
-        if self.player_has_blackjack and self.dealer_has_blackjack:
-            self.result = "НИЧЬЯ 🤝"
-            return self.bet
-        if self.player_score > 21:
-            self.result = "ПЕРЕБОР! 💥"
-            return 0
-        if self.dealer_score > 21:
-            self.result = "ПОБЕДА! 🎉"
-            return self.bet * 2
-        if self.player_score > self.dealer_score:
-            self.result = "ПОБЕДА! 🎉"
-            return self.bet * 2
-        if self.player_score < self.dealer_score:
-            self.result = "ПОРАЖЕНИЕ 💔"
-            return 0
-        self.result = "НИЧЬЯ 🤝"
-        return self.bet
+S = {"balance": START_BALANCE, "wins": 0, "losses": 0}
 
 
-# ---------------------------------------------------------------------------
-# Persistent state
-# ---------------------------------------------------------------------------
-
-class State:
-    def __init__(self):
-        try:
-            self.balance = int(_get("balance", START_BALANCE))
-            self.wins = int(_get("wins", 0))
-            self.losses = int(_get("losses", 0))
-        except (TypeError, ValueError):
-            self.balance, self.wins, self.losses = START_BALANCE, 0, 0
-
-    def save(self):
-        _set("balance", self.balance)
-        _set("wins", self.wins)
-        _set("losses", self.losses)
+def _card_value(rank):
+    if rank == "A":
+        return 11
+    if rank == "J" or rank == "Q" or rank == "K":
+        return 10
+    return int(rank)
 
 
-game = BlackjackGame()
-state = State()
+def _card_render(card):
+    rank, suit, hidden = card
+    if hidden:
+        return "\U0001F0A0"
+    return rank + SUIT_SYM[suit]
 
 
-# ---------------------------------------------------------------------------
-# UI rendering
-# ---------------------------------------------------------------------------
+def _reshuffle():
+    global _deck
+    _deck = []
+    for _ in range(6):
+        for s in SUITS:
+            for r in RANKS:
+                _deck.append((r, s, False))
+    _shuffle(_deck)
+
+
+def _deal(hand, hidden=False):
+    if len(_deck) < 20:
+        _reshuffle()
+    card = _deck.pop()
+    if hidden:
+        card = (card[0], card[1], True)
+    hand.append(card)
+
+
+def _score(hand, ignore_hidden=True):
+    total = 0
+    aces = 0
+    for c in hand:
+        if ignore_hidden and c[2]:
+            continue
+        total += _card_value(c[0])
+        if c[0] == "A":
+            aces += 1
+    while total > 21 and aces > 0:
+        total -= 10
+        aces -= 1
+    return total
+
+
+def _reveal_dealer():
+    for i in range(len(_dealer)):
+        c = _dealer[i]
+        if c[2]:
+            _dealer[i] = (c[0], c[1], False)
+
 
 def _render_hand(hand):
-    return " ".join(c.render() for c in hand) if hand else "—"
+    if not hand:
+        return "-"
+    parts = []
+    for c in hand:
+        parts.append(_card_render(c))
+    return " ".join(parts)
 
 
-def _state_text(status=""):
-    dealer_score = "?" if (game.player_turn and not game.game_over) else game.dealer_score
-    status_line = status or ("Ваш ход: /bj hit, stand, double, split, insurance"
-                             if game.player_turn else "")
-    return (
-        f"Дилер: {_render_hand(game.dealer_hand)} (счёт: {dealer_score})\n"
-        f"Игрок: {_render_hand(game.player_hand)} (счёт: {game.player_score})\n"
-        f"Ставка: ${game.bet}\n\n{status_line}"
-    )
+def _state_text(status):
+    if G["player_turn"] and not G["game_over"]:
+        ds = "?"
+    else:
+        ds = str(G["dealer_score"])
+    line = status
+    if not line and G["player_turn"]:
+        line = "Ход: /bj hit, stand, double, split, insurance"
+    return ("Дилер: " + _render_hand(_dealer) + " (" + ds + ")\n"
+            + "Игрок: " + _render_hand(_player) + " (" + str(G["player_score"]) + ")\n"
+            + "Ставка: $" + str(G["bet"]) + "\n\n" + line)
 
 
 def _show_round(status=""):
-    _alert("♠️ Раздача", _state_text(status))
+    _alert("♠ Раздача", _state_text(status))
 
 
 def _show_help():
-    msg = (
-        f"Баланс: ${state.balance}\n"
-        f"W/L: {state.wins}/{state.losses}\n\n"
-        "Команды:\n"
-        "/bj start <сумма> — начать\n"
-        "/bj hit — взять карту\n"
-        "/bj stand — стоп\n"
-        "/bj double — удвоить\n"
-        "/bj split — разделить\n"
-        "/bj insurance — страховка\n"
-        "/bj stats — статистика\n"
-        "/bj reset — сброс баланса\n"
-        "/bj exit — выйти"
-    )
-    _alert("♠️ BlackJack ♥️", msg)
+    msg = ("Баланс: $" + str(S["balance"]) + "\n"
+           "W/L: " + str(S["wins"]) + "/" + str(S["losses"]) + "\n\n"
+           "Команды:\n"
+           "/bj start <сумма>\n/bj hit\n/bj stand\n/bj double\n"
+           "/bj split\n/bj insurance\n/bj stats\n/bj reset\n/bj exit")
+    _alert("♠ BlackJack ♥", msg)
 
 
-def _finish_round(payout, total_cost):
+# ---------------------------------------------------------------------------
+# Round resolution
+# ---------------------------------------------------------------------------
+
+def _finish():
+    _reveal_dealer()
+    G["dealer_score"] = _score(_dealer)
+    G["game_over"] = True
+    G["player_turn"] = False
+    bet = G["bet"]
+    if G["player_bj"] and not G["dealer_bj"]:
+        G["result"] = "БЛЭКДЖЕК! 🏆"
+        return (bet * 5) // 2
+    if G["dealer_bj"] and not G["player_bj"]:
+        G["result"] = "ПОРАЖЕНИЕ 💔"
+        return 0
+    if G["player_bj"] and G["dealer_bj"]:
+        G["result"] = "НИЧЬЯ 🤝"
+        return bet
+    if G["player_score"] > 21:
+        G["result"] = "ПЕРЕБОР! 💥"
+        return 0
+    if G["dealer_score"] > 21:
+        G["result"] = "ПОБЕДА! 🎉"
+        return bet * 2
+    if G["player_score"] > G["dealer_score"]:
+        G["result"] = "ПОБЕДА! 🎉"
+        return bet * 2
+    if G["player_score"] < G["dealer_score"]:
+        G["result"] = "ПОРАЖЕНИЕ 💔"
+        return 0
+    G["result"] = "НИЧЬЯ 🤝"
+    return bet
+
+
+def _dealer_play():
+    _reveal_dealer()
+    G["dealer_score"] = _score(_dealer)
+    while G["dealer_score"] < 17:
+        _deal(_dealer)
+        G["dealer_score"] = _score(_dealer)
+
+
+def _start_round(bet):
+    global _player, _dealer
+    _player = []
+    _dealer = []
+    G["bet"] = bet
+    G["result"] = ""
+    G["game_over"] = False
+    G["player_turn"] = True
+    _deal(_player)
+    _deal(_dealer, hidden=True)
+    _deal(_player)
+    _deal(_dealer)
+    G["player_score"] = _score(_player)
+    G["dealer_score"] = _score(_dealer)
+    G["player_bj"] = G["player_score"] == 21 and len(_player) == 2
+    G["dealer_bj"] = _score(_dealer, ignore_hidden=False) == 21 and len(_dealer) == 2
+    G["can_split"] = len(_player) == 2 and _player[0][0] == _player[1][0]
+    G["can_insure"] = (not G["player_bj"]) and _dealer[1][0] == "A"
+    if G["player_bj"] or G["dealer_bj"]:
+        return _finish()
+    return None
+
+
+def _finish_and_show(payout, total_cost):
     delta = payout - total_cost
     if payout == 0:
-        state.losses += 1
+        S["losses"] = S["losses"] + 1
         _haptic("error")
     elif payout > total_cost:
-        state.wins += 1
+        S["wins"] = S["wins"] + 1
         _haptic("success")
     else:
         _haptic("warning")
-    state.balance += payout
-    state.save()
-    delta_str = f"+${delta}" if delta >= 0 else f"-${-delta}"
-    _alert(
-        game.result,
-        f"{_state_text(status=game.result)}\n\nБаланс: ${state.balance} ({delta_str})",
-    )
+    S["balance"] = S["balance"] + payout
+    _set("balance", S["balance"])
+    _set("wins", S["wins"])
+    _set("losses", S["losses"])
+    if delta >= 0:
+        delta_str = "+$" + str(delta)
+    else:
+        delta_str = "-$" + str(-delta)
+    _alert(G["result"], _state_text(G["result"]) + "\n\nБаланс: $" + str(S["balance"]) + " (" + delta_str + ")")
 
 
 # ---------------------------------------------------------------------------
-# Command handlers
+# Commands
 # ---------------------------------------------------------------------------
 
 def _cmd_start(parts):
-    if not game.game_over:
+    if not G["game_over"]:
         _toast("Раздача уже идёт")
         return
     if len(parts) < 3:
-        _toast(f"Укажите сумму: /bj start <{MIN_BET}-{MAX_BET}>")
+        _toast("Укажите сумму: /bj start <" + str(MIN_BET) + "-" + str(MAX_BET) + ">")
         return
     try:
         amount = int(parts[2])
-    except ValueError:
+    except Exception:
         _toast("Неверная сумма")
         return
     if amount < MIN_BET or amount > MAX_BET:
-        _toast(f"Мин ${MIN_BET}, макс ${MAX_BET}")
+        _toast("Мин $" + str(MIN_BET) + ", макс $" + str(MAX_BET))
         return
-    if state.balance < amount:
+    if S["balance"] < amount:
         _toast("Недостаточно средств")
         return
-    state.balance -= amount
-    state.save()
-    payout = game.start(amount)
+    S["balance"] = S["balance"] - amount
+    _set("balance", S["balance"])
+    payout = _start_round(amount)
     _haptic("light")
     if payout is not None:
-        _finish_round(payout, amount)
+        _finish_and_show(payout, amount)
     else:
         _show_round()
 
 
+def _do_hit():
+    _deal(_player)
+    G["player_score"] = _score(_player)
+    G["can_split"] = False
+    G["can_insure"] = False
+    if G["player_score"] > 21:
+        return _finish()
+    return None
+
+
+def _do_stand():
+    G["player_turn"] = False
+    _dealer_play()
+    return _finish()
+
+
+def _do_double():
+    if len(_player) != 2:
+        return None
+    _deal(_player)
+    G["player_score"] = _score(_player)
+    G["bet"] = G["bet"] * 2
+    G["can_split"] = False
+    G["can_insure"] = False
+    if G["player_score"] > 21:
+        return _finish()
+    G["player_turn"] = False
+    _dealer_play()
+    return _finish()
+
+
+def _do_split():
+    if not G["can_split"]:
+        return None
+    _deal(_player)
+    G["player_score"] = _score(_player)
+    G["bet"] = G["bet"] * 2
+    G["can_split"] = False
+    G["can_insure"] = False
+    return None
+
+
+def _do_insurance():
+    if not G["can_insure"]:
+        return None
+    G["can_insure"] = False
+    return None
+
+
 def _cmd_action(name):
-    if game.game_over or not game.player_turn:
+    if G["game_over"] or not G["player_turn"]:
         _toast("Сначала: /bj start <сумма>")
         return
-    initial_bet = game.bet
+    initial_bet = G["bet"]
     extra = 0
-    if name in ("double", "split"):
-        if state.balance < game.bet:
+    if name == "double" or name == "split":
+        if S["balance"] < G["bet"]:
             _toast("Недостаточно средств")
             return
-        extra = game.bet
-        state.balance -= extra
+        extra = G["bet"]
+        S["balance"] = S["balance"] - extra
     elif name == "insurance":
-        cost = game.bet // 2
-        if state.balance < cost:
+        cost = G["bet"] // 2
+        if S["balance"] < cost:
             _toast("Недостаточно средств")
             return
         extra = cost
-        state.balance -= extra
-    payout = getattr(game, name)()
-    state.save()
+        S["balance"] = S["balance"] - extra
+    _set("balance", S["balance"])
+
+    if name == "hit":
+        payout = _do_hit()
+    elif name == "stand":
+        payout = _do_stand()
+    elif name == "double":
+        payout = _do_double()
+    elif name == "split":
+        payout = _do_split()
+    elif name == "insurance":
+        payout = _do_insurance()
+    else:
+        return
+
     _haptic("light")
     if payout is not None:
-        _finish_round(payout, initial_bet + extra)
+        _finish_and_show(payout, initial_bet + extra)
     else:
         _show_round()
 
 
 def _cmd_stats():
-    _alert(
-        "📊 Статистика",
-        f"Баланс: ${state.balance}\nПобеды: {state.wins}\nПоражения: {state.losses}\n"
-        f"Текущая ставка: ${game.bet}",
-    )
+    _alert("\U0001F4CA Статистика",
+           "Баланс: $" + str(S["balance"]) + "\n"
+           "Победы: " + str(S["wins"]) + "\n"
+           "Поражения: " + str(S["losses"]) + "\n"
+           "Текущая ставка: $" + str(G["bet"]))
 
 
 def _cmd_reset():
-    state.balance = START_BALANCE
-    state.wins = 0
-    state.losses = 0
-    state.save()
-    game.__init__()
-    _alert("♠️ BlackJack ♥️", f"Баланс сброшен: ${state.balance}")
+    global _player, _dealer
+    S["balance"] = START_BALANCE
+    S["wins"] = 0
+    S["losses"] = 0
+    _set("balance", S["balance"])
+    _set("wins", S["wins"])
+    _set("losses", S["losses"])
+    _player = []
+    _dealer = []
+    G["bet"] = 0
+    G["game_over"] = True
+    G["player_turn"] = False
+    G["result"] = ""
+    _alert("♠ BlackJack ♥", "Баланс сброшен: $" + str(S["balance"]))
 
 
 def _cmd_exit():
-    game.__init__()
+    global _player, _dealer
+    _player = []
+    _dealer = []
+    G["bet"] = 0
+    G["game_over"] = True
+    G["player_turn"] = False
     _toast("Раздача завершена")
 
 
 def _dispatch(text):
     parts = text.strip().split()
-    if not parts or parts[0] != CMD_PREFIX:
+    if not parts:
         return False
-    sub = parts[1].lower() if len(parts) > 1 else ""
-    if sub == "" or sub == "help":
+    if parts[0] != CMD_PREFIX:
+        return False
+    if len(parts) < 2:
+        _show_help()
+        return True
+    sub = parts[1].lower()
+    if sub == "help":
         _show_help()
     elif sub == "start":
         _cmd_start(parts)
-    elif sub in ("hit", "stand", "double", "split", "insurance"):
+    elif sub == "hit" or sub == "stand" or sub == "double" or sub == "split" or sub == "insurance":
         _cmd_action(sub)
     elif sub == "stats":
         _cmd_stats()
@@ -459,27 +488,29 @@ def _dispatch(text):
     elif sub == "exit":
         _cmd_exit()
     else:
-        _toast(f"Неизвестная команда: {sub}")
+        _toast("Неизвестная команда: " + sub)
     return True
 
 
-# ---------------------------------------------------------------------------
-# TL hook — intercept outgoing chat messages prefixed with /bj
-# ---------------------------------------------------------------------------
-
 def _on_send_message(tl_obj):
     try:
-        message = tl_obj.get("message", "") if hasattr(tl_obj, "get") else ""
+        message = tl_obj.get("message", "")
     except Exception:
         return
-    if not isinstance(message, str) or not message.startswith(CMD_PREFIX):
+    if not message:
+        return
+    try:
+        starts = message.startswith(CMD_PREFIX)
+    except Exception:
+        return
+    if not starts:
         return
     try:
         _dispatch(message)
     except Exception as e:
-        _log(f"dispatch error: {e}")
+        _log("dispatch error: " + str(e))
     try:
-        tl_obj["message"] = "🎰"
+        tl_obj["message"] = "\U0001F3B0"
         if "entities" in tl_obj:
             tl_obj["entities"] = []
     except Exception:
@@ -487,27 +518,41 @@ def _on_send_message(tl_obj):
 
 
 # ---------------------------------------------------------------------------
-# Plugin lifecycle
+# Lifecycle
 # ---------------------------------------------------------------------------
+
+def _load_state():
+    try:
+        b = _get("balance", START_BALANCE)
+        w = _get("wins", 0)
+        l = _get("losses", 0)
+        S["balance"] = int(b) if b is not None else START_BALANCE
+        S["wins"] = int(w) if w is not None else 0
+        S["losses"] = int(l) if l is not None else 0
+    except Exception:
+        S["balance"] = START_BALANCE
+        S["wins"] = 0
+        S["losses"] = 0
+
 
 def on_load(plugin):
     _log("blackjack on_load called")
+    _load_state()
     try:
         _ios_bridge.add_tl_hook("messages.sendMessage", _on_send_message)
     except Exception as e:
-        _log(f"add_tl_hook failed: {e}")
-    _alert(
-        "♠️ BlackJack ♥️ загружен",
-        f"Баланс: ${state.balance}  W/L: {state.wins}/{state.losses}\n\n"
-        "Отправьте /bj в любом чате для справки.\n"
-        "Начать игру: /bj start 50",
-        "OK",
-    )
+        _log("add_tl_hook failed: " + str(e))
+    _alert("♠ BlackJack ♥ загружен",
+           "Баланс: $" + str(S["balance"]) + "  W/L: " + str(S["wins"]) + "/" + str(S["losses"]) + "\n\n"
+           "Отправьте /bj в чате — справка.\nНачать: /bj start 50",
+           "OK")
 
 
 def on_unload(plugin):
     _log("blackjack on_unload called")
     try:
-        state.save()
+        _set("balance", S["balance"])
+        _set("wins", S["wins"])
+        _set("losses", S["losses"])
     except Exception:
         pass
