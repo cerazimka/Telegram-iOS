@@ -944,11 +944,50 @@ static id py_to_ns(PyObject *obj) {
         }
         Py_DECREF(exec_result);
 
-        // Call on_load(module) if it exists
+        // Call on_load(module) if it exists — log any exception instead of
+        // swallowing it silently so plugin authors can diagnose failures.
         PyObject *on_load = PyObject_GetAttrString(module, "on_load");
         if (on_load && PyCallable_Check(on_load)) {
             PyObject *r = PyObject_CallFunctionObjArgs(on_load, module, NULL);
-            if (!r) { PyErr_Clear(); } else { Py_DECREF(r); }
+            if (!r) {
+                // Capture traceback as a string and write to debug log.
+                PyObject *exc = PyErr_GetRaisedException();
+                if (exc) {
+                    // Try to get a full formatted traceback via traceback module.
+                    PyObject *tb_mod = PyImport_ImportModule("traceback");
+                    NSMutableString *tbStr = [NSMutableString string];
+                    if (tb_mod) {
+                        PyObject *fmt = PyObject_GetAttrString(tb_mod, "format_exception");
+                        if (fmt) {
+                            PyObject *lines = PyObject_CallFunctionObjArgs(fmt, exc, NULL);
+                            if (lines && PyList_Check(lines)) {
+                                Py_ssize_t ln = PyList_Size(lines);
+                                for (Py_ssize_t i = 0; i < ln; i++) {
+                                    PyObject *s = PyList_GetItem(lines, i);
+                                    const char *cs = PyUnicode_AsUTF8(s);
+                                    if (cs) [tbStr appendFormat:@"%s", cs];
+                                }
+                            }
+                            Py_XDECREF(lines);
+                            Py_DECREF(fmt);
+                        }
+                        Py_DECREF(tb_mod);
+                    }
+                    if (tbStr.length == 0) {
+                        PyObject *str = PyObject_Str(exc);
+                        const char *cs = str ? PyUnicode_AsUTF8(str) : "?";
+                        [tbStr appendFormat:@"%s", cs ?: "?"];
+                        Py_XDECREF(str);
+                    }
+                    EGPluginDebugLog_appendCStr("Engine",
+                        [[NSString stringWithFormat:@"on_load EXCEPTION in '%@':\n%@",
+                          pluginId, tbStr] UTF8String]);
+                    plugin_log(@"PluginEngine",
+                        @"on_load exception in %@: %@", pluginId, tbStr);
+                    Py_DECREF(exc);
+                }
+                PyErr_Clear();
+            } else { Py_DECREF(r); }
         }
         PyErr_Clear();
         Py_XDECREF(on_load);
