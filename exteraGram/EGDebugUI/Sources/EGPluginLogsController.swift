@@ -157,7 +157,7 @@ public func egPluginLogsController(context: AccountContext) -> ViewController {
     legacyController.title = "Plugin Logs"
     legacyController.statusBar.statusBarStyle = theme.rootController.statusBarStyle.style
 
-    let swiftUIView = EGSwiftUIView<PluginLogsView>(legacyController: legacyController) {
+    let swiftUIView = EGSwiftUIView<PluginLogsView>(legacyController: legacyController, manageSafeArea: true) {
         PluginLogsView()
     }
     let hostingController = UIHostingController(rootView: swiftUIView, ignoreSafeArea: true)

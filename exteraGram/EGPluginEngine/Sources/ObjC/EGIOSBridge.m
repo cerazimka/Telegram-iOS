@@ -24,6 +24,10 @@
 @class EGLoggerBridgeImpl;
 extern void EGLoggerBridgeImpl_logFromPlugin(NSString *tag, NSString *message);
 
+// Swift @_cdecl bridge — synchronous write to EGPluginDebugLog (no async dispatch).
+// Declared in EGPluginDebugLog.swift.
+extern void EGPluginDebugLog_appendCStr(const char *tag, const char *message);
+
 static void plugin_log(NSString *tag, NSString *fmt, ...) NS_FORMAT_FUNCTION(2, 3);
 static void plugin_log(NSString *tag, NSString *fmt, ...) {
     va_list args;
@@ -331,6 +335,8 @@ static id py_to_ns(PyObject *obj) {
         PyStatus status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
             plugin_log(@"PluginEngine", @"Py_PreInitialize failed: %s", status.err_msg);
+            char buf[512]; snprintf(buf, sizeof(buf), "Py_PreInitialize failed: %s", status.err_msg ?: "(null)");
+            EGPluginDebugLog_appendCStr("Runtime", buf);
             return;
         }
 
@@ -347,6 +353,8 @@ static id py_to_ns(PyObject *obj) {
             PyMem_RawFree(wHome);
             if (PyStatus_Exception(status)) {
                 plugin_log(@"PluginEngine", @"PyConfig_SetString(home) failed: %s", status.err_msg);
+                char buf[512]; snprintf(buf, sizeof(buf), "PyConfig_SetString(home) failed: %s", status.err_msg ?: "(null)");
+                EGPluginDebugLog_appendCStr("Runtime", buf);
                 PyConfig_Clear(&config);
                 return;
             }
@@ -356,6 +364,8 @@ static id py_to_ns(PyObject *obj) {
         status = PyConfig_Read(&config);
         if (PyStatus_Exception(status)) {
             plugin_log(@"PluginEngine", @"PyConfig_Read failed: %s", status.err_msg);
+            char buf[512]; snprintf(buf, sizeof(buf), "PyConfig_Read failed: %s", status.err_msg ?: "(null)");
+            EGPluginDebugLog_appendCStr("Runtime", buf);
             PyConfig_Clear(&config);
             return;
         }
@@ -377,12 +387,15 @@ static id py_to_ns(PyObject *obj) {
         } @catch (NSException *ex) {
             PyConfig_Clear(&config);
             plugin_log(@"PluginEngine", @"Py_InitializeFromConfig exception: %@", ex.reason);
+            EGPluginDebugLog_appendCStr("Runtime", [[NSString stringWithFormat:@"Py_InitializeFromConfig exception: %@", ex.reason] UTF8String]);
             return;
         }
         PyConfig_Clear(&config);
 
         if (PyStatus_Exception(status)) {
             plugin_log(@"PluginEngine", @"Py_InitializeFromConfig failed: %s", status.err_msg);
+            char buf[512]; snprintf(buf, sizeof(buf), "Py_InitializeFromConfig failed: %s", status.err_msg ?: "(null)");
+            EGPluginDebugLog_appendCStr("Runtime", buf);
             return;
         }
 

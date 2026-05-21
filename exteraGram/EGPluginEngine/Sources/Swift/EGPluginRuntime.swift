@@ -35,6 +35,14 @@ public final class EGPluginRuntime {
         // Locate the Python SDK .py files (base_plugin, hook_utils, etc.)
         let sdkPath = findSDKPath()
 
+        // Log stdlib directory contents to help diagnose extraction issues.
+        let stdlibContents = (try? FileManager.default.contentsOfDirectory(atPath: pythonHome))?
+            .sorted().joined(separator: ", ") ?? "(empty)"
+        EGPluginDebugLog.shared.append(tag: "Runtime", "stdlib dir: \(stdlibContents)")
+
+        // Start logger bridge BEFORE init so ObjC error notifications have a listener.
+        EGLoggerBridge.shared.start()
+
         // CPython must be initialized on the main thread.
         // If we're already on main, call directly; otherwise dispatch synchronously.
         let doInit = {
@@ -46,7 +54,6 @@ public final class EGPluginRuntime {
                 sitePackagesPath: EGPluginsDirectory.sitePackages.path
             )
             if ok {
-                EGLoggerBridge.shared.start()
                 EGLogger.shared.log("PluginRuntime",
                     "Engine ready. home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
                 EGPluginDebugLog.shared.append(tag: "Runtime", "CPython ready ✓")

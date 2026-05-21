@@ -64,3 +64,12 @@ public final class EGPluginDebugLog {
         }
     }
 }
+
+// C-callable bridge so ObjC can write synchronously to the debug log without
+// going through the async NSNotification chain (avoids lost messages during init).
+@_cdecl("EGPluginDebugLog_appendCStr")
+public func EGPluginDebugLog_appendCStr(_ tag: UnsafePointer<CChar>?, _ message: UnsafePointer<CChar>?) {
+    let tagStr = tag.map { String(cString: $0) } ?? "Plugin"
+    let msgStr = message.map { String(cString: $0) } ?? ""
+    EGPluginDebugLog.shared.append(tag: tagStr, msgStr)
+}
