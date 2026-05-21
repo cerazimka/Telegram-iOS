@@ -109,14 +109,19 @@ def _save():
 # ---------------------------------------------------------------------------
 
 def _on_send_message(tl_obj):
+    _log(f"_on_send_message called (sent so far: {_stats['sent']})")
     if not _get("track_messages", True):
+        _log("track_messages disabled — skipping")
         return
     _stats["sent"] += 1
     _save()
+    _log(f"sent count now: {_stats['sent']}")
     if _get("haptic_on_send", False):
+        _log("triggering haptic (light)")
         _ios_bridge.haptic_feedback("light")
     n = _stats["sent"]
     if _get("milestone_bulletin", True) and n in _MILESTONES:
+        _log(f"milestone reached: {n} — showing bulletin")
         show_bulletin(f"{n} messages sent!", "Tracked by Smart Stats", "chart.bar.fill")
 
 # ---------------------------------------------------------------------------
@@ -124,6 +129,7 @@ def _on_send_message(tl_obj):
 # ---------------------------------------------------------------------------
 
 def _on_send_reaction(tl_obj):
+    _log("_on_send_reaction called")
     if _get("haptic_on_send", False):
         _ios_bridge.haptic_feedback("medium")
 
@@ -142,25 +148,32 @@ def _on_screen_appeared():
 # ---------------------------------------------------------------------------
 
 def on_load(plugin):
+    _log("on_load: started")
     _load()
+    _log(f"on_load: stats loaded — sent={_stats['sent']} screens={_stats['screens']}")
 
     add_tl_hook("messages.sendMessage",  _on_send_message)
+    _log("on_load: TL hook registered — messages.sendMessage")
     add_tl_hook("messages.sendReaction", _on_send_reaction)
+    _log("on_load: TL hook registered — messages.sendReaction")
 
     if _get("hook_screens", True):
         try:
             add_method_hook("UIViewController", "viewDidAppear:", before=_on_screen_appeared)
-            _log("ObjC hook installed: UIViewController.viewDidAppear:")
+            _log("on_load: ObjC hook installed — UIViewController.viewDidAppear:")
         except Exception as exc:
-            _log(f"ObjC hook skipped: {exc}")
+            _log(f"on_load: ObjC hook skipped — {exc}")
 
     if _get("greet_on_load", True):
         uid   = get_user_id()
         state = get_connection_state()
         text  = _get("greeting_text", "Smart Stats is running")
+        _log(f"on_load: calling show_bulletin — '{text}'")
         show_bulletin(text, f"uid={uid}  ·  {state}  ·  {_stats['sent']} msgs", "puzzlepiece.extension.fill")
+    else:
+        _log("on_load: greet_on_load disabled — skipping bulletin")
 
-    _log(f"on_load complete — account={get_account_id()}")
+    _log(f"on_load: complete — account={get_account_id()}")
 
 
 def on_unload(plugin):

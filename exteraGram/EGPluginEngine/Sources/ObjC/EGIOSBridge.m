@@ -131,6 +131,9 @@ static PyObject *py_add_tl_hook(PyObject *self, PyObject *args) {
         list = PyDict_GetItemString(g_tl_hooks, tl_type);
     }
     PyList_Append(list, callback);
+    EGPluginDebugLog_appendCStr("TLHook",
+        [[NSString stringWithFormat:@"add_tl_hook: registered '%s' (total %ld)",
+          tl_type, (long)PyList_Size(list)] UTF8String]);
     Py_RETURN_NONE;
 }
 
@@ -390,9 +393,12 @@ static PyObject *py_show_bulletin(PyObject *self, PyObject *args) {
     NSString *nsTitle = [NSString stringWithUTF8String:title];
     NSString *nsText  = [NSString stringWithUTF8String:text];
     NSString *nsIcon  = [NSString stringWithUTF8String:icon];
-    // 0.5s delay so any toggle animation or install sheet can finish before we present.
+    EGPluginDebugLog_appendCStr("Bulletin",
+        [[NSString stringWithFormat:@"show_bulletin called: title='%@'", nsTitle] UTF8String]);
+    // 0.5s delay so any toggle animation or install sheet finishes before we present.
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
                    dispatch_get_main_queue(), ^{
+        EGPluginDebugLog_appendCStr("Bulletin", "posting EGPluginShowBulletinNotification");
         [[NSNotificationCenter defaultCenter]
             postNotificationName:@"EGPluginShowBulletinNotification"
                           object:nil
@@ -986,19 +992,40 @@ static id py_to_ns(PyObject *obj) {
 
 + (void)dispatchTLHook:(NSString *)tlType params:(NSMutableDictionary<NSString *, id> *)params {
 #if EGPLUGIN_HAS_PYTHON
-    if (!g_initialized || !g_tl_hooks) return;
+    if (!g_initialized || !g_tl_hooks) {
+        EGPluginDebugLog_appendCStr("TLHook",
+            [[NSString stringWithFormat:@"dispatchTLHook(%@): skipped — not initialized", tlType] UTF8String]);
+        return;
+    }
     [self withPython:^{
         PyObject *list = PyDict_GetItemString(g_tl_hooks, tlType.UTF8String);
-        if (!list || PyList_Size(list) == 0) return;
+        if (!list || PyList_Size(list) == 0) {
+            EGPluginDebugLog_appendCStr("TLHook",
+                [[NSString stringWithFormat:@"dispatchTLHook(%@): no hooks registered", tlType] UTF8String]);
+            return;
+        }
+
+        Py_ssize_t n = PyList_Size(list);
+        EGPluginDebugLog_appendCStr("TLHook",
+            [[NSString stringWithFormat:@"dispatchTLHook(%@): calling %ld callback(s)", tlType, (long)n] UTF8String]);
 
         // Convert params to a Python dict
         PyObject *py_params = ns_to_py(params);
 
-        Py_ssize_t n = PyList_Size(list);
         for (Py_ssize_t i = 0; i < n; i++) {
             PyObject *cb = PyList_GetItem(list, i); // borrowed
             PyObject *result = PyObject_CallFunctionObjArgs(cb, py_params, NULL);
-            if (!result) { PyErr_Clear(); } else { Py_DECREF(result); }
+            if (!result) {
+                PyObject *exc = PyErr_Occurred();
+                if (exc) {
+                    PyObject *str = PyObject_Str(exc);
+                    const char *cstr = str ? PyUnicode_AsUTF8(str) : "unknown";
+                    EGPluginDebugLog_appendCStr("TLHook",
+                        [[NSString stringWithFormat:@"callback[%ld] error: %s", (long)i, cstr] UTF8String]);
+                    Py_XDECREF(str);
+                }
+                PyErr_Clear();
+            } else { Py_DECREF(result); }
         }
 
         // Write modified values back to params

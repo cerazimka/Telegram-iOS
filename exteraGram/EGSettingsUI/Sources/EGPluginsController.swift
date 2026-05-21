@@ -332,6 +332,7 @@ public final class PluginsController {
             let title = note.userInfo?["title"] as? String ?? ""
             let text  = note.userInfo?["text"]  as? String ?? ""
             let icon  = note.userInfo?["icon"]  as? String ?? ""
+            EGPluginDebugLog.shared.append(tag: "Bulletin", "observer fired: '\(title)'")
             Self.showBulletin(title: title, text: text, icon: icon)
         }
 
@@ -356,20 +357,19 @@ public final class PluginsController {
     // MARK: - Bulletin / toast presentation
 
     private static func topViewController() -> UIViewController? {
-        var win: UIWindow?
-        for scene in UIApplication.shared.connectedScenes {
-            if let ws = scene as? UIWindowScene,
-               ws.activationState == .foregroundActive {
-                win = ws.windows.first(where: { $0.isKeyWindow })
-                if win != nil { break }
-            }
-        }
+        // Collect all windows across all scenes (active or not).
+        let allWindows = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+
+        // Prefer the key window; fall back to any window with a rootViewController.
+        let win = allWindows.first(where: { $0.isKeyWindow })
+                ?? allWindows.first(where: { $0.rootViewController != nil })
+
         if win == nil {
-            win = UIApplication.shared.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .flatMap { $0.windows }
-                .first(where: { $0.isKeyWindow })
+            EGPluginDebugLog.shared.append(tag: "Bulletin", "topViewController: no window found")
         }
+
         var vc = win?.rootViewController
         while let presented = vc?.presentedViewController,
               !presented.isBeingDismissed {
@@ -378,11 +378,15 @@ public final class PluginsController {
         while vc?.isBeingDismissed == true, let parent = vc?.presentingViewController {
             vc = parent
         }
+        if let vc { EGPluginDebugLog.shared.append(tag: "Bulletin", "topViewController: \(type(of: vc))") }
         return vc
     }
 
     private static func showBulletin(title: String, text: String, icon: String) {
-        guard let vc = topViewController() else { return }
+        guard let vc = topViewController() else {
+            EGPluginDebugLog.shared.append(tag: "Bulletin", "showBulletin: no VC — giving up")
+            return
+        }
         let alert = UIAlertController(
             title: title,
             message: text.isEmpty ? nil : text,
