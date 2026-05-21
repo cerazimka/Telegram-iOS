@@ -28,6 +28,11 @@ extern void EGLoggerBridgeImpl_logFromPlugin(NSString *tag, NSString *message);
 // Declared in EGPluginDebugLog.swift.
 extern void EGPluginDebugLog_appendCStr(const char *tag, const char *message);
 
+// Swift @_cdecl bridges — localisation. Declared in EGStringsBridge.swift.
+// Both return strdup'd strings — caller must free().
+extern const char *EGStringsBridge_currentLanguageCStr(void);
+extern const char *EGStringsBridge_localizedStringCStr(const char *key);
+
 static void plugin_log(NSString *tag, NSString *fmt, ...) NS_FORMAT_FUNCTION(2, 3);
 static void plugin_log(NSString *tag, NSString *fmt, ...) {
     va_list args;
@@ -182,6 +187,83 @@ static PyObject *py_show_toast(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+// copy_to_clipboard(text)
+static PyObject *py_copy_to_clipboard(PyObject *self, PyObject *args) {
+    const char *text = "";
+    if (!PyArg_ParseTuple(args, "s", &text)) return NULL;
+    NSString *nsText = [NSString stringWithUTF8String:text];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [UIPasteboard generalPasteboard].string = nsText;
+    });
+    Py_RETURN_NONE;
+}
+
+// open_url(url)
+static PyObject *py_open_url(PyObject *self, PyObject *args) {
+    const char *url = "";
+    if (!PyArg_ParseTuple(args, "s", &url)) return NULL;
+    NSString *nsUrl = [NSString stringWithUTF8String:url];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSURL *u = [NSURL URLWithString:nsUrl];
+        if (u && [[UIApplication sharedApplication] canOpenURL:u]) {
+            [[UIApplication sharedApplication] openURL:u options:@{} completionHandler:nil];
+        }
+    });
+    Py_RETURN_NONE;
+}
+
+// haptic_feedback(style="medium")
+//   "light"|"medium"|"heavy" → UIImpactFeedbackGenerator
+//   "success"|"warning"|"error" → UINotificationFeedbackGenerator
+static PyObject *py_haptic_feedback(PyObject *self, PyObject *args) {
+    const char *style = "medium";
+    if (!PyArg_ParseTuple(args, "|s", &style)) return NULL;
+    NSString *nsStyle = [NSString stringWithUTF8String:style];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if ([nsStyle isEqualToString:@"success"] ||
+            [nsStyle isEqualToString:@"warning"] ||
+            [nsStyle isEqualToString:@"error"]) {
+            UINotificationFeedbackGenerator *gen = [UINotificationFeedbackGenerator new];
+            UINotificationFeedbackType type = UINotificationFeedbackTypeSuccess;
+            if      ([nsStyle isEqualToString:@"warning"]) type = UINotificationFeedbackTypeWarning;
+            else if ([nsStyle isEqualToString:@"error"])   type = UINotificationFeedbackTypeError;
+            [gen notificationOccurred:type];
+        } else {
+            UIImpactFeedbackStyle s = UIImpactFeedbackStyleMedium;
+            if      ([nsStyle isEqualToString:@"light"]) s = UIImpactFeedbackStyleLight;
+            else if ([nsStyle isEqualToString:@"heavy"]) s = UIImpactFeedbackStyleHeavy;
+            UIImpactFeedbackGenerator *gen = [[UIImpactFeedbackGenerator alloc] initWithStyle:s];
+            [gen impactOccurred];
+        }
+    });
+    Py_RETURN_NONE;
+}
+
+// get_locale_language() -> str
+static PyObject *py_get_locale_language(PyObject *self, PyObject *args) {
+    const char *lang = EGStringsBridge_currentLanguageCStr();
+    PyObject *result = PyUnicode_FromString(lang ?: "en");
+    if (lang) free((void *)lang);
+    return result;
+}
+
+// get_string(key, default="") -> str
+static PyObject *py_get_string(PyObject *self, PyObject *args) {
+    const char *key = "";
+    const char *def = "";
+    if (!PyArg_ParseTuple(args, "s|s", &key, &def)) return NULL;
+    const char *value = EGStringsBridge_localizedStringCStr(key);
+    PyObject *result;
+    // EGLocalizationManager returns the key itself if not found — fall back to default.
+    if (value && strcmp(value, key) != 0 && strlen(value) > 0) {
+        result = PyUnicode_FromString(value);
+    } else {
+        result = PyUnicode_FromString(def);
+    }
+    if (value) free((void *)value);
+    return result;
+}
+
 static PyMethodDef ios_bridge_methods[] = {
     {"log_text",           py_log_text,           METH_VARARGS, "log_text(msg, tag='Plugin')"},
     {"add_tl_hook",        py_add_tl_hook,        METH_VARARGS, "add_tl_hook(tl_type, callback)"},
@@ -189,6 +271,11 @@ static PyMethodDef ios_bridge_methods[] = {
     {"run_on_main_thread", py_run_on_main_thread, METH_VARARGS, "run_on_main_thread(fn)"},
     {"show_alert",         py_show_alert,         METH_VARARGS, "show_alert(title, message, button='OK')"},
     {"show_toast",         py_show_toast,         METH_VARARGS, "show_toast(message, duration=2.0)"},
+    {"copy_to_clipboard",  py_copy_to_clipboard,  METH_VARARGS, "copy_to_clipboard(text)"},
+    {"open_url",           py_open_url,           METH_VARARGS, "open_url(url)"},
+    {"haptic_feedback",    py_haptic_feedback,    METH_VARARGS, "haptic_feedback(style='medium')"},
+    {"get_locale_language",py_get_locale_language,METH_NOARGS,  "get_locale_language() -> str"},
+    {"get_string",         py_get_string,         METH_VARARGS, "get_string(key, default='') -> str"},
     {NULL, NULL, 0, NULL}
 };
 

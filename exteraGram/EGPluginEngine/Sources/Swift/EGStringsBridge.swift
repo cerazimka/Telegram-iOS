@@ -14,3 +14,23 @@ import EGStrings
         return EGLocalizationManager.shared.localizedString(key)
     }
 }
+
+// MARK: - C bridges for ObjC (no module import needed)
+
+/// Returns the current UI language code (e.g. "en", "ru").
+/// Caller is responsible for using the returned string before any Python GC pass.
+@_cdecl("EGStringsBridge_currentLanguageCStr")
+public func EGStringsBridge_currentLanguageCStr() -> UnsafePointer<CChar>? {
+    let lang = Locale.current.languageCode ?? "en"
+    return strdup(lang)
+}
+
+/// Returns a localized string for the given key, or the key itself if not found.
+/// Result is heap-allocated; caller must `free()` it.
+@_cdecl("EGStringsBridge_localizedStringCStr")
+public func EGStringsBridge_localizedStringCStr(_ key: UnsafePointer<CChar>?) -> UnsafePointer<CChar>? {
+    guard let key else { return strdup("") }
+    let keyStr = String(cString: key)
+    let value = EGLocalizationManager.shared.localizedString(keyStr)
+    return strdup(value)
+}
