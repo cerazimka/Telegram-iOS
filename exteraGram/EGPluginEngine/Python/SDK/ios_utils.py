@@ -42,6 +42,22 @@ def copy_to_clipboard(text: str) -> None:
         pass
 
 
+def read_clipboard() -> str:
+    """Return the current pasteboard string contents (empty string if none)."""
+    try:
+        return _ios_bridge.read_clipboard() or ""
+    except AttributeError:
+        return ""
+
+
+def get_screen_info() -> dict:
+    """Return main screen geometry: {'width': float, 'height': float, 'scale': float}."""
+    try:
+        return _ios_bridge.get_screen_info()
+    except AttributeError:
+        return {"width": 0.0, "height": 0.0, "scale": 1.0}
+
+
 def haptic_feedback(style: str = "medium") -> None:
     """
     Trigger haptic feedback.

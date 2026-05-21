@@ -13,4 +13,12 @@ public enum EGPluginHooks {
     /// Called when enqueueMessages fires for a real outgoing user message.
     /// params["peer_id"]: Int64, params["count"]: Int
     public static var sendMessageHook: ((inout [String: Any]) -> Void)?
+
+    /// Called when a message is being edited.
+    /// params["peer_id"]: Int64, params["message_id"]: Int32, params["text"]: String
+    public static var editMessageHook: ((inout [String: Any]) -> Void)?
+
+    /// Called when messages are deleted interactively.
+    /// params["message_ids"]: [Int32], params["delete_for_everyone"]: Bool
+    public static var deleteMessagesHook: ((inout [String: Any]) -> Void)?
 }

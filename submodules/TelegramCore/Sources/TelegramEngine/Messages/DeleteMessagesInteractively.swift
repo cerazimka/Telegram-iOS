@@ -6,6 +6,11 @@ import MtProtoKit
 
 
 func _internal_deleteMessagesInteractively(account: Account, messageIds: [MessageId], type: InteractiveMessagesDeletionType, deleteAllInGroup: Bool = false) -> Signal<Void, NoError> {
+    var hookParams: [String: Any] = [
+        "message_ids": messageIds.map { $0.id },
+        "delete_for_everyone": type == .forEveryone,
+    ]
+    EGPluginHooks.deleteMessagesHook?(&hookParams)
     return account.postbox.transaction { transaction -> Void in
         deleteMessagesInteractively(transaction: transaction, stateManager: account.stateManager, postbox: account.postbox, messageIds: messageIds, type: type, removeIfPossiblyDelivered: true)
     }

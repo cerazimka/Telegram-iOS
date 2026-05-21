@@ -28,6 +28,12 @@ public enum RequestEditMessageError {
 }
 
 func _internal_requestEditMessage(account: Account, messageId: MessageId, text: String, media: RequestEditMessageMedia, entities: TextEntitiesMessageAttribute?, inlineStickers: [MediaId: Media], webpagePreviewAttribute: WebpagePreviewMessageAttribute?, disableUrlPreview: Bool, scheduleInfoAttribute: OutgoingScheduleInfoMessageAttribute?, invertMediaAttribute: InvertMediaMessageAttribute?) -> Signal<RequestEditMessageResult, RequestEditMessageError> {
+    var hookParams: [String: Any] = [
+        "peer_id": messageId.peerId.id._internalGetInt64Value(),
+        "message_id": messageId.id,
+        "text": text,
+    ]
+    EGPluginHooks.editMessageHook?(&hookParams)
     return requestEditMessage(accountPeerId: account.peerId, postbox: account.postbox, network: account.network, stateManager: account.stateManager, transformOutgoingMessageMedia: account.transformOutgoingMessageMedia, messageMediaPreuploadManager: account.messageMediaPreuploadManager, mediaReferenceRevalidationContext: account.mediaReferenceRevalidationContext, messageId: messageId, text: text, media: media, entities: entities, inlineStickers: inlineStickers, webpagePreviewAttribute: webpagePreviewAttribute, disableUrlPreview: disableUrlPreview, scheduleInfoAttribute: scheduleInfoAttribute, invertMediaAttribute: invertMediaAttribute)
 }
 

@@ -34,12 +34,21 @@ public final class EGPluginsEngineImpl {
             EGPluginHooks.sendReactionHook = { params in
                 EGTLHookBridge.shared.dispatchTLHook("messages.sendReaction", params: &params)
             }
-            // sendMessage is notification-only: dispatch via the bridge's dedicated
-            // serial Python queue — never blocks main thread, always same OS thread
-            // (avoids GCD thread-recycling SIGSEGV in CPython PyGILState).
+            // sendMessage / editMessage / deleteMessages are notification-only:
+            // dispatch via the bridge's dedicated serial Python queue — never
+            // blocks main thread, always same OS thread (avoids GCD thread-
+            // recycling SIGSEGV in CPython PyGILState).
             EGPluginHooks.sendMessageHook = { params in
                 EGTLHookBridge.shared.dispatchTLHookAsync(
                     "messages.sendMessage", snapshot: params)
+            }
+            EGPluginHooks.editMessageHook = { params in
+                EGTLHookBridge.shared.dispatchTLHookAsync(
+                    "messages.editMessage", snapshot: params)
+            }
+            EGPluginHooks.deleteMessagesHook = { params in
+                EGTLHookBridge.shared.dispatchTLHookAsync(
+                    "messages.deleteMessages", snapshot: params)
             }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {
@@ -55,6 +64,8 @@ public final class EGPluginsEngineImpl {
         engineQueue.async {
             EGPluginHooks.sendReactionHook = nil
             EGPluginHooks.sendMessageHook = nil
+            EGPluginHooks.editMessageHook = nil
+            EGPluginHooks.deleteMessagesHook = nil
             for id in pluginIds {
                 if EGPythonBridge.isInitialized {
                     EGPythonBridge.unloadPlugin(id)

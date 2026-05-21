@@ -240,6 +240,38 @@ static PyObject *py_copy_to_clipboard(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+// read_clipboard() -> str
+static PyObject *py_read_clipboard(PyObject *self, PyObject *args) {
+    __block NSString *value = nil;
+    if ([NSThread isMainThread]) {
+        value = [UIPasteboard generalPasteboard].string;
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            value = [UIPasteboard generalPasteboard].string;
+        });
+    }
+    const char *cstr = value ? [value UTF8String] : "";
+    return PyUnicode_FromString(cstr ?: "");
+}
+
+// get_screen_info() -> dict {"width": float, "height": float, "scale": float}
+static PyObject *py_get_screen_info(PyObject *self, PyObject *args) {
+    __block CGFloat w = 0, h = 0, scale = 1;
+    void (^block)(void) = ^{
+        UIScreen *s = [UIScreen mainScreen];
+        w = s.bounds.size.width;
+        h = s.bounds.size.height;
+        scale = s.scale;
+    };
+    if ([NSThread isMainThread]) block();
+    else dispatch_sync(dispatch_get_main_queue(), block);
+    PyObject *d = PyDict_New();
+    PyDict_SetItemString(d, "width",  PyFloat_FromDouble((double)w));
+    PyDict_SetItemString(d, "height", PyFloat_FromDouble((double)h));
+    PyDict_SetItemString(d, "scale",  PyFloat_FromDouble((double)scale));
+    return d;
+}
+
 // open_url(url)
 static PyObject *py_open_url(PyObject *self, PyObject *args) {
     const char *url = "";
@@ -589,6 +621,8 @@ static PyMethodDef ios_bridge_methods[] = {
     {"show_alert",         py_show_alert,         METH_VARARGS, "show_alert(title, message, button='OK')"},
     {"show_toast",         py_show_toast,         METH_VARARGS, "show_toast(message, duration=2.0)"},
     {"copy_to_clipboard",  py_copy_to_clipboard,  METH_VARARGS, "copy_to_clipboard(text)"},
+    {"read_clipboard",     py_read_clipboard,     METH_NOARGS,  "read_clipboard() -> str"},
+    {"get_screen_info",    py_get_screen_info,    METH_NOARGS,  "get_screen_info() -> dict"},
     {"open_url",           py_open_url,           METH_VARARGS, "open_url(url)"},
     {"haptic_feedback",    py_haptic_feedback,    METH_VARARGS, "haptic_feedback(style='medium')"},
     {"get_locale_language",py_get_locale_language,METH_NOARGS,  "get_locale_language() -> str"},
@@ -1029,34 +1063,62 @@ static id py_to_ns(PyObject *obj) {
         }
 
         // --- Purge TL-hook callbacks that belong to this module -----------
-        // Callbacks registered by the plugin are closures whose __module__
-        // attribute equals the plugin id.  Walk every hook list and remove
-        // any callable whose __module__ matches.  This prevents use-after-free
-        // if the hook fires (via the async serial queue) after the module is gone.
+        // A callback belongs to the plugin when either its __module__ attribute
+        // OR its __globals__["__name__"] equals the plugin id.  We check both
+        // because some closures don't have __module__ set correctly while their
+        // __globals__["__name__"] always reflects the defining module.
         if (g_tl_hooks) {
             PyObject *keys = PyDict_Keys(g_tl_hooks);
             Py_ssize_t kn  = PyList_Size(keys);
+            Py_ssize_t totalRemoved = 0;
+            const char *pidC = pluginId.UTF8String;
             for (Py_ssize_t ki = 0; ki < kn; ki++) {
-                PyObject *key  = PyList_GetItem(keys, ki); // borrowed
-                PyObject *list = PyDict_GetItem(g_tl_hooks, key); // borrowed
+                PyObject *key  = PyList_GetItem(keys, ki);
+                PyObject *list = PyDict_GetItem(g_tl_hooks, key);
                 if (!list) continue;
-                // Build a new list without callbacks from this plugin.
+                Py_ssize_t before = PyList_Size(list);
                 PyObject *filtered = PyList_New(0);
-                Py_ssize_t ln = PyList_Size(list);
-                for (Py_ssize_t li = 0; li < ln; li++) {
-                    PyObject *cb  = PyList_GetItem(list, li); // borrowed
+                for (Py_ssize_t li = 0; li < before; li++) {
+                    PyObject *cb = PyList_GetItem(list, li);
+
+                    // 1. __module__
                     PyObject *mod = PyObject_GetAttrString(cb, "__module__");
                     const char *modName = mod ? PyUnicode_AsUTF8(mod) : NULL;
-                    BOOL belongs = (modName && strcmp(modName, pluginId.UTF8String) == 0);
+                    BOOL byModule = (modName && strcmp(modName, pidC) == 0);
                     Py_XDECREF(mod);
                     PyErr_Clear();
-                    if (!belongs) {
-                        PyList_Append(filtered, cb);
+
+                    // 2. __globals__["__name__"] (fallback for closures)
+                    BOOL byGlobals = NO;
+                    PyObject *globals = PyObject_GetAttrString(cb, "__globals__");
+                    if (globals && PyDict_Check(globals)) {
+                        PyObject *gname = PyDict_GetItemString(globals, "__name__");
+                        const char *gnameC = gname ? PyUnicode_AsUTF8(gname) : NULL;
+                        byGlobals = (gnameC && strcmp(gnameC, pidC) == 0);
                     }
+                    Py_XDECREF(globals);
+                    PyErr_Clear();
+
+                    BOOL belongs = byModule || byGlobals;
+                    const char *keyStr = PyUnicode_AsUTF8(key);
+                    EGPluginDebugLog_appendCStr("Engine",
+                        [[NSString stringWithFormat:@"  purge %s[%ld] __module__='%s' globals='%s' match=%s",
+                          keyStr ?: "?", (long)li, modName ?: "(null)",
+                          byGlobals ? pidC : "?", belongs ? "YES" : "no"] UTF8String]);
+                    if (!belongs) PyList_Append(filtered, cb);
                 }
+                Py_ssize_t after = PyList_Size(filtered);
+                totalRemoved += (before - after);
+                const char *keyStr = PyUnicode_AsUTF8(key);
+                EGPluginDebugLog_appendCStr("Engine",
+                    [[NSString stringWithFormat:@"  purge %s: %ld → %ld",
+                      keyStr ?: "?", (long)before, (long)after] UTF8String]);
                 PyDict_SetItem(g_tl_hooks, key, filtered);
                 Py_DECREF(filtered);
             }
+            EGPluginDebugLog_appendCStr("Engine",
+                [[NSString stringWithFormat:@"unloadPlugin '%@': %ld TL callback(s) removed",
+                  pluginId, (long)totalRemoved] UTF8String]);
             Py_DECREF(keys);
         }
 
