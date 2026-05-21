@@ -446,19 +446,52 @@ static id py_to_ns(PyObject *obj) {
     if (!g_initialized) return @"Python runtime not initialized";
     __block NSString *errorMsg = nil;
     [self withPython:^{
-        PyObject *importlib_util = PyImport_ImportModule("importlib.util");
-        if (!importlib_util) { PyErr_Clear(); errorMsg = @"importlib.util not available"; return; }
+        PyObject *importlib_util     = PyImport_ImportModule("importlib.util");
+        PyObject *importlib_machinery = PyImport_ImportModule("importlib.machinery");
+        if (!importlib_util || !importlib_machinery) {
+            PyErr_Clear();
+            Py_XDECREF(importlib_util); Py_XDECREF(importlib_machinery);
+            errorMsg = @"importlib not available";
+            return;
+        }
 
-        // spec_from_file_location(pluginId, path)
-        PyObject *spec = PyObject_CallMethod(importlib_util, "spec_from_file_location", "ss",
-                                             pluginId.UTF8String, path.UTF8String);
+        // .plugin is not a recognised extension — build an explicit SourceFileLoader
+        // so spec_from_file_location knows how to handle the file.
+        PyObject *SFL = PyObject_GetAttrString(importlib_machinery, "SourceFileLoader");
+        if (!SFL) {
+            PyErr_Clear(); Py_DECREF(importlib_util); Py_DECREF(importlib_machinery);
+            errorMsg = @"SourceFileLoader not found";
+            return;
+        }
+        PyObject *loader = PyObject_CallFunction(SFL, "ss", pluginId.UTF8String, path.UTF8String);
+        Py_DECREF(SFL);
+        if (!loader) {
+            PyErr_Clear(); Py_DECREF(importlib_util); Py_DECREF(importlib_machinery);
+            errorMsg = @"SourceFileLoader() failed";
+            return;
+        }
+
+        // spec_from_file_location(name, path, loader=loader)
+        PyObject *kwArgs = PyDict_New();
+        PyDict_SetItemString(kwArgs, "loader", loader);
+        Py_DECREF(loader); loader = NULL;
+
+        PyObject *posArgs = PyTuple_Pack(2,
+            PyUnicode_FromString(pluginId.UTF8String),
+            PyUnicode_FromString(path.UTF8String));
+        PyObject *sflFn = PyObject_GetAttrString(importlib_util, "spec_from_file_location");
+        PyObject *spec = sflFn ? PyObject_Call(sflFn, posArgs, kwArgs) : NULL;
+        Py_XDECREF(sflFn);
+        Py_DECREF(posArgs); Py_DECREF(kwArgs);
+
         if (!spec || spec == Py_None) {
             PyErr_Clear();
             Py_XDECREF(spec);
-            Py_DECREF(importlib_util);
+            Py_DECREF(importlib_util); Py_DECREF(importlib_machinery);
             errorMsg = [NSString stringWithFormat:@"spec_from_file_location failed for %@", path];
             return;
         }
+        Py_DECREF(importlib_machinery);
 
         PyObject *module = PyObject_CallMethod(importlib_util, "module_from_spec", "O", spec);
         if (!module) {
@@ -472,9 +505,9 @@ static id py_to_ns(PyObject *obj) {
         PyDict_SetItemString(sys_modules, pluginId.UTF8String, module);
 
         // Execute the module body
-        PyObject *loader = PyObject_GetAttrString(spec, "loader");
-        PyObject *exec_result = loader ? PyObject_CallMethod(loader, "exec_module", "O", module) : NULL;
-        Py_XDECREF(loader);
+        PyObject *specLoader = PyObject_GetAttrString(spec, "loader");
+        PyObject *exec_result = specLoader ? PyObject_CallMethod(specLoader, "exec_module", "O", module) : NULL;
+        Py_XDECREF(specLoader);
 
         if (!exec_result) {
             // Capture traceback as error string
