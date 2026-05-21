@@ -15,19 +15,10 @@ __version__     = "2.0"
 __author__      = "@SaturnFake (iOS port @exteraPlugins)"
 __description__ = "Classic Blackjack 21 with native UI — bet, hit, stand, double, persistent balance & W/L."
 
-import os as _os
+import random
 import json
 import functools
 import traceback
-
-
-def _urandom_shuffle(lst):
-    """Fisher-Yates shuffle using os.urandom — avoids the 'math' C-extension
-    dependency that random.py pulls in via 'from math import ...'."""
-    n = len(lst)
-    for i in range(n - 1, 0, -1):
-        j = int.from_bytes(_os.urandom(4), 'big') % (i + 1)
-        lst[i], lst[j] = lst[j], lst[i]
 
 # Same imports as the Android original — these now resolve to eg_widgets
 # via the auto-generated android/ ui/ java/ packages in site-packages.
@@ -147,7 +138,7 @@ class Game:
             for s in suits:
                 for r in ranks:
                     self.deck.append(Card(s, r))
-        _urandom_shuffle(self.deck)
+        random.shuffle(self.deck)
 
     def _draw(self, hand, hidden=False):
         if len(self.deck) < 20: self._build_deck()
