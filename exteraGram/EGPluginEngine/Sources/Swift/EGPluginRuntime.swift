@@ -94,50 +94,84 @@ public final class EGPluginRuntime {
     /// re-export from the flat modules that Bazel placed at the bundle root.
     private func buildUiPackageInSitePackages(flatSDKPaths: [String]) {
         let sp   = EGPluginsDirectory.sitePackages.url
-        let uiDir = sp.appendingPathComponent("ui")
-        let marker = uiDir.appendingPathComponent(".sdkVersion").path
+        let marker = sp.appendingPathComponent(".sdkVersion").path
         let version = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "0"
 
-        // Only rebuild when the app version changed (avoids startup file I/O on each launch).
+        // Rebuild on app-version change (avoids startup file I/O each launch).
         if (try? String(contentsOfFile: marker, encoding: .utf8)) == version { return }
 
         let fm = FileManager.default
-        // Wipe stale ui/ if it exists so we start clean.
-        try? fm.removeItem(at: uiDir)
+
+        // Helper: write a string to a path, creating intermediate dirs.
+        func write(_ contents: String, to relPath: String) throws {
+            let url = sp.appendingPathComponent(relPath)
+            try fm.createDirectory(at: url.deletingLastPathComponent(),
+                                   withIntermediateDirectories: true)
+            try contents.write(toFile: url.path, atomically: true, encoding: .utf8)
+        }
+
+        // Wipe stale generated packages so we start clean.
+        for dir in ["ui", "android", "java"] {
+            try? fm.removeItem(at: sp.appendingPathComponent(dir))
+        }
 
         do {
-            try fm.createDirectory(at: uiDir, withIntermediateDirectories: true)
-
-            // __init__.py — re-exports from submodules so both
-            //   `import ui` and `from ui import PluginSettings` work.
-            try """
+            // -- ui/ ----------------------------------------------------------
+            try write("""
 from .settings import PluginSettings, SettingItem, show_settings_screen
 from .bulletin import show_bulletin
-
-__all__ = ['PluginSettings', 'SettingItem', 'show_settings_screen', 'show_bulletin']
-""".write(toFile: uiDir.appendingPathComponent("__init__.py").path,
-          atomically: true, encoding: .utf8)
-
-            // settings.py — re-export from flat settings module at SDK root.
-            // Works because sdk root is in sys.path and settings.py is there.
-            try """
+from .alert    import AlertDialogBuilder
+__all__ = ['PluginSettings','SettingItem','show_settings_screen','show_bulletin','AlertDialogBuilder']
+""", to: "ui/__init__.py")
+            try write("""
 from settings import PluginSettings, SettingItem, show_settings_screen
-__all__ = ['PluginSettings', 'SettingItem', 'show_settings_screen']
-""".write(toFile: uiDir.appendingPathComponent("settings.py").path,
-          atomically: true, encoding: .utf8)
-
-            // bulletin.py — re-export from flat bulletin module.
-            try """
+__all__ = ['PluginSettings','SettingItem','show_settings_screen']
+""", to: "ui/settings.py")
+            try write("""
 from bulletin import show_bulletin
 __all__ = ['show_bulletin']
-""".write(toFile: uiDir.appendingPathComponent("bulletin.py").path,
-          atomically: true, encoding: .utf8)
+""", to: "ui/bulletin.py")
+            try write("""
+from eg_widgets import AlertDialogBuilder, BulletinHelper
+__all__ = ['AlertDialogBuilder','BulletinHelper']
+""", to: "ui/alert.py")
+
+            // -- android/ -----------------------------------------------------
+            //   Each submodule pulls from eg_widgets so Android-style imports
+            //   work unchanged ("from android.widget import LinearLayout").
+            try write("__all__ = []\n", to: "android/__init__.py")
+            try write("""
+from eg_widgets import LinearLayout, TextView, Button, Space
+__all__ = ['LinearLayout','TextView','Button','Space']
+""", to: "android/widget.py")
+            try write("""
+from eg_widgets import View, MotionEvent, Gravity
+__all__ = ['View','MotionEvent','Gravity']
+""", to: "android/view.py")
+            try write("""
+from eg_widgets import TextUtils
+__all__ = ['TextUtils']
+""", to: "android/text.py")
+            try write("""
+from eg_widgets import Color, Typeface
+__all__ = ['Color','Typeface']
+""", to: "android/graphics/__init__.py")
+            try write("""
+from eg_widgets import GradientDrawable
+__all__ = ['GradientDrawable']
+""", to: "android/graphics/drawable.py")
+
+            // -- java/ — only dynamic_proxy is used by plugins ----------------
+            try write("""
+from eg_widgets import dynamic_proxy
+__all__ = ['dynamic_proxy']
+""", to: "java/__init__.py")
 
             try version.write(toFile: marker, atomically: true, encoding: .utf8)
             EGPluginDebugLog.shared.append(tag: "Runtime",
-                "ui/ package bootstrapped in site-packages (v\(version))")
+                "ui/ + android/ + java/ packages bootstrapped (v\(version))")
         } catch {
-            EGLogger.shared.log("PluginRuntime", "ui package bootstrap error: \(error)")
+            EGLogger.shared.log("PluginRuntime", "package bootstrap error: \(error)")
         }
     }
 

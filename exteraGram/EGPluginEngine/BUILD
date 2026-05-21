@@ -17,10 +17,12 @@ objc_library(
     srcs = [
         "Sources/ObjC/EGIOSBridge.m",
         "Sources/ObjC/EGObjCSwizzler.m",
+        "Sources/ObjC/EGViewRenderer.m",
     ],
     hdrs = [
         "Sources/ObjC/EGIOSBridge.h",
         "Sources/ObjC/EGObjCSwizzler.h",
+        "Sources/ObjC/EGViewRenderer.h",
     ],
     sdk_frameworks = [
         "Foundation",

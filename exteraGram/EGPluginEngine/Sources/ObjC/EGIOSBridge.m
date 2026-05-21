@@ -1,10 +1,13 @@
 // MARK: exteraGram — EGPluginEngine ObjC/Python bridge implementation
 
 #import "EGIOSBridge.h"
+#import "EGViewRenderer.h"
 #import <UIKit/UIKit.h>
 #import <os/log.h>
 #import <objc/runtime.h>
 #import <ZipArchive/ZipArchive.h>
+
+extern NSString *const EGPluginViewCallbackNotification;
 
 // ---------------------------------------------------------------------------
 // CPython C API — only compiled when the framework is present.
@@ -301,6 +304,173 @@ static PyObject *py_show_action_sheet(PyObject *self, PyObject *args) {
         }
         [vc presentViewController:alert animated:YES completion:nil];
     });
+    Py_RETURN_NONE;
+}
+
+// Dialog registry — maps handle string to presented UIAlertController.
+static NSMutableDictionary<NSString *, UIViewController *> *g_dialogs = nil;
+
+@interface EGDoneTarget : NSObject
+@property (nonatomic, weak) UIViewController *vc;
+- (void)done:(id)sender;
+@end
+@implementation EGDoneTarget
+- (void)done:(id)sender {
+    [self.vc dismissViewControllerAnimated:YES completion:nil];
+}
+@end
+
+// show_dialog(spec) -> handle: present a Python widget tree as a modal sheet.
+static PyObject *py_show_dialog(PyObject *self, PyObject *args) {
+    PyObject *specObj = NULL;
+    if (!PyArg_ParseTuple(args, "O", &specObj)) return NULL;
+
+    id ns = py_to_ns(specObj);
+    if (![ns isKindOfClass:[NSDictionary class]]) {
+        PyErr_SetString(PyExc_TypeError, "show_dialog: spec must be a dict");
+        return NULL;
+    }
+    NSDictionary *spec = (NSDictionary *)ns;
+    NSString *title = spec[@"title"] ?: @"";
+    NSDictionary *viewSpec = spec[@"view"];
+
+    // Allocate a handle and ask the renderer (on main) to build + present.
+    NSString *handle = [[NSUUID UUID] UUIDString];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (!g_dialogs) g_dialogs = [NSMutableDictionary new];
+        UIView *content = [EGViewRenderer buildView:viewSpec];
+        if (!content) {
+            EGPluginDebugLog_appendCStr("Dialog", "show_dialog: empty content view");
+            return;
+        }
+
+        // Wrap content in a UIViewController for presentation.
+        UIViewController *vc = [UIViewController new];
+        vc.modalPresentationStyle = UIModalPresentationFormSheet;
+        vc.view.backgroundColor = UIColor.systemBackgroundColor;
+
+        content.translatesAutoresizingMaskIntoConstraints = NO;
+        [vc.view addSubview:content];
+        UILayoutGuide *safe = vc.view.safeAreaLayoutGuide;
+        [NSLayoutConstraint activateConstraints:@[
+            [content.leadingAnchor  constraintEqualToAnchor:safe.leadingAnchor],
+            [content.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor],
+            [content.topAnchor      constraintEqualToAnchor:safe.topAnchor],
+            [content.bottomAnchor   constraintEqualToAnchor:safe.bottomAnchor],
+        ]];
+        if (title.length > 0) {
+            vc.title = title;
+        }
+
+        // Find a host VC to present from.
+        UIWindow *win = nil;
+        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                for (UIWindow *w in ((UIWindowScene *)scene).windows) {
+                    if (w.isKeyWindow) { win = w; break; }
+                }
+                if (win) break;
+            }
+        }
+        UIViewController *host = win.rootViewController;
+        while (host.presentedViewController && !host.presentedViewController.isBeingDismissed) {
+            host = host.presentedViewController;
+        }
+        if (!host) {
+            EGPluginDebugLog_appendCStr("Dialog", "show_dialog: no host VC found");
+            return;
+        }
+
+        // Wrap in a navigation controller so a Done button can be added cleanly.
+        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
+        EGDoneTarget *doneTarget = [EGDoneTarget new];
+        doneTarget.vc = nav;
+        vc.navigationItem.rightBarButtonItem =
+            [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
+                                                          target:doneTarget
+                                                          action:@selector(done:)];
+        // Retain doneTarget for the nav controller's lifetime.
+        objc_setAssociatedObject(nav, "EGDoneTarget", doneTarget, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+        g_dialogs[handle] = nav;
+        [host presentViewController:nav animated:YES completion:nil];
+        EGPluginDebugLog_appendCStr("Dialog",
+            [[NSString stringWithFormat:@"show_dialog: presented (handle=%@)", handle] UTF8String]);
+    });
+
+    return PyUnicode_FromString(handle.UTF8String);
+}
+
+// update_dialog(handle, view_spec) — replace the dialog's content view in place.
+// Used by plugins to refresh game/state UI without dismissing & re-presenting.
+static PyObject *py_update_dialog(PyObject *self, PyObject *args) {
+    const char *handle = "";
+    PyObject *specObj = NULL;
+    if (!PyArg_ParseTuple(args, "sO", &handle, &specObj)) return NULL;
+    id ns = py_to_ns(specObj);
+    if (![ns isKindOfClass:[NSDictionary class]]) {
+        PyErr_SetString(PyExc_TypeError, "update_dialog: spec must be a dict");
+        return NULL;
+    }
+    NSDictionary *viewSpec = (NSDictionary *)ns;
+    NSString *h = [NSString stringWithUTF8String:handle];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *navVC = g_dialogs[h];
+        UIViewController *vc = nil;
+        if ([navVC isKindOfClass:[UINavigationController class]]) {
+            vc = ((UINavigationController *)navVC).viewControllers.firstObject;
+        } else {
+            vc = navVC;
+        }
+        if (!vc) return;
+        for (UIView *sv in [vc.view.subviews copy]) [sv removeFromSuperview];
+        UIView *content = [EGViewRenderer buildView:viewSpec];
+        if (!content) return;
+        content.translatesAutoresizingMaskIntoConstraints = NO;
+        [vc.view addSubview:content];
+        UILayoutGuide *safe = vc.view.safeAreaLayoutGuide;
+        [NSLayoutConstraint activateConstraints:@[
+            [content.leadingAnchor  constraintEqualToAnchor:safe.leadingAnchor],
+            [content.trailingAnchor constraintEqualToAnchor:safe.trailingAnchor],
+            [content.topAnchor      constraintEqualToAnchor:safe.topAnchor],
+            [content.bottomAnchor   constraintEqualToAnchor:safe.bottomAnchor],
+        ]];
+    });
+    Py_RETURN_NONE;
+}
+
+// dismiss_dialog(handle)
+static PyObject *py_dismiss_dialog(PyObject *self, PyObject *args) {
+    const char *handle = "";
+    if (!PyArg_ParseTuple(args, "s", &handle)) return NULL;
+    NSString *h = [NSString stringWithUTF8String:handle];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *vc = g_dialogs[h];
+        if (vc) {
+            [vc dismissViewControllerAnimated:YES completion:nil];
+            [g_dialogs removeObjectForKey:h];
+        }
+    });
+    Py_RETURN_NONE;
+}
+
+// invoke_view_callback(handle, *args) — called by ObjC notification observer,
+// forwards back into Python's eg_widgets._invoke().  Exposed as a Python-callable
+// in case tests want to trigger it manually too.
+static PyObject *py_invoke_view_callback(PyObject *self, PyObject *args) {
+    const char *handle = "";
+    if (!PyArg_ParseTuple(args, "s", &handle)) return NULL;
+    PyObject *mod = PyImport_ImportModule("eg_widgets");
+    if (mod) {
+        PyObject *fn = PyObject_GetAttrString(mod, "_invoke");
+        if (fn && PyCallable_Check(fn)) {
+            PyObject *r = PyObject_CallFunction(fn, "s", handle);
+            if (!r) PyErr_Clear(); else Py_DECREF(r);
+        }
+        Py_XDECREF(fn);
+        Py_DECREF(mod);
+    } else { PyErr_Clear(); }
     Py_RETURN_NONE;
 }
 
@@ -710,6 +880,10 @@ static PyMethodDef ios_bridge_methods[] = {
     {"run_on_main_thread", py_run_on_main_thread, METH_VARARGS, "run_on_main_thread(fn)"},
     {"show_alert",         py_show_alert,         METH_VARARGS, "show_alert(title, message, button='OK')"},
     {"show_action_sheet",  py_show_action_sheet,  METH_VARARGS, "show_action_sheet(title, message, options, callback)"},
+    {"show_dialog",        py_show_dialog,        METH_VARARGS, "show_dialog(spec) -> handle"},
+    {"update_dialog",      py_update_dialog,      METH_VARARGS, "update_dialog(handle, view_spec)"},
+    {"dismiss_dialog",     py_dismiss_dialog,     METH_VARARGS, "dismiss_dialog(handle)"},
+    {"invoke_view_callback", py_invoke_view_callback, METH_VARARGS, "invoke_view_callback(handle)"},
     {"show_toast",         py_show_toast,         METH_VARARGS, "show_toast(message, duration=2.0)"},
     {"copy_to_clipboard",  py_copy_to_clipboard,  METH_VARARGS, "copy_to_clipboard(text)"},
     {"read_clipboard",     py_read_clipboard,     METH_NOARGS,  "read_clipboard() -> str"},
@@ -959,6 +1133,27 @@ static id py_to_ns(PyObject *obj) {
 
         g_initialized = YES;
         plugin_log(@"PluginEngine", @"CPython %s ready. home=%@", PY_VERSION, pythonHome);
+
+        // Observe view-tree tap notifications and dispatch them into Python.
+        [[NSNotificationCenter defaultCenter]
+            addObserverForName:EGPluginViewCallbackNotification
+                        object:nil
+                         queue:nil
+                    usingBlock:^(NSNotification *note) {
+            NSString *handle = note.userInfo[@"handle"];
+            if (![handle isKindOfClass:[NSString class]] || handle.length == 0) return;
+            [EGPythonBridge withPython:^{
+                PyObject *mod = PyImport_ImportModule("eg_widgets");
+                if (!mod) { PyErr_Clear(); return; }
+                PyObject *fn = PyObject_GetAttrString(mod, "_invoke");
+                if (fn && PyCallable_Check(fn)) {
+                    PyObject *r = PyObject_CallFunction(fn, "s", handle.UTF8String);
+                    if (!r) PyErr_Clear(); else Py_DECREF(r);
+                }
+                Py_XDECREF(fn);
+                Py_DECREF(mod);
+            }];
+        }];
     });
 
     return g_initialized;
