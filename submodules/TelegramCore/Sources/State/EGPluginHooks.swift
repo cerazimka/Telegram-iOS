@@ -31,4 +31,26 @@ public enum EGPluginHooks {
     /// Plugins insert/remove entries; TelegramCore checks the set at parse time.
     /// Example: "MediaSpoilerMessageAttribute" drops the media-spoiler attribute.
     public nonisolated(unsafe) static var suppressedAttributeTypes: Set<String> = []
+
+    // MARK: - Generic event bus
+
+    /// Synchronous event dispatch — registered closure modifies params in-place and returns.
+    /// Use when the caller needs the modified params back (e.g. reaction big flag).
+    public static var eventBusHook: ((String, inout [String: Any]) -> Void)?
+
+    /// Asynchronous event dispatch — fire-and-forget notification to plugins.
+    /// Use for lifecycle events where no params need to be written back.
+    public static var eventBusHookAsync: ((String, [String: Any]) -> Void)?
+
+    /// Fire a synchronous lifecycle/data event. Plugins registered via add_event_hook() receive it.
+    @inline(__always)
+    public static func fire(_ event: String, _ params: inout [String: Any]) {
+        eventBusHook?(event, &params)
+    }
+
+    /// Fire an async lifecycle event (notification-only, params are a snapshot).
+    @inline(__always)
+    public static func fireAsync(_ event: String, params: [String: Any] = [:]) {
+        eventBusHookAsync?(event, params)
+    }
 }

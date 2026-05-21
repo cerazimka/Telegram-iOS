@@ -396,6 +396,10 @@ private func opportunisticallyTransformOutgoingMedia(network: Network, postbox: 
 public func enqueueMessages(account: Account, peerId: PeerId, messages: [EnqueueMessage]) -> Signal<[MessageId?], NoError> {
     var hookParams: [String: Any] = ["peer_id": peerId.id._internalGetInt64Value(), "count": messages.count]
     EGPluginHooks.sendMessageHook?(&hookParams)
+    let forwardCount = messages.filter { if case .forward = $0 { return true }; return false }.count
+    if forwardCount > 0 {
+        EGPluginHooks.fireAsync("messages.forwardMessages", params: ["peer_id": peerId.id._internalGetInt64Value(), "count": forwardCount])
+    }
     let signal: Signal<[(Bool, EnqueueMessage)], NoError>
     if let transformOutgoingMessageMedia = account.transformOutgoingMessageMedia {
         signal = opportunisticallyTransformOutgoingMedia(network: account.network, postbox: account.postbox, transformOutgoingMessageMedia: transformOutgoingMessageMedia, messages: messages, userInteractive: true)

@@ -7160,7 +7160,7 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         }
     }
     
-    override public func viewWillAppear(_ animated: Bool) {
+    @objc dynamic override public func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
                 
         if self.willAppear {
@@ -7257,10 +7257,11 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
     
     var returnInputViewFocus = false
     
-    override public func viewDidAppear(_ animated: Bool) {
+    @objc dynamic override public func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        
+
         self.didAppear = true
+        EGPluginHooks.fireAsync("chat.opened", params: self.chatLocation.peerId.map { ["peer_id": $0.id._internalGetInt64Value()] } ?? [:])
         
         self.chatDisplayNode.historyNode.experimentalSnapScrollToItem = false
         self.chatDisplayNode.historyNode.canReadHistory.set(self.computedCanReadHistoryPromise.get())
@@ -7728,9 +7729,10 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         }
     }
     
-    override public func viewWillDisappear(_ animated: Bool) {
+    @objc dynamic override public func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
+        EGPluginHooks.fireAsync("chat.closed", params: self.chatLocation.peerId.map { ["peer_id": $0.id._internalGetInt64Value()] } ?? [:])
+
         if #available(iOS 18.0, *) {
         } else {
             //TODO:release
@@ -7991,13 +7993,13 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         }
     }
     
-    @objc func leftNavigationButtonAction() {
+    @objc dynamic func leftNavigationButtonAction() {
         if let button = self.leftNavigationButton {
             self.navigationButtonAction(button.action)
         }
     }
     
-    @objc func rightNavigationButtonAction() {
+    @objc dynamic func rightNavigationButtonAction() {
         if let button = self.rightNavigationButton {
             if case .standard(.previewing) = self.mode {
                 self.navigationButtonAction(button.action)
@@ -8009,13 +8011,13 @@ public final class ChatControllerImpl: TelegramBaseController, ChatController, G
         }
     }
     
-    @objc func secondaryRightNavigationButtonAction() {
+    @objc dynamic func secondaryRightNavigationButtonAction() {
         if let button = self.secondaryRightNavigationButton {
             self.navigationButtonAction(button.action)
         }
     }
     
-    @objc func moreButtonPressed() {
+    @objc dynamic func moreButtonPressed() {
         self.moreBarButton.play()
         self.moreBarButton.contextAction?(self.moreBarButton.containerNode, nil)
     }

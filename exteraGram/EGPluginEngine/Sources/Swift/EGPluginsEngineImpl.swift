@@ -59,6 +59,14 @@ public final class EGPluginsEngineImpl {
                 if suppress { EGPluginHooks.suppressedAttributeTypes.insert(typeName) }
                 else        { EGPluginHooks.suppressedAttributeTypes.remove(typeName) }
             }
+            // Generic event bus — reuses the same g_tl_hooks dict; event name is the key.
+            EGPluginHooks.eventBusHook = { [weak self] event, params in
+                _ = self
+                EGTLHookBridge.shared.dispatchTLHook(event, params: &params)
+            }
+            EGPluginHooks.eventBusHookAsync = { event, params in
+                EGTLHookBridge.shared.dispatchTLHookAsync(event, snapshot: params)
+            }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {
                 // loadPlugin also calls EGPluginRuntime.initialize() — dispatch_once makes it safe.
@@ -79,6 +87,8 @@ public final class EGPluginsEngineImpl {
             EGPluginHooks.suppressedAttributeTypes.removeAll()
             EGPythonBridge.suppressEntityTypeHandler = nil
             EGPythonBridge.suppressAttributeTypeHandler = nil
+            EGPluginHooks.eventBusHook = nil
+            EGPluginHooks.eventBusHookAsync = nil
             for id in pluginIds {
                 if EGPythonBridge.isInitialized {
                     EGPythonBridge.unloadPlugin(id)

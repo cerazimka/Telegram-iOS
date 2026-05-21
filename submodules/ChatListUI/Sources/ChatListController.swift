@@ -2341,9 +2341,9 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
     
     public static var sharedPreviousPowerSavingEnabled: Bool?
     
-    override public func viewDidAppear(_ animated: Bool) {
+    @objc dynamic override public func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-                
+
         if self.powerSavingMonitoringDisposable == nil {
             self.powerSavingMonitoringDisposable = (self.context.sharedContext.automaticMediaDownloadSettings
             |> mapToSignal { settings -> Signal<Bool, NoError> in
@@ -2821,9 +2821,9 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         }
     }
     
-    override public func viewWillDisappear(_ animated: Bool) {
+    @objc dynamic override public func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        
+
         self.chatListDisplayNode.mainContainerNode.updateEnableAdjacentFilterLoading(false)
         
         self.dismissAllUndoControllers()
@@ -3519,7 +3519,7 @@ public class ChatListControllerImpl: TelegramBaseController, ChatListController 
         }
     }
     
-    @objc func editPressed() {
+    @objc dynamic func editPressed() {
         if self.secondaryContext == nil {
             if case .chatList(.root) = self.chatListDisplayNode.effectiveContainerNode.location {
                 self.effectiveContext?.leftButton = AnyComponentWithIdentity(id: "done", component: AnyComponent(NavigationButtonComponent(
