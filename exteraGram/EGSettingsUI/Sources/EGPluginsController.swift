@@ -159,12 +159,16 @@ public final class PluginsController {
         }
     }
 
-    /// Fill in empty filePath fields using the canonical Documents/EGPlugins/<id>.plugin path.
+    /// Ensure every plugin's filePath resolves to an existing file.
+    /// Handles both empty paths (pre-filePath field era) and stale absolute paths
+    /// (container UUID changes on app reinstall/update).
     private func repairMissingFilePaths() {
         let dir = EGPluginsDirectory.plugins.url
         var updated = false
         var list = plugins
-        for i in list.indices where list[i].filePath.isEmpty {
+        for i in list.indices {
+            let existing = list[i].filePath
+            guard existing.isEmpty || !FileManager.default.fileExists(atPath: existing) else { continue }
             let candidate = dir.appendingPathComponent("\(list[i].id).plugin").path
             if FileManager.default.fileExists(atPath: candidate) {
                 list[i].filePath = candidate
