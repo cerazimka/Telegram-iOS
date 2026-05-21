@@ -47,6 +47,17 @@ SUITS = ["H", "D", "C", "S"]
 SUIT_SYM = {"H": "♥", "D": "♦", "C": "♣", "S": "♠"}
 RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 
+# Unicode Playing Cards block (U+1F0A0..U+1F0DE). iOS renders these as
+# full-colour card faces, much nicer than text like "Q♠".
+#   Spades base = 0x1F0A1 (A of spades), then 2..10 = +1..+9,
+#   then J=+10, Q=+12 (skip Knight=+11), K=+13.
+_SUIT_GLYPH_BASE = {"S": 0x1F0A1, "H": 0x1F0B1, "D": 0x1F0C1, "C": 0x1F0D1}
+_RANK_OFFSET = {
+    "A": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5,
+    "7": 6, "8": 7, "9": 8, "10": 9, "J": 10, "Q": 12, "K": 13,
+}
+DIVIDER = "━━━━━━━━━━━━━━━"
+
 
 # ---------------------------------------------------------------------------
 # Bridge wrappers (each guarded — missing bridge method must not break load)
@@ -105,7 +116,12 @@ def _card_value(rank):
 
 
 def _render(card):
-    return card[0] + SUIT_SYM[card[1]]
+    rank, suit = card
+    base = _SUIT_GLYPH_BASE.get(suit)
+    off = _RANK_OFFSET.get(rank)
+    if base is None or off is None:
+        return rank + SUIT_SYM.get(suit, "?")
+    return chr(base + off)
 
 
 def _build_deck():
@@ -173,41 +189,50 @@ def _play_round(bet):
             _deal(dealer)
         dealer_score = _score(dealer)
 
-    # Resolve outcome
+    # Resolve outcome. `kind` drives haptic + stat counter; `title` and
+    # `subtitle` together form the alert headline.
     if player_bj and not dealer_bj:
-        result = "♠ БЛЭКДЖЕК! \U0001F3C6"
+        title = "🏆 БЛЭКДЖЕК!"
+        subtitle = "Чистая 21 с двух карт"
         payout = (bet * 5) // 2
         kind = "win_bj"
     elif dealer_bj and not player_bj:
-        result = "Дилер БЛЭКДЖЕК \U0001F494"
+        title = "💔 Дилер собрал БЛЭКДЖЕК"
+        subtitle = "Раунд проигран"
         payout = 0
         kind = "lose"
     elif player_bj and dealer_bj:
-        result = "Двойной БЛЭКДЖЕК — ничья \U0001F91D"
+        title = "🤝 Двойной БЛЭКДЖЕК"
+        subtitle = "Ставка возвращается"
         payout = bet
         kind = "push"
     elif player_score > 21:
-        result = "ПЕРЕБОР! \U0001F4A5"
+        title = "💥 ПЕРЕБОР"
+        subtitle = "Игрок ушёл за 21"
         payout = 0
         kind = "lose"
     elif dealer_score > 21:
-        result = "ПОБЕДА — у дилера перебор \U0001F389"
+        title = "🎉 ПОБЕДА"
+        subtitle = "У дилера перебор"
         payout = bet * 2
         kind = "win"
     elif player_score > dealer_score:
-        result = "ПОБЕДА! \U0001F389"
+        title = "🎉 ПОБЕДА"
+        subtitle = "Выше дилера"
         payout = bet * 2
         kind = "win"
     elif player_score < dealer_score:
-        result = "ПОРАЖЕНИЕ \U0001F494"
+        title = "💔 ПОРАЖЕНИЕ"
+        subtitle = "Ниже дилера"
         payout = 0
         kind = "lose"
     else:
-        result = "НИЧЬЯ \U0001F91D"
+        title = "🤝 НИЧЬЯ"
+        subtitle = "Очки совпали"
         payout = bet
         kind = "push"
 
-    return player, dealer, player_score, dealer_score, result, payout, kind
+    return player, dealer, player_score, dealer_score, title, subtitle, payout, kind
 
 
 # ---------------------------------------------------------------------------
@@ -252,15 +277,21 @@ def on_load(plugin):
     _load_state()
 
     if S["balance"] <= 0:
-        _alert("♠ BlackJack ♥",
-               "Баланс: $0\n\nЧтобы сыграть заново, очисти статистику плагина в настройках iOS (UserDefaults).",
-               "OK")
+        _alert(
+            "♠️ Игра окончена ♥️",
+            DIVIDER + "\n"
+            + "💸  Баланс: $0\n"
+            + DIVIDER + "\n\n"
+            + "Очисти данные плагина в Settings → Plugins,\n"
+            + "чтобы начать заново со стартовым балансом.",
+            "Закрыть",
+        )
         return
 
     bet = _pick_bet()
     S["balance"] -= bet
 
-    player, dealer, ps, ds, result, payout, kind = _play_round(bet)
+    player, dealer, ps, ds, title, subtitle, payout, kind = _play_round(bet)
 
     if kind == "win" or kind == "win_bj":
         S["wins"] += 1
@@ -276,18 +307,29 @@ def on_load(plugin):
     _save_state()
 
     delta = payout - bet
-    delta_str = ("+$" + str(delta)) if delta >= 0 else ("-$" + str(-delta))
+    if delta > 0:
+        delta_str = "+$" + str(delta)
+    elif delta < 0:
+        delta_str = "−$" + str(-delta)
+    else:
+        delta_str = "±$0"
 
     body = (
-        "Ставка: $" + str(bet) + "\n"
-        "Дилер: " + _render_hand(dealer) + " (" + str(ds) + ")\n"
-        "Игрок: " + _render_hand(player) + " (" + str(ps) + ")\n\n"
-        + result + "\n\n"
-        "Баланс: $" + str(S["balance"]) + " (" + delta_str + ")\n"
-        "W/L/T: " + str(S["wins"]) + "/" + str(S["losses"]) + "/" + str(S["pushes"]) + "\n\n"
-        "Перезагрузи плагин чтобы сыграть ещё раз."
+        subtitle + "\n"
+        + DIVIDER + "\n\n"
+        + "🎩  Дилер  ·  " + str(ds) + "\n"
+        + "      " + _render_hand(dealer) + "\n\n"
+        + "👤  Игрок  ·  " + str(ps) + "\n"
+        + "      " + _render_hand(player) + "\n\n"
+        + DIVIDER + "\n"
+        + "💎  Ставка    $" + str(bet) + "\n"
+        + "💰  Баланс    $" + str(S["balance"]) + "   " + delta_str + "\n"
+        + "📊  " + str(S["wins"]) + " W · " + str(S["losses"]) + " L · " + str(S["pushes"]) + " T\n"
+        + DIVIDER + "\n\n"
+        + "🔄  Toggle off/on в Settings → Plugins\n"
+        + "      для следующей раздачи"
     )
-    _alert("♠ BlackJack ♥", body, "OK")
+    _alert(title, body, "Закрыть")
 
 
 def on_unload(plugin):
