@@ -1,0 +1,32 @@
+"""
+Anti-Spoiler — iOS port of @mihailkotovski & @mishabotov's Android plugin.
+
+Automatically removes spoilers from text and media in all chats.
+Works by setting EGPluginHooks.antiSpoilerEnabled = True in TelegramCore
+before messages are stored — text spoiler entities and MediaSpoilerMessageAttribute
+are never added to the message database, so spoilers are never shown.
+"""
+
+__id__          = "anti_spoiler"
+__name__        = "Anti-Spoiler"
+__os__          = "ios"
+__version__     = "1.0.0"
+__author__      = "@mihailkotovski & @mishabotov (iOS port @exteraPlugins)"
+__description__ = "Автоматически убирает спойлеры из текста и медиа."
+__min_version__ = "11.12.1"
+__icon__        = "UtyaDuck/5"
+
+from ios_utils import set_anti_spoiler_enabled
+from android_utils import log
+
+# No settings needed — the plugin is active as long as it is loaded and enabled.
+
+
+def on_load(plugin):
+    set_anti_spoiler_enabled(True)
+    log("[AntiSpoiler] Loaded — spoilers suppressed")
+
+
+def on_unload(plugin):
+    set_anti_spoiler_enabled(False)
+    log("[AntiSpoiler] Unloaded — spoilers restored")

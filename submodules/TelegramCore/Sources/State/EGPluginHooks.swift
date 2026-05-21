@@ -21,4 +21,8 @@ public enum EGPluginHooks {
     /// Called when messages are deleted interactively.
     /// params["message_ids"]: [Int32], params["delete_for_everyone"]: Bool
     public static var deleteMessagesHook: ((inout [String: Any]) -> Void)?
+
+    /// When true, incoming messages are stored without MediaSpoilerMessageAttribute
+    /// and without MessageTextEntity(.Spoiler) — anti-spoiler plugin sets this.
+    public nonisolated(unsafe) static var antiSpoilerEnabled: Bool = false
 }

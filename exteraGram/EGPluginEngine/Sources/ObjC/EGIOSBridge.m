@@ -69,6 +69,9 @@ static PyObject *g_tl_hooks = NULL;
 static PyObject *g_loaded_modules = NULL;
 static BOOL g_initialized = NO;
 
+// Block set by EGPluginsEngineImpl to forward set_anti_spoiler() → EGPluginHooks.antiSpoilerEnabled
+static void (^g_antiSpoilerSetter)(BOOL) = nil;
+
 // ---------------------------------------------------------------------------
 // ObjC method-hook registry  (add_method_hook)
 // ---------------------------------------------------------------------------
@@ -608,6 +611,20 @@ static PyObject *py_haptic_feedback(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+// set_anti_spoiler(enabled: bool) — plugin calls this to toggle EGPluginHooks.antiSpoilerEnabled.
+// The actual flag lives in Swift (TelegramCore) and is set via g_antiSpoilerSetter, which
+// EGPluginsEngineImpl wires up at engine start.
+static PyObject *py_set_anti_spoiler(PyObject *self, PyObject *args) {
+    int enabled = 0;
+    if (!PyArg_ParseTuple(args, "p", &enabled)) return NULL;
+    void (^setter)(BOOL) = g_antiSpoilerSetter;
+    if (setter) {
+        BOOL b = (BOOL)enabled;
+        dispatch_async(dispatch_get_main_queue(), ^{ setter(b); });
+    }
+    Py_RETURN_NONE;
+}
+
 // get_locale_language() -> str
 static PyObject *py_get_locale_language(PyObject *self, PyObject *args) {
     const char *lang = EGStringsBridge_currentLanguageCStr();
@@ -938,6 +955,7 @@ static PyMethodDef ios_bridge_methods[] = {
     {"plugin_has_settings",  py_plugin_has_settings,  METH_VARARGS, "plugin_has_settings(plugin_id) -> bool"},
     {"get_plugin_settings",  py_get_plugin_settings,  METH_VARARGS, "get_plugin_settings(plugin_id) -> dict|None"},
     {"show_plugin_settings", py_show_plugin_settings, METH_VARARGS, "show_plugin_settings(plugin_id)"},
+    {"set_anti_spoiler",     py_set_anti_spoiler,     METH_VARARGS, "set_anti_spoiler(enabled: bool)"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -1045,6 +1063,9 @@ static id py_to_ns(PyObject *obj) {
 // ---------------------------------------------------------------------------
 
 @implementation EGPythonBridge
+
++ (void (^)(BOOL))antiSpoilerEnabledSetter { return g_antiSpoilerSetter; }
++ (void)setAntiSpoilerEnabledSetter:(void (^)(BOOL))block { g_antiSpoilerSetter = [block copy]; }
 
 + (BOOL)initializeWithHome:(NSString *)pythonHome
                    sdkPath:(NSString *)sdkPath

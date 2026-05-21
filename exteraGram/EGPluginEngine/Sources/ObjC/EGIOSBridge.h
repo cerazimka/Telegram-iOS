@@ -58,6 +58,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// Returns YES on success. Idempotent — call before initializeWithHome:.
 + (BOOL)extractPythonStdlibZip:(NSString *)zipPath toDirectory:(NSString *)destDir;
 
+/// Block set by EGPluginsEngineImpl to wire set_anti_spoiler() → EGPluginHooks.antiSpoilerEnabled.
+@property (class, nonatomic, copy, nullable) void (^antiSpoilerEnabledSetter)(BOOL);
+
 @end
 
 NS_ASSUME_NONNULL_END

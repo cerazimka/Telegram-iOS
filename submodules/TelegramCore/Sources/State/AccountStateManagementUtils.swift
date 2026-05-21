@@ -1205,7 +1205,7 @@ private func finalStateWithUpdatesAndServerTime(accountPeerId: PeerId, postbox: 
                             attributes.append(NonPremiumMessageAttribute())
                         }
                         
-                        if let hasSpoiler = hasSpoiler, hasSpoiler {
+                        if let hasSpoiler = hasSpoiler, hasSpoiler, !EGPluginHooks.antiSpoilerEnabled {
                             attributes.append(MediaSpoilerMessageAttribute())
                         }
                         

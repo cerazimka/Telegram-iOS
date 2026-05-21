@@ -78,3 +78,15 @@ def haptic_feedback(style: str = "medium") -> None:
         _ios_bridge.haptic_feedback(style)
     except AttributeError:
         pass
+
+
+def set_anti_spoiler_enabled(enabled: bool) -> None:
+    """
+    When True, incoming messages are stored without spoiler entities/attributes,
+    so text and media spoilers are always visible. Calls into TelegramCore via
+    EGPluginHooks.antiSpoilerEnabled (Swift-level flag, fast path, no overhead).
+    """
+    try:
+        _ios_bridge.set_anti_spoiler(bool(enabled))
+    except AttributeError:
+        pass

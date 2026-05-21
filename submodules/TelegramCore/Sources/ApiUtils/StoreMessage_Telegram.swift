@@ -805,8 +805,10 @@ func messageTextEntitiesFromApiEntities(_ entities: [Api.MessageEntity]) -> [Mes
             let (offset, length) = (messageEntityBankCardData.offset, messageEntityBankCardData.length)
             result.append(MessageTextEntity(range: Int(offset) ..< Int(offset + length), type: .BankCard))
         case let .messageEntitySpoiler(messageEntitySpoilerData):
-            let (offset, length) = (messageEntitySpoilerData.offset, messageEntitySpoilerData.length)
-            result.append(MessageTextEntity(range: Int(offset) ..< Int(offset + length), type: .Spoiler))
+            if !EGPluginHooks.antiSpoilerEnabled {
+                let (offset, length) = (messageEntitySpoilerData.offset, messageEntitySpoilerData.length)
+                result.append(MessageTextEntity(range: Int(offset) ..< Int(offset + length), type: .Spoiler))
+            }
         case let .messageEntityCustomEmoji(messageEntityCustomEmojiData):
             let (offset, length, documentId) = (messageEntityCustomEmojiData.offset, messageEntityCustomEmojiData.length, messageEntityCustomEmojiData.documentId)
             result.append(MessageTextEntity(range: Int(offset) ..< Int(offset + length), type: .CustomEmoji(stickerPack: nil, fileId: documentId)))
@@ -1032,10 +1034,10 @@ extension StoreMessage {
                             attributes.append(NonPremiumMessageAttribute())
                         }
                         
-                        if let hasSpoiler = hasSpoiler, hasSpoiler {
+                        if let hasSpoiler = hasSpoiler, hasSpoiler, !EGPluginHooks.antiSpoilerEnabled {
                             attributes.append(MediaSpoilerMessageAttribute())
                         }
-                        
+
                         if let videoTimestamp {
                             attributes.append(ForwardVideoTimestampAttribute(timestamp: videoTimestamp))
                         }

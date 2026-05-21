@@ -188,7 +188,7 @@ func applyUpdateMessage(postbox: Postbox, stateManager: AccountStateManager, mes
                     updatedAttributes.append(NonPremiumMessageAttribute())
                 }
                 
-                if let hasSpoiler = hasSpoiler, hasSpoiler {
+                if let hasSpoiler = hasSpoiler, hasSpoiler, !EGPluginHooks.antiSpoilerEnabled {
                     updatedAttributes.append(MediaSpoilerMessageAttribute())
                 }
                 

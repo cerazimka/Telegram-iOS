@@ -50,6 +50,10 @@ public final class EGPluginsEngineImpl {
                 EGTLHookBridge.shared.dispatchTLHookAsync(
                     "messages.deleteMessages", snapshot: params)
             }
+            // Wire anti-spoiler setter: Python's set_anti_spoiler(bool) → EGPluginHooks.antiSpoilerEnabled
+            EGPythonBridge.antiSpoilerEnabledSetter = { enabled in
+                EGPluginHooks.antiSpoilerEnabled = enabled
+            }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {
                 // loadPlugin also calls EGPluginRuntime.initialize() — dispatch_once makes it safe.
@@ -66,6 +70,8 @@ public final class EGPluginsEngineImpl {
             EGPluginHooks.sendMessageHook = nil
             EGPluginHooks.editMessageHook = nil
             EGPluginHooks.deleteMessagesHook = nil
+            EGPluginHooks.antiSpoilerEnabled = false
+            EGPythonBridge.antiSpoilerEnabledSetter = nil
             for id in pluginIds {
                 if EGPythonBridge.isInitialized {
                     EGPythonBridge.unloadPlugin(id)
