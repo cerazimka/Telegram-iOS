@@ -390,7 +390,9 @@ static PyObject *py_show_bulletin(PyObject *self, PyObject *args) {
     NSString *nsTitle = [NSString stringWithUTF8String:title];
     NSString *nsText  = [NSString stringWithUTF8String:text];
     NSString *nsIcon  = [NSString stringWithUTF8String:icon];
-    dispatch_async(dispatch_get_main_queue(), ^{
+    // 0.5s delay so any toggle animation or install sheet can finish before we present.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
         [[NSNotificationCenter defaultCenter]
             postNotificationName:@"EGPluginShowBulletinNotification"
                           object:nil

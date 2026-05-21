@@ -34,6 +34,9 @@ public final class EGPluginsEngineImpl {
             EGPluginHooks.sendReactionHook = { params in
                 EGTLHookBridge.shared.dispatchTLHook("messages.sendReaction", params: &params)
             }
+            EGPluginHooks.sendMessageHook = { params in
+                EGTLHookBridge.shared.dispatchTLHook("messages.sendMessage", params: &params)
+            }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {
                 // loadPlugin also calls EGPluginRuntime.initialize() — dispatch_once makes it safe.
@@ -47,6 +50,7 @@ public final class EGPluginsEngineImpl {
     public func stop(pluginIds: [String], completion: @escaping () -> Void) {
         engineQueue.async {
             EGPluginHooks.sendReactionHook = nil
+            EGPluginHooks.sendMessageHook = nil
             for id in pluginIds {
                 if EGPythonBridge.isInitialized {
                     EGPythonBridge.unloadPlugin(id)
@@ -130,8 +134,13 @@ public final class EGPluginsEngineImpl {
 
     // MARK: - Settings
 
-    public func getPluginSetting(_ id: String, key: String, default def: Any?) -> Any? { def }
-    public func setPluginSetting(_ id: String, key: String, value: Any) { }
+    public func getPluginSetting(_ id: String, key: String, default def: Any?) -> Any? {
+        UserDefaults.standard.object(forKey: "eg.plugin.\(id).\(key)") ?? def
+    }
+
+    public func setPluginSetting(_ id: String, key: String, value: Any) {
+        UserDefaults.standard.set(value, forKey: "eg.plugin.\(id).\(key)")
+    }
 
     /// Returns the plugin's `__settings__` items array, or nil if the plugin has no settings.
     public func getPluginSettingsSchema(_ id: String) -> [[String: Any]]? {
