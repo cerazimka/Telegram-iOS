@@ -34,15 +34,12 @@ public final class EGPluginsEngineImpl {
             EGPluginHooks.sendReactionHook = { params in
                 EGTLHookBridge.shared.dispatchTLHook("messages.sendReaction", params: &params)
             }
-            // sendMessage is notification-only — dispatch async so the main thread
-            // is never blocked waiting for the Python GIL.
+            // sendMessage is notification-only: dispatch via the bridge's dedicated
+            // serial Python queue — never blocks main thread, always same OS thread
+            // (avoids GCD thread-recycling SIGSEGV in CPython PyGILState).
             EGPluginHooks.sendMessageHook = { params in
-                let snapshot = params  // copy value before inout binding expires
-                DispatchQueue.global(qos: .userInitiated).async {
-                    var localParams = snapshot
-                    EGPluginDebugLog.shared.append(tag: "TLHook", "sendMessage hook → Python")
-                    EGTLHookBridge.shared.dispatchTLHook("messages.sendMessage", params: &localParams)
-                }
+                EGTLHookBridge.shared.dispatchTLHookAsync(
+                    "messages.sendMessage", snapshot: params)
             }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {

@@ -982,10 +982,83 @@ static id py_to_ns(PyObject *obj) {
             PyErr_Clear();
             Py_XDECREF(on_unload);
             PyDict_DelItemString(g_loaded_modules, pluginId.UTF8String);
-            // Remove from sys.modules
             PyObject *sys_modules = PySys_GetObject("modules");
             PyDict_DelItemString(sys_modules, pluginId.UTF8String);
         }
+
+        // --- Purge TL-hook callbacks that belong to this module -----------
+        // Callbacks registered by the plugin are closures whose __module__
+        // attribute equals the plugin id.  Walk every hook list and remove
+        // any callable whose __module__ matches.  This prevents use-after-free
+        // if the hook fires (via the async serial queue) after the module is gone.
+        if (g_tl_hooks) {
+            PyObject *keys = PyDict_Keys(g_tl_hooks);
+            Py_ssize_t kn  = PyList_Size(keys);
+            for (Py_ssize_t ki = 0; ki < kn; ki++) {
+                PyObject *key  = PyList_GetItem(keys, ki); // borrowed
+                PyObject *list = PyDict_GetItem(g_tl_hooks, key); // borrowed
+                if (!list) continue;
+                // Build a new list without callbacks from this plugin.
+                PyObject *filtered = PyList_New(0);
+                Py_ssize_t ln = PyList_Size(list);
+                for (Py_ssize_t li = 0; li < ln; li++) {
+                    PyObject *cb  = PyList_GetItem(list, li); // borrowed
+                    PyObject *mod = PyObject_GetAttrString(cb, "__module__");
+                    const char *modName = mod ? PyUnicode_AsUTF8(mod) : NULL;
+                    BOOL belongs = (modName && strcmp(modName, pluginId.UTF8String) == 0);
+                    Py_XDECREF(mod);
+                    PyErr_Clear();
+                    if (!belongs) {
+                        PyList_Append(filtered, cb);
+                    }
+                }
+                PyDict_SetItem(g_tl_hooks, key, filtered);
+                Py_DECREF(filtered);
+            }
+            Py_DECREF(keys);
+        }
+
+        // --- Purge ObjC method-hook callbacks for this plugin ---------------
+        // Clear before_list / after_list for each installed hook so that
+        // the IMP replacement becomes a no-op rather than calling freed objects.
+        if (g_method_hooks) {
+            for (NSValue *val in g_method_hooks.allValues) {
+                EGMethodHookEntry *entry = (EGMethodHookEntry *)val.pointerValue;
+                if (!entry) continue;
+                // Remove callbacks whose __module__ matches the unloaded plugin.
+                for (PyObject *hookList in @[ (__bridge id)entry->before_list,
+                                              (__bridge id)entry->after_list ]) {
+                    // Can't use fast-enum on a PyObject; iterate via index.
+                    (void)hookList; // suppress unused warning — see loop below
+                }
+                // Iterate before_list
+                PyObject *lists[2] = { entry->before_list, entry->after_list };
+                for (int li = 0; li < 2; li++) {
+                    PyObject *lst = lists[li];
+                    if (!lst) continue;
+                    PyObject *filtered = PyList_New(0);
+                    Py_ssize_t ln = PyList_Size(lst);
+                    for (Py_ssize_t i = 0; i < ln; i++) {
+                        PyObject *cb  = PyList_GetItem(lst, i);
+                        PyObject *mod = PyObject_GetAttrString(cb, "__module__");
+                        const char *mn = mod ? PyUnicode_AsUTF8(mod) : NULL;
+                        BOOL belongs = (mn && strcmp(mn, pluginId.UTF8String) == 0);
+                        Py_XDECREF(mod);
+                        PyErr_Clear();
+                        if (!belongs) PyList_Append(filtered, cb);
+                    }
+                    // Replace the list in-place by swapping contents
+                    while (PyList_Size(lists[li]) > 0) PyList_SetSlice(lists[li], 0, 1, NULL);
+                    ln = PyList_Size(filtered);
+                    for (Py_ssize_t i = 0; i < ln; i++)
+                        PyList_Append(lists[li], PyList_GetItem(filtered, i));
+                    Py_DECREF(filtered);
+                }
+            }
+        }
+
+        EGPluginDebugLog_appendCStr("Engine",
+            [[NSString stringWithFormat:@"unloadPlugin: hooks purged for '%@'", pluginId] UTF8String]);
     }];
 #endif
 }
