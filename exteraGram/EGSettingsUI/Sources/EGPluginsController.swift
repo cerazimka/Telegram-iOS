@@ -14,6 +14,12 @@ import TelegramCore
 import AnimatedStickerNode
 import TelegramAnimatedStickerNode
 
+/// Reference-type holder for the latest connection-state string so the
+/// signal subscriber and the EGPluginClientInfo provider closure share state.
+private final class ConnectionStateBox {
+    var value: String = "connected"
+}
+
 // MARK: - Data Model
 
 public struct EGPlugin: Identifiable, Codable {
@@ -182,6 +188,39 @@ public final class PluginsController {
         let ids = plugins.map { $0.id }
         engine.stop(pluginIds: ids) {
             DispatchQueue.main.async { completion?() }
+        }
+    }
+
+    // MARK: - Client info wiring (exposes account/user info to Python plugins)
+
+    private var clientInfoDisposable: Disposable?
+
+    /// Wire the AccountContext into EGPluginClientInfo so Python plugins can read
+    /// account id, user id, and live connection state via _ios_bridge.
+    /// Safe to call multiple times — the previous subscription is cancelled.
+    public func wireClientInfo(context: AccountContext) {
+        EGPluginClientInfo.accountIdProvider = { [weak context] in
+            context?.account.id.int64 ?? 0
+        }
+        EGPluginClientInfo.userIdProvider = { [weak context] in
+            context?.account.peerId.id._internalGetInt64Value() ?? 0
+        }
+
+        // Subscribe to connection status so get_connection_state() reflects live state.
+        clientInfoDisposable?.dispose()
+        let stateBox = ConnectionStateBox()
+        clientInfoDisposable = context.account.network.connectionStatus.start(next: { status in
+            stateBox.value = Self.stateString(status)
+        })
+        EGPluginClientInfo.connectionStateProvider = { stateBox.value }
+    }
+
+    private static func stateString(_ status: ConnectionStatus) -> String {
+        switch status {
+        case .waitingForNetwork: return "waiting_for_network"
+        case .connecting:        return "connecting"
+        case .updating:          return "updating"
+        case .online:            return "connected"
         }
     }
 
@@ -865,6 +904,9 @@ public func egPluginsController(context: AccountContext) -> ViewController {
     guard #available(iOS 14.0, *) else {
         return egSettingsController(context: context)
     }
+
+    // Make account/user/connection info available to Python plugins.
+    PluginsController.shared.wireClientInfo(context: context)
 
     let presentationData = context.sharedContext.currentPresentationData.with { $0 }
     let theme   = presentationData.theme

@@ -33,6 +33,12 @@ extern void EGPluginDebugLog_appendCStr(const char *tag, const char *message);
 extern const char *EGStringsBridge_currentLanguageCStr(void);
 extern const char *EGStringsBridge_localizedStringCStr(const char *key);
 
+// Swift @_cdecl bridges — client info & data dir. Declared in EGPluginClientInfo.swift.
+extern int64_t EGPluginClientInfo_getAccountId(void);
+extern int64_t EGPluginClientInfo_getUserId(void);
+extern const char *EGPluginClientInfo_getConnectionStateCStr(void);
+extern const char *EGPluginClientInfo_getPluginDataDirCStr(const char *plugin_id);
+
 static void plugin_log(NSString *tag, NSString *fmt, ...) NS_FORMAT_FUNCTION(2, 3);
 static void plugin_log(NSString *tag, NSString *fmt, ...) {
     va_list args;
@@ -264,6 +270,85 @@ static PyObject *py_get_string(PyObject *self, PyObject *args) {
     return result;
 }
 
+// ---------------------------------------------------------------------------
+// Plugin settings (UserDefaults, namespaced eg.plugin.<id>.<key>)
+// ---------------------------------------------------------------------------
+
+static NSString *settingKey(const char *plugin_id, const char *key) {
+    return [NSString stringWithFormat:@"eg.plugin.%s.%s", plugin_id ?: "", key ?: ""];
+}
+
+// get_plugin_setting(plugin_id, key, default=None) -> Any
+static PyObject *py_get_plugin_setting(PyObject *self, PyObject *args) {
+    const char *plugin_id = "", *key = "";
+    PyObject *def = Py_None;
+    if (!PyArg_ParseTuple(args, "ss|O", &plugin_id, &key, &def)) return NULL;
+    id value = [[NSUserDefaults standardUserDefaults] objectForKey:settingKey(plugin_id, key)];
+    if (value == nil) {
+        Py_INCREF(def);
+        return def;
+    }
+    PyObject *py = ns_to_py(value);
+    if (py) return py;
+    Py_INCREF(def);
+    return def;
+}
+
+// set_plugin_setting(plugin_id, key, value)
+static PyObject *py_set_plugin_setting(PyObject *self, PyObject *args) {
+    const char *plugin_id = "", *key = "";
+    PyObject *value;
+    if (!PyArg_ParseTuple(args, "ssO", &plugin_id, &key, &value)) return NULL;
+    NSString *k = settingKey(plugin_id, key);
+    if (value == Py_None) {
+        [[NSUserDefaults standardUserDefaults] removeObjectForKey:k];
+    } else {
+        id ns = py_to_ns(value);
+        if (ns && ns != [NSNull null]) {
+            [[NSUserDefaults standardUserDefaults] setObject:ns forKey:k];
+        } else {
+            [[NSUserDefaults standardUserDefaults] removeObjectForKey:k];
+        }
+    }
+    Py_RETURN_NONE;
+}
+
+// ---------------------------------------------------------------------------
+// Plugin data directory
+// ---------------------------------------------------------------------------
+
+// get_plugin_data_dir(plugin_id) -> str
+static PyObject *py_get_plugin_data_dir(PyObject *self, PyObject *args) {
+    const char *plugin_id = "";
+    if (!PyArg_ParseTuple(args, "s", &plugin_id)) return NULL;
+    const char *path = EGPluginClientInfo_getPluginDataDirCStr(plugin_id);
+    PyObject *result = PyUnicode_FromString(path ?: "");
+    if (path) free((void *)path);
+    return result;
+}
+
+// ---------------------------------------------------------------------------
+// Telegram client info
+// ---------------------------------------------------------------------------
+
+// get_account_id() -> int
+static PyObject *py_get_account_id(PyObject *self, PyObject *args) {
+    return PyLong_FromLongLong(EGPluginClientInfo_getAccountId());
+}
+
+// get_user_id() -> int
+static PyObject *py_get_user_id(PyObject *self, PyObject *args) {
+    return PyLong_FromLongLong(EGPluginClientInfo_getUserId());
+}
+
+// get_connection_state() -> str ("connected" | "connecting" | "updating" | "waiting_for_network")
+static PyObject *py_get_connection_state(PyObject *self, PyObject *args) {
+    const char *state = EGPluginClientInfo_getConnectionStateCStr();
+    PyObject *result = PyUnicode_FromString(state ?: "connected");
+    if (state) free((void *)state);
+    return result;
+}
+
 static PyMethodDef ios_bridge_methods[] = {
     {"log_text",           py_log_text,           METH_VARARGS, "log_text(msg, tag='Plugin')"},
     {"add_tl_hook",        py_add_tl_hook,        METH_VARARGS, "add_tl_hook(tl_type, callback)"},
@@ -276,6 +361,12 @@ static PyMethodDef ios_bridge_methods[] = {
     {"haptic_feedback",    py_haptic_feedback,    METH_VARARGS, "haptic_feedback(style='medium')"},
     {"get_locale_language",py_get_locale_language,METH_NOARGS,  "get_locale_language() -> str"},
     {"get_string",         py_get_string,         METH_VARARGS, "get_string(key, default='') -> str"},
+    {"get_plugin_setting", py_get_plugin_setting, METH_VARARGS, "get_plugin_setting(plugin_id, key, default=None) -> Any"},
+    {"set_plugin_setting", py_set_plugin_setting, METH_VARARGS, "set_plugin_setting(plugin_id, key, value)"},
+    {"get_plugin_data_dir",py_get_plugin_data_dir,METH_VARARGS, "get_plugin_data_dir(plugin_id) -> str"},
+    {"get_account_id",     py_get_account_id,     METH_NOARGS,  "get_account_id() -> int"},
+    {"get_user_id",        py_get_user_id,        METH_NOARGS,  "get_user_id() -> int"},
+    {"get_connection_state",py_get_connection_state,METH_NOARGS,"get_connection_state() -> str"},
     {NULL, NULL, 0, NULL}
 };
 

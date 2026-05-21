@@ -1472,6 +1472,8 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
             }
             self.contextValue = context
             if let context = context {
+                // MARK: exteraGram — expose account/user/connection info to plugins
+                PluginsController.shared.wireClientInfo(context: context.context)
                 setupLegacyComponents(context: context.context)
                 let isReady = context.isReady.get()
                 contextReadyDisposable.set((isReady
