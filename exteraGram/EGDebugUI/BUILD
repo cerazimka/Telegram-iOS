@@ -38,6 +38,7 @@ swift_library(
         "//exteraGram/EGBadges:EGBadges",
         "//exteraGram/EGItemListUI:EGItemListUI",
         "//exteraGram/EGLogging:EGLogging",
+        "//exteraGram/EGPluginEngine:EGPluginEngine",
         "//exteraGram/EGSimpleSettings:EGSimpleSettings",
         "//exteraGram/EGStrings:EGStrings",
         "//exteraGram/EGSwiftUI:EGSwiftUI",

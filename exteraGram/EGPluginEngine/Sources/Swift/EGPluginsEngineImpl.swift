@@ -82,18 +82,23 @@ public final class EGPluginsEngineImpl {
         // from any thread, even concurrently — the second caller waits for the first to finish.
         EGPluginRuntime.shared.initialize()
         guard EGPythonBridge.isInitialized else {
-            errorStates[id] = "Python runtime unavailable"
+            let msg = "Python runtime unavailable"
+            errorStates[id] = msg
+            EGPluginDebugLog.shared.append(tag: "Engine", "[\(id)] \(msg)")
             return
         }
         let watchdog = EGPluginsWatchdog.shared
         watchdog.begin(pluginId: id) { [weak self] in self?.notResponding[id] = true }
+        EGPluginDebugLog.shared.append(tag: "Engine", "Loading plugin: \(id)")
         let errMsg = EGPythonBridge.loadPlugin(id, fromPath: filePath)
         watchdog.end(pluginId: id)
         if let errMsg {
             errorStates[id] = errMsg
             EGLogger.shared.log("PluginEngine", "Error loading \(id): \(errMsg)")
+            EGPluginDebugLog.shared.append(tag: "Engine", "ERROR [\(id)]: \(errMsg)")
         } else {
             errorStates.removeValue(forKey: id)
+            EGPluginDebugLog.shared.append(tag: "Engine", "Loaded [\(id)] ✓")
         }
     }
 

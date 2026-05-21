@@ -19,6 +19,7 @@ public final class EGLoggerBridge {
             let tag = note.userInfo?["tag"] as? String ?? "Plugin"
             let msg = note.userInfo?["msg"] as? String ?? ""
             EGLogger.shared.log("Plugin[\(tag)]", msg)
+            EGPluginDebugLog.shared.append(tag: tag, msg)
         }
     }
 

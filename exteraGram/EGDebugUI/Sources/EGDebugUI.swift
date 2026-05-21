@@ -17,6 +17,7 @@ import EGBadges
 import EGSimpleSettings
 import EGLogging
 import EGPayWall
+import EGPluginEngine
 import OverlayStatusController
 #if DEBUG
 import FLEX
@@ -33,6 +34,7 @@ private enum EGDebugDisclosureLink: String {
     case messageFilter
     case debugIAP
     case pluginIconDebug
+    case pluginLogs
 }
 
 private enum EGDebugActions: String {
@@ -73,6 +75,7 @@ private func EGDebugControllerEntries(presentationData: PresentationData) -> [EG
     entries.append(.action(id: id.count, section: .base, actionType: .showBadgeCache, text: "Show badge cache", kind: .generic))
     entries.append(.action(id: id.count, section: .base, actionType: .clearBadgeCache, text: "Clear Badge cache", kind: .destructive))
     entries.append(.disclosure(id: id.count, section: .base, link: .pluginIconDebug, text: "Plugin Icon Debug"))
+    entries.append(.disclosure(id: id.count, section: .base, link: .pluginLogs, text: "Plugin System Logs"))
     entries.append(.toggle(id: id.count, section: .base, settingName: .forceImmediateShareSheet, value: EGSimpleSettings.shared.forceSystemSharing, text: "Force System Share Sheet", enabled: true))
     
     entries.append(.toggle(id: id.count, section: .notifications, settingName: .legacyNotificationsFix, value: EGSimpleSettings.shared.legacyNotificationsFix, text: "[OLD] Fix empty notifications", enabled: true))
@@ -116,6 +119,8 @@ public func egDebugController(context: AccountContext) -> ViewController {
         switch link {
         case .pluginIconDebug:
             pushControllerImpl?(egPluginIconDebugController(context: context))
+        case .pluginLogs:
+            pushControllerImpl?(egPluginLogsController(context: context))
         default:
             break
         }

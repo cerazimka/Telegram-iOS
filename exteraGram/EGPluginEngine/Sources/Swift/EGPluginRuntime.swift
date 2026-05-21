@@ -38,6 +38,7 @@ public final class EGPluginRuntime {
         // CPython must be initialized on the main thread.
         // If we're already on main, call directly; otherwise dispatch synchronously.
         let doInit = {
+            EGPluginDebugLog.shared.append(tag: "Runtime", "Initializing CPython… home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
             let ok = EGPythonBridge.initialize(
                 withHome: pythonHome,
                 sdkPath: sdkPath ?? "",
@@ -48,6 +49,10 @@ public final class EGPluginRuntime {
                 EGLoggerBridge.shared.start()
                 EGLogger.shared.log("PluginRuntime",
                     "Engine ready. home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
+                EGPluginDebugLog.shared.append(tag: "Runtime", "CPython ready ✓")
+            } else {
+                EGPluginDebugLog.shared.append(tag: "Runtime", "CPython init FAILED ✗")
+                EGLogger.shared.log("PluginRuntime", "CPython init failed")
             }
         }
         if Thread.isMainThread {
