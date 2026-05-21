@@ -422,6 +422,13 @@ class AlertDialogBuilder:
 
     setCancelable = set_cancelable
 
+    def set_on_dismiss(self, cb):
+        """Called when dialog is dismissed (Done button or swipe-down)."""
+        h = _register(cb)
+        if h:
+            self._spec["on_dismiss_id"] = h
+        return self
+
     def create(self):
         return _Dialog(self._spec)
 

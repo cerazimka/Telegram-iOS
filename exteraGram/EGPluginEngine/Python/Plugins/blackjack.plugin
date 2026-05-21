@@ -451,6 +451,11 @@ def _update_view():
 # Presentation
 # ---------------------------------------------------------------------------
 
+def _on_main_dialog_dismiss():
+    global _dialog
+    _dialog = None
+
+
 def _present_dialog():
     global _dialog
     if _dialog:
@@ -461,6 +466,7 @@ def _present_dialog():
     b.set_title("Blackjack")
     b.set_view(root)
     b.set_cancelable(True)
+    b.set_on_dismiss(_on_main_dialog_dismiss)
     _dialog = b.create()
     _dialog.show()
 
@@ -498,10 +504,15 @@ def _show_bet_dialog():
         if _data["balance"] >= v:
             container.addView(make_bet(v))
 
+    def _on_bet_dialog_dismiss():
+        global _bet_dialog
+        _bet_dialog = None
+
     builder = AlertDialogBuilder()
     builder.set_title("Ставка")
     builder.set_view(container)
     builder.set_cancelable(True)
+    builder.set_on_dismiss(_on_bet_dialog_dismiss)
     global _bet_dialog
     _bet_dialog = builder.create()
     _bet_dialog.show()

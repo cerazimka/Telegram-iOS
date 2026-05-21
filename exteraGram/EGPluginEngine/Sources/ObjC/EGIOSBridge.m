@@ -310,13 +310,41 @@ static PyObject *py_show_action_sheet(PyObject *self, PyObject *args) {
 // Dialog registry — maps handle string to presented UIAlertController.
 static NSMutableDictionary<NSString *, UIViewController *> *g_dialogs = nil;
 
-@interface EGDoneTarget : NSObject
+@interface EGDoneTarget : NSObject <UIAdaptivePresentationControllerDelegate>
 @property (nonatomic, weak) UIViewController *vc;
+@property (nonatomic, copy) NSString *dialogHandle;
+@property (nonatomic, copy) NSString *dismissCallbackId;
+@property (nonatomic) BOOL fired;
 - (void)done:(id)sender;
+- (void)_fireCallback;
 @end
 @implementation EGDoneTarget
 - (void)done:(id)sender {
-    [self.vc dismissViewControllerAnimated:YES completion:nil];
+    [self.vc dismissViewControllerAnimated:YES completion:^{ [self _fireCallback]; }];
+}
+// Fires when user swipes down to dismiss (interactive dismissal only).
+- (void)presentationControllerDidDismiss:(UIPresentationController *)pc {
+    [self _fireCallback];
+}
+- (void)_fireCallback {
+    if (self.fired) return;
+    self.fired = YES;
+    NSString *h = self.dialogHandle;
+    if (h.length > 0) [g_dialogs removeObjectForKey:h];
+    NSString *cbId = self.dismissCallbackId;
+    if (cbId.length == 0) return;
+    const char *cid = cbId.UTF8String;
+    [EGPythonBridge withPython:^{
+        PyObject *mod = PyImport_ImportModule("eg_widgets");
+        if (!mod) { PyErr_Clear(); return; }
+        PyObject *fn = PyObject_GetAttrString(mod, "_invoke");
+        if (fn && PyCallable_Check(fn)) {
+            PyObject *r = PyObject_CallFunction(fn, "s", cid);
+            if (!r) PyErr_Clear(); else Py_DECREF(r);
+        }
+        Py_XDECREF(fn);
+        Py_DECREF(mod);
+    }];
 }
 @end
 
@@ -384,8 +412,11 @@ static PyObject *py_show_dialog(PyObject *self, PyObject *args) {
 
         // Wrap in a navigation controller so a Done button can be added cleanly.
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
+        NSString *dismissId = spec[@"on_dismiss_id"] ?: @"";
         EGDoneTarget *doneTarget = [EGDoneTarget new];
         doneTarget.vc = nav;
+        doneTarget.dialogHandle = handle;
+        doneTarget.dismissCallbackId = dismissId;
         vc.navigationItem.rightBarButtonItem =
             [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone
                                                           target:doneTarget
@@ -394,7 +425,11 @@ static PyObject *py_show_dialog(PyObject *self, PyObject *args) {
         objc_setAssociatedObject(nav, "EGDoneTarget", doneTarget, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 
         g_dialogs[handle] = nav;
-        [host presentViewController:nav animated:YES completion:nil];
+        // Set the presentation delegate in the completion block — presentationController
+        // is guaranteed non-nil once the presentation animation has begun.
+        [host presentViewController:nav animated:YES completion:^{
+            nav.presentationController.delegate = doneTarget;
+        }];
         EGPluginDebugLog_appendCStr("Dialog",
             [[NSString stringWithFormat:@"show_dialog: presented (handle=%@)", handle] UTF8String]);
     });
