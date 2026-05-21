@@ -370,17 +370,10 @@ static id py_to_ns(PyObject *obj) {
             return;
         }
 
-        // Append extra search paths (SDK, plugins, site-packages)
-        NSArray<NSString *> *extraPaths = @[sdkPath, pluginsPath, sitePkgs];
-        for (NSString *p in extraPaths) {
-            if (p.length == 0) continue;
-            wchar_t *wp = Py_DecodeLocale([p UTF8String], NULL);
-            if (wp) {
-                PyWideStringList_Append(&config.module_search_paths, wp);
-                PyMem_RawFree(wp);
-            }
-        }
-        config.module_search_paths_set = 1;
+        // Do NOT set module_search_paths_set=1 — that would replace the computed stdlib
+        // paths with only our extras, causing "Failed to import encodings module".
+        // Instead, let CPython compute sys.path from home automatically and append
+        // our extra paths to sys.path after initialization via the C API.
 
         @try {
             status = Py_InitializeFromConfig(&config);
@@ -402,10 +395,21 @@ static id py_to_ns(PyObject *obj) {
         // Release GIL (allows GILState acquire/release pattern on all threads)
         PyEval_SaveThread();
 
-        // One-time global state setup
+        // One-time global state setup + extend sys.path with extra dirs
         PyGILState_STATE state = PyGILState_Ensure();
         g_tl_hooks = PyDict_New();
         g_loaded_modules = PyDict_New();
+
+        // Append SDK, plugins, and site-packages to sys.path now that Python is alive.
+        PyObject *sysPath = PySys_GetObject("path"); // borrowed ref — never NULL post-init
+        if (sysPath) {
+            NSArray<NSString *> *extraPaths = @[sdkPath, pluginsPath, sitePkgs];
+            for (NSString *p in extraPaths) {
+                if (p.length == 0) continue;
+                PyObject *pyPath = PyUnicode_FromString([p UTF8String]);
+                if (pyPath) { PyList_Append(sysPath, pyPath); Py_DECREF(pyPath); }
+            }
+        }
         PyGILState_Release(state);
 
         g_initialized = YES;
