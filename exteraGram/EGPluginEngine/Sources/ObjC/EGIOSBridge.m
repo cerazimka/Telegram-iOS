@@ -188,7 +188,10 @@ static PyObject *py_show_alert(PyObject *self, PyObject *args) {
             }
             if (keyWin) break;
         }
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
         if (!keyWin) keyWin = [UIApplication sharedApplication].keyWindow;
+#pragma clang diagnostic pop
         UIViewController *root = keyWin.rootViewController;
         // Skip VCs that are in the middle of being dismissed — presenting from them fails silently.
         while (root.presentedViewController && !root.presentedViewController.isBeingDismissed) {
@@ -1064,13 +1067,6 @@ static id py_to_ns(PyObject *obj) {
             for (NSValue *val in g_method_hooks.allValues) {
                 EGMethodHookEntry *entry = (EGMethodHookEntry *)val.pointerValue;
                 if (!entry) continue;
-                // Remove callbacks whose __module__ matches the unloaded plugin.
-                for (PyObject *hookList in @[ (__bridge id)entry->before_list,
-                                              (__bridge id)entry->after_list ]) {
-                    // Can't use fast-enum on a PyObject; iterate via index.
-                    (void)hookList; // suppress unused warning — see loop below
-                }
-                // Iterate before_list
                 PyObject *lists[2] = { entry->before_list, entry->after_list };
                 for (int li = 0; li < 2; li++) {
                     PyObject *lst = lists[li];
@@ -1086,8 +1082,8 @@ static id py_to_ns(PyObject *obj) {
                         PyErr_Clear();
                         if (!belongs) PyList_Append(filtered, cb);
                     }
-                    // Replace the list in-place by swapping contents
-                    while (PyList_Size(lists[li]) > 0) PyList_SetSlice(lists[li], 0, 1, NULL);
+                    // Replace the list in-place
+                    PyList_SetSlice(lists[li], 0, PyList_Size(lists[li]), NULL);
                     ln = PyList_Size(filtered);
                     for (Py_ssize_t i = 0; i < ln; i++)
                         PyList_Append(lists[li], PyList_GetItem(filtered, i));
