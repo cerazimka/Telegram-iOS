@@ -18,6 +18,17 @@ def show_alert(title: str, message: str, button: str = "OK") -> None:
         pass
 
 
+def show_action_sheet(title: str, message: str, options, callback) -> None:
+    """
+    Show a multi-button alert.  options is a list of button labels;
+    when the user taps one, callback(index, label) is invoked.
+    """
+    try:
+        _ios_bridge.show_action_sheet(title, message, list(options), callback)
+    except AttributeError:
+        pass
+
+
 def show_toast(message: str, duration: float = 2.0) -> None:
     """Show a brief toast notification (bulletin-style)."""
     try:

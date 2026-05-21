@@ -1,0 +1,453 @@
+"""
+Blackjack 21 — iOS port of @SaturnFake's Android plugin.
+
+Original Android source uses LinearLayout / GradientDrawable / Button widgets that
+don't exist on iOS, so the UI is rebuilt with chained UIAlertControllers (one
+per game state).  Game logic — deck, scoring, dealer play, payouts — is
+preserved verbatim from the Android original.
+
+Launch the game from the plugin settings: open Settings → Plugins → Blackjack → ⚙,
+then tap "Play Blackjack".  All state (balance, W/L) is persisted via file_utils.
+"""
+
+__id__          = "blackjack"
+__name__        = "Blackjack 21"
+__os__          = "ios"
+__version__     = "1.0"
+__author__      = "@SaturnFake (iOS port @exteraPlugins)"
+__description__ = "Classic Blackjack 21 — bet, hit, stand, double. Persistent balance & W/L."
+
+import random
+
+from ui.settings  import PluginSettings, SettingItem
+from ui.bulletin  import show_bulletin
+from ios_utils    import (
+    show_alert, show_action_sheet, haptic_feedback, copy_to_clipboard,
+)
+from file_utils   import read_json, write_json
+from android_utils import log
+
+_ID = __id__
+
+# ---------------------------------------------------------------------------
+# Settings — buttons launch the game / reset
+# ---------------------------------------------------------------------------
+
+__settings__ = PluginSettings([
+    SettingItem(
+        key="launch_game",
+        title="♠️  Play Blackjack  ♥️",
+        subtitle="Tap to start a new round",
+        type="button",
+        default=None,
+    ),
+    SettingItem(
+        key="show_stats",
+        title="Show stats",
+        subtitle="Balance · wins · losses",
+        type="button",
+        default=None,
+    ),
+    SettingItem(
+        key="reset_balance",
+        title="Reset balance",
+        subtitle="Restart from $1000",
+        type="button",
+        default=None,
+    ),
+    SettingItem(
+        key="haptics",
+        title="Haptic feedback",
+        subtitle="Vibrate on hits and wins",
+        type="toggle",
+        default=True,
+    ),
+])
+
+# ---------------------------------------------------------------------------
+# Game model — ported from @SaturnFake's Android version
+# ---------------------------------------------------------------------------
+
+_SUIT_GLYPH = {'H': '♥️', 'D': '♦️', 'C': '♣️', 'S': '♠️'}
+
+
+class Card:
+    __slots__ = ('suit', 'rank', 'hidden')
+    def __init__(self, suit, rank):
+        self.suit = suit
+        self.rank = rank
+        self.hidden = False
+
+    def value(self):
+        if self.rank in ('J', 'Q', 'K'): return 10
+        if self.rank == 'A':              return 11
+        return int(self.rank)
+
+    @property
+    def is_ace(self):
+        return self.rank == 'A'
+
+    def __str__(self):
+        return '🂠' if self.hidden else f"{self.rank}{_SUIT_GLYPH[self.suit]}"
+
+
+class BlackjackGame:
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self._build_deck()
+        self.player_hand = []
+        self.dealer_hand = []
+        self.player_score = 0
+        self.dealer_score = 0
+        self.player_turn = True
+        self.game_over = False
+        self.bet = 0
+        self.result = ""
+        self.player_blackjack = False
+        self.dealer_blackjack = False
+
+    def _build_deck(self, decks=6):
+        self.deck = []
+        for _ in range(decks):
+            for s in 'HDCS':
+                for r in ('2','3','4','5','6','7','8','9','10','J','Q','K','A'):
+                    self.deck.append(Card(s, r))
+        random.shuffle(self.deck)
+
+    def _draw(self, hand, hidden=False):
+        if len(self.deck) < 20:
+            self._build_deck()
+        c = self.deck.pop()
+        c.hidden = hidden
+        hand.append(c)
+        return c
+
+    def _score(self, hand):
+        score = aces = 0
+        for c in hand:
+            if c.hidden:
+                continue
+            score += c.value()
+            if c.is_ace: aces += 1
+        while score > 21 and aces:
+            score -= 10
+            aces -= 1
+        return score
+
+    def start(self, bet):
+        self.bet = bet
+        self.player_hand.clear()
+        self.dealer_hand.clear()
+        self.player_turn = True
+        self.game_over = False
+        self.result = ""
+        self._draw(self.player_hand)
+        self._draw(self.dealer_hand, hidden=True)
+        self._draw(self.player_hand)
+        self._draw(self.dealer_hand)
+        self.player_score = self._score(self.player_hand)
+        self.dealer_score = self._score(self.dealer_hand)
+        self.player_blackjack = (self.player_score == 21 and len(self.player_hand) == 2)
+        self.dealer_blackjack = (self.dealer_hand[1].value() == 11 and self._score(self.dealer_hand) + 10 == 21
+                                 and self.dealer_hand[0].rank == 'A')
+        # Recompute dealer_blackjack honestly: peek both cards
+        peek = self.dealer_hand[0].value() + self.dealer_hand[1].value()
+        # ace-as-11 already counted in card.value()
+        self.dealer_blackjack = (peek == 21 and len(self.dealer_hand) == 2)
+        if self.player_blackjack or self.dealer_blackjack:
+            self._reveal_dealer()
+            self._finalize()
+
+    def hit(self):
+        if not self.player_turn or self.game_over: return
+        self._draw(self.player_hand)
+        self.player_score = self._score(self.player_hand)
+        if self.player_score > 21:
+            self._reveal_dealer()
+            self._finalize()
+
+    def stand(self):
+        if not self.player_turn or self.game_over: return
+        self.player_turn = False
+        self._reveal_dealer()
+        self._dealer_play()
+        self._finalize()
+
+    def double(self):
+        if not self.player_turn or self.game_over or len(self.player_hand) != 2:
+            return
+        self.bet *= 2
+        self._draw(self.player_hand)
+        self.player_score = self._score(self.player_hand)
+        self.player_turn = False
+        self._reveal_dealer()
+        if self.player_score <= 21:
+            self._dealer_play()
+        self._finalize()
+
+    def _reveal_dealer(self):
+        if self.dealer_hand:
+            self.dealer_hand[0].hidden = False
+        self.dealer_score = self._score(self.dealer_hand)
+
+    def _dealer_play(self):
+        while self.dealer_score < 17:
+            self._draw(self.dealer_hand)
+            self.dealer_score = self._score(self.dealer_hand)
+
+    def _finalize(self):
+        self.game_over = True
+        self.player_turn = False
+        if self.player_blackjack and not self.dealer_blackjack:
+            self.result = "BLACKJACK 🏆"
+        elif self.dealer_blackjack and not self.player_blackjack:
+            self.result = "Dealer Blackjack — you lose 💔"
+        elif self.player_blackjack and self.dealer_blackjack:
+            self.result = "Push 🤝"
+        elif self.player_score > 21:
+            self.result = "Bust! 💥"
+        elif self.dealer_score > 21:
+            self.result = "Dealer busts — you win! 🎉"
+        elif self.player_score > self.dealer_score:
+            self.result = "You win! 🎉"
+        elif self.player_score < self.dealer_score:
+            self.result = "You lose 💔"
+        else:
+            self.result = "Push 🤝"
+
+    def payout(self):
+        """Multiplier on the original bet."""
+        if self.player_blackjack and not self.dealer_blackjack: return 2.5
+        if self.player_blackjack and self.dealer_blackjack:     return 1.0  # bet back
+        if self.player_score > 21:                              return 0.0
+        if self.dealer_score > 21:                              return 2.0
+        if self.player_score > self.dealer_score:               return 2.0
+        if self.player_score == self.dealer_score:              return 1.0
+        return 0.0
+
+
+# ---------------------------------------------------------------------------
+# Persistent state
+# ---------------------------------------------------------------------------
+
+_data = {"balance": 1000, "wins": 0, "losses": 0, "pushes": 0}
+_game = BlackjackGame()
+_orig_bet = 0  # original bet before doubling — for payout calc
+
+
+def _load():
+    global _data
+    d = read_json(_ID, "data.json")
+    if isinstance(d, dict):
+        for k in ("balance", "wins", "losses", "pushes"):
+            if k in d:
+                _data[k] = d[k]
+
+
+def _save():
+    write_json(_ID, "data.json", _data)
+
+
+def _haptic(style):
+    try:
+        import _ios_bridge as b
+        if b.get_plugin_setting(_ID, "haptics", True):
+            haptic_feedback(style)
+    except Exception:
+        pass
+
+
+# ---------------------------------------------------------------------------
+# UI helpers — render game state as alert message text
+# ---------------------------------------------------------------------------
+
+def _render_hand(hand):
+    return "  ".join(str(c) for c in hand) if hand else "—"
+
+
+def _render_state(show_dealer_score=False):
+    dealer_score_text = str(_game.dealer_score) if (show_dealer_score or not _game.player_turn or _game.game_over) else "?"
+    lines = [
+        f"🎩 Dealer   ({dealer_score_text})",
+        f"   {_render_hand(_game.dealer_hand)}",
+        "",
+        f"👤 You   ({_game.player_score})",
+        f"   {_render_hand(_game.player_hand)}",
+        "",
+        f"Bet: ${_game.bet}   ·   Balance: ${_data['balance']}",
+    ]
+    if _game.result:
+        lines.append("")
+        lines.append(_game.result)
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Screens
+# ---------------------------------------------------------------------------
+
+def _screen_main():
+    msg = (f"Balance: ${_data['balance']}\n"
+           f"Wins: {_data['wins']}   Losses: {_data['losses']}   Pushes: {_data['pushes']}")
+    show_action_sheet("♠️ Blackjack ♥️", msg, ["New round", "Stats", "Close"], _main_pick)
+
+
+def _main_pick(idx, label):
+    if label == "New round":
+        _screen_bet()
+    elif label == "Stats":
+        _screen_stats()
+
+
+def _screen_bet():
+    options = []
+    for v in (5, 10, 25, 50, 100, 500):
+        if _data["balance"] >= v:
+            options.append(f"${v}")
+    if not options:
+        show_alert("Insufficient funds", f"Your balance is ${_data['balance']}.\nReset to $1000?")
+        return
+    options.append("Cancel")
+    show_action_sheet("Place your bet", f"Balance: ${_data['balance']}", options, _bet_pick)
+
+
+def _bet_pick(idx, label):
+    global _orig_bet
+    if not label.startswith("$"):
+        return
+    amount = int(label[1:])
+    if _data["balance"] < amount:
+        show_alert("Insufficient funds", "Choose a smaller bet.")
+        return
+    _data["balance"] -= amount
+    _save()
+    _orig_bet = amount
+    _game.reset()
+    _game.start(amount)
+    _haptic("light")
+    if _game.game_over:
+        _settle_and_show()
+    else:
+        _screen_game()
+
+
+def _screen_game():
+    options = ["HIT", "STAND"]
+    if len(_game.player_hand) == 2 and _data["balance"] >= _game.bet:
+        options.append("DOUBLE")
+    options.append("Quit")
+    show_action_sheet("♠️ Blackjack ♥️", _render_state(), options, _game_pick)
+
+
+def _game_pick(idx, label):
+    if label == "HIT":
+        _haptic("light")
+        _game.hit()
+        if _game.game_over: _settle_and_show()
+        else:               _screen_game()
+    elif label == "STAND":
+        _haptic("light")
+        _game.stand()
+        _settle_and_show()
+    elif label == "DOUBLE":
+        if _data["balance"] < _game.bet:
+            show_alert("Insufficient funds", "Can't double — not enough balance.")
+            _screen_game()
+            return
+        _data["balance"] -= _game.bet  # extra bet for the double
+        _save()
+        _haptic("medium")
+        _game.double()
+        _settle_and_show()
+    elif label == "Quit":
+        # Forfeit: keep the bet as loss.
+        _data["losses"] += 1
+        _save()
+
+
+def _settle_and_show():
+    if not _game.game_over:
+        return
+    mult = _game.payout()
+    win = int(_game.bet * mult)
+    _data["balance"] += win
+
+    if _game.result.startswith("BLACKJACK") or _game.result.startswith("You win") or _game.result.startswith("Dealer busts"):
+        _data["wins"] += 1
+        _haptic("success")
+    elif _game.result.startswith("Push"):
+        _data["pushes"] += 1
+    else:
+        _data["losses"] += 1
+        _haptic("error")
+
+    _save()
+
+    show_action_sheet(
+        "♠️ Blackjack ♥️",
+        _render_state(show_dealer_score=True) + f"\n\nPayout: ${win}",
+        ["Play again", "Close"],
+        _end_pick,
+    )
+
+
+def _end_pick(idx, label):
+    if label == "Play again":
+        _screen_bet()
+
+
+def _screen_stats():
+    msg = (f"💰 Balance: ${_data['balance']}\n\n"
+           f"🏆 Wins:    {_data['wins']}\n"
+           f"💔 Losses:  {_data['losses']}\n"
+           f"🤝 Pushes:  {_data['pushes']}")
+    show_action_sheet("Stats", msg, ["Copy", "Close"], _stats_pick)
+
+
+def _stats_pick(idx, label):
+    if label == "Copy":
+        copy_to_clipboard(
+            f"Blackjack — balance ${_data['balance']}, "
+            f"{_data['wins']}W / {_data['losses']}L / {_data['pushes']}P")
+        show_bulletin("Copied", "Stats copied to clipboard", "doc.on.clipboard")
+
+
+def _do_reset():
+    _data["balance"] = 1000
+    _data["wins"] = 0
+    _data["losses"] = 0
+    _data["pushes"] = 0
+    _save()
+    show_bulletin("Balance reset", "Back to $1000", "arrow.counterclockwise")
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle + settings-button entry point
+# ---------------------------------------------------------------------------
+
+def on_setting_action(key):
+    if key == "launch_game":
+        _screen_main()
+    elif key == "show_stats":
+        _screen_stats()
+    elif key == "reset_balance":
+        show_action_sheet(
+            "Reset balance?",
+            f"Current: ${_data['balance']}, W/L/P {_data['wins']}/{_data['losses']}/{_data['pushes']}\n"
+            "This cannot be undone.",
+            ["Yes, reset", "Cancel"],
+            lambda idx, label: _do_reset() if label.startswith("Yes") else None,
+        )
+
+
+def on_load(plugin):
+    _load()
+    log(f"Blackjack loaded — balance=${_data['balance']} "
+        f"W/L/P={_data['wins']}/{_data['losses']}/{_data['pushes']}")
+
+
+def on_unload(plugin):
+    _save()
+    log("Blackjack unloaded — state flushed.")

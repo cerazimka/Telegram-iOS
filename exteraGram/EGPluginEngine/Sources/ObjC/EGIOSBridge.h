@@ -50,6 +50,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// Returns the plugin's `__settings__.to_dict()` as an NSDictionary, or nil if none.
 + (nullable NSDictionary *)getPluginSettingsSchema:(NSString *)pluginId;
 
+/// Call `on_setting_action(key)` on the loaded plugin module, if defined.
+/// Used by 'button'-type settings to dispatch tap events into Python.
++ (void)invokePluginAction:(NSString *)pluginId key:(NSString *)key;
+
 /// Extract python3.14.zip (bundled as a data resource) to destDir, preserving paths.
 /// Returns YES on success. Idempotent — call before initializeWithHome:.
 + (BOOL)extractPythonStdlibZip:(NSString *)zipPath toDirectory:(NSString *)destDir;

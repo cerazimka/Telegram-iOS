@@ -157,6 +157,12 @@ public final class EGPluginsEngineImpl {
         UserDefaults.standard.set(value, forKey: "eg.plugin.\(id).\(key)")
     }
 
+    /// Invoke a 'button'-type setting tap: calls module.on_setting_action(key) in Python.
+    public func invokePluginAction(_ id: String, key: String) {
+        guard EGPythonBridge.isInitialized else { return }
+        EGPythonBridge.invokePluginAction(id, key: key)
+    }
+
     /// Returns the plugin's `__settings__` items array, or nil if the plugin has no settings.
     public func getPluginSettingsSchema(_ id: String) -> [[String: Any]]? {
         guard EGPythonBridge.isInitialized else { return nil }

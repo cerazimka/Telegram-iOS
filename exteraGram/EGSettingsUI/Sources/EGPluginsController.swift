@@ -316,6 +316,9 @@ public final class PluginsController {
     public func getSettingsSchema(_ pluginId: String) -> [[String: Any]] {
         engine.getPluginSettingsSchema(pluginId) ?? []
     }
+    public func invokeAction(_ pluginId: String, key: String) {
+        engine.invokePluginAction(pluginId, key: key)
+    }
 
     // MARK: - Plugin navigation callback (set by the settings VC hierarchy)
 

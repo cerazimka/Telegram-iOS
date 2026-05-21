@@ -214,6 +214,96 @@ static PyObject *py_show_alert(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+// show_action_sheet(title, message, options, callback)
+//   Presents a UIAlertController with one button per option.  When the user
+//   taps a button, callback(index, label) is invoked under the Python GIL.
+//   The new alert is presented after a 0.4s delay so any previously visible
+//   alert has time to finish its dismissal animation.
+static PyObject *py_show_action_sheet(PyObject *self, PyObject *args) {
+    const char *title = "", *message = "";
+    PyObject *options = NULL, *callback = NULL;
+    if (!PyArg_ParseTuple(args, "ssOO", &title, &message, &options, &callback)) return NULL;
+    if (!PyList_Check(options)) {
+        PyErr_SetString(PyExc_TypeError, "options must be a list of strings");
+        return NULL;
+    }
+    if (!PyCallable_Check(callback)) {
+        PyErr_SetString(PyExc_TypeError, "callback must be callable");
+        return NULL;
+    }
+    NSString *nsTitle   = [NSString stringWithUTF8String:title];
+    NSString *nsMessage = [NSString stringWithUTF8String:message];
+
+    NSMutableArray<NSString *> *labels = [NSMutableArray new];
+    Py_ssize_t n = PyList_Size(options);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *item = PyList_GetItem(options, i);
+        const char *s = PyUnicode_AsUTF8(item);
+        if (s) [labels addObject:[NSString stringWithUTF8String:s]];
+    }
+
+    // Retain callback once; it's released by whichever action handler fires.
+    Py_INCREF(callback);
+    PyObject *cbBox = callback; // captured by all action handler blocks
+    __block BOOL fired = NO;    // ensure exactly one DECREF
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.4 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        // Find the topmost VC able to present.
+        UIWindow *win = nil;
+        for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                for (UIWindow *w in ((UIWindowScene *)scene).windows) {
+                    if (w.isKeyWindow) { win = w; break; }
+                }
+                if (win) break;
+            }
+        }
+        UIViewController *vc = win.rootViewController;
+        while (vc.presentedViewController && !vc.presentedViewController.isBeingDismissed) {
+            vc = vc.presentedViewController;
+        }
+        if (!vc) {
+            // No host VC — release ref and abort.
+            PyGILState_STATE gs = PyGILState_Ensure();
+            Py_DECREF(cbBox);
+            PyGILState_Release(gs);
+            return;
+        }
+
+        UIAlertController *alert = [UIAlertController
+            alertControllerWithTitle:nsTitle.length ? nsTitle : nil
+                             message:nsMessage.length ? nsMessage : nil
+                      preferredStyle:UIAlertControllerStyleAlert];
+
+        for (NSInteger i = 0; i < (NSInteger)labels.count; i++) {
+            NSString *label = labels[i];
+            UIAlertActionStyle style = UIAlertActionStyleDefault;
+            NSString *lc = [label lowercaseString];
+            if ([lc containsString:@"cancel"] || [lc containsString:@"отмена"] ||
+                [lc isEqualToString:@"exit"] || [lc isEqualToString:@"выход"]) {
+                style = UIAlertActionStyleCancel;
+            }
+            NSInteger capturedIdx = i;
+            NSString *capturedLabel = label;
+            [alert addAction:[UIAlertAction
+                actionWithTitle:label style:style
+                        handler:^(UIAlertAction *act) {
+                if (fired) return;
+                fired = YES;
+                PyGILState_STATE gs = PyGILState_Ensure();
+                PyObject *res = PyObject_CallFunction(
+                    cbBox, "is", (int)capturedIdx, capturedLabel.UTF8String);
+                if (!res) { PyErr_Print(); PyErr_Clear(); } else Py_DECREF(res);
+                Py_DECREF(cbBox);
+                PyGILState_Release(gs);
+            }]];
+        }
+        [vc presentViewController:alert animated:YES completion:nil];
+    });
+    Py_RETURN_NONE;
+}
+
 // show_toast(message, duration=2.0)
 static PyObject *py_show_toast(PyObject *self, PyObject *args) {
     const char *message = "";
@@ -619,6 +709,7 @@ static PyMethodDef ios_bridge_methods[] = {
     {"has_hook",           py_has_hook,           METH_VARARGS, "has_hook(tl_type) -> bool"},
     {"run_on_main_thread", py_run_on_main_thread, METH_VARARGS, "run_on_main_thread(fn)"},
     {"show_alert",         py_show_alert,         METH_VARARGS, "show_alert(title, message, button='OK')"},
+    {"show_action_sheet",  py_show_action_sheet,  METH_VARARGS, "show_action_sheet(title, message, options, callback)"},
     {"show_toast",         py_show_toast,         METH_VARARGS, "show_toast(message, duration=2.0)"},
     {"copy_to_clipboard",  py_copy_to_clipboard,  METH_VARARGS, "copy_to_clipboard(text)"},
     {"read_clipboard",     py_read_clipboard,     METH_NOARGS,  "read_clipboard() -> str"},
@@ -1212,6 +1303,36 @@ static id py_to_ns(PyObject *obj) {
         }
         Py_DECREF(keys);
         Py_DECREF(py_params);
+    }];
+#endif
+}
+
++ (void)invokePluginAction:(NSString *)pluginId key:(NSString *)key {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized || !g_loaded_modules) return;
+    [self withPython:^{
+        PyObject *mod = PyDict_GetItemString(g_loaded_modules, pluginId.UTF8String);
+        if (!mod) {
+            EGPluginDebugLog_appendCStr("Action",
+                [[NSString stringWithFormat:@"invokePluginAction: module '%@' not loaded", pluginId] UTF8String]);
+            return;
+        }
+        PyObject *fn = PyObject_GetAttrString(mod, "on_setting_action");
+        if (fn && PyCallable_Check(fn)) {
+            PyObject *r = PyObject_CallFunction(fn, "s", key.UTF8String);
+            if (!r) {
+                PyObject *exc = PyErr_GetRaisedException();
+                PyObject *str = exc ? PyObject_Str(exc) : NULL;
+                const char *cs = str ? PyUnicode_AsUTF8(str) : "?";
+                EGPluginDebugLog_appendCStr("Action",
+                    [[NSString stringWithFormat:@"on_setting_action('%@', '%@') failed: %s",
+                      pluginId, key, cs ?: "?"] UTF8String]);
+                Py_XDECREF(str); Py_XDECREF(exc);
+                PyErr_Clear();
+            } else Py_DECREF(r);
+        }
+        Py_XDECREF(fn);
+        PyErr_Clear();
     }];
 #endif
 }

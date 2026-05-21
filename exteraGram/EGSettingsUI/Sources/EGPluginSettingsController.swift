@@ -73,6 +73,20 @@ private struct PluginSettingsView: View {
                     Text(opt).tag(opt)
                 }
             }
+        } else if row.type == "button" {
+            Button(action: {
+                PluginsController.shared.invokeAction(pluginId, key: row.id)
+            }) {
+                HStack {
+                    labelStack(row)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(.secondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
         } else {
             labelStack(row)
         }
