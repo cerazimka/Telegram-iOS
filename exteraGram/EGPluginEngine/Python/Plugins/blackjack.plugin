@@ -5,8 +5,33 @@ __author__      = "@SaturnFake (ported)"
 __version__     = "1.0.0-ios"
 __os__          = "ios"
 
-import random
 import _ios_bridge
+
+
+# Tiny stdlib-free PRNG (random/math may not be bundled in the iOS CPython build).
+# Linear congruential generator, seeded from object identity each call to _shuffle.
+_rand_state = [0]
+
+
+def _seed_once():
+    if _rand_state[0] == 0:
+        s = id(object()) ^ id(_rand_state) ^ 0x9E3779B97F4A7C15
+        _rand_state[0] = s & 0x7FFFFFFFFFFFFFFF or 1
+
+
+def _rand():
+    _seed_once()
+    s = _rand_state[0]
+    s = (s * 6364136223846793005 + 1442695040888963407) & 0x7FFFFFFFFFFFFFFF
+    _rand_state[0] = s
+    return s
+
+
+def _shuffle(lst):
+    n = len(lst)
+    for i in range(n - 1, 0, -1):
+        j = _rand() % (i + 1)
+        lst[i], lst[j] = lst[j], lst[i]
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +137,7 @@ class BlackjackGame:
 
     def _reshuffle(self, decks=6):
         self.deck = [Card(s, r) for _ in range(decks) for s in SUITS for r in RANKS]
-        random.shuffle(self.deck)
+        _shuffle(self.deck)
 
     def _deal(self, hand, hidden=False):
         if len(self.deck) < 20:
