@@ -56,7 +56,12 @@ def find_class(module: str, name: str):
 def add_method_hook(class_name: str, method_name: str, before=None, after=None) -> None:
     """
     Android: hooks a Java method via reflection.
-    iOS: hooks an ObjC method via EGObjCSwizzler (future implementation).
+    iOS: hooks an ObjC instance method via the runtime swizzler.
+
+    The before/after callbacks are called with no arguments (notification style).
+    Extra method arguments are preserved via ARM64 register conventions so the
+    original implementation receives them unmodified.
+
+    Raises ValueError if the class or method does not exist at call time.
     """
-    # TODO: implement ObjC swizzling via _ios_bridge.swizzle(class_name, method_name, before, after)
-    pass
+    _ios_bridge.add_method_hook(class_name, method_name, before, after)

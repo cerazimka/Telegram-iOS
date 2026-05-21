@@ -3,6 +3,7 @@
 #import "EGIOSBridge.h"
 #import <UIKit/UIKit.h>
 #import <os/log.h>
+#import <objc/runtime.h>
 #import <ZipArchive/ZipArchive.h>
 
 // ---------------------------------------------------------------------------
@@ -60,6 +61,31 @@ static PyObject *g_tl_hooks = NULL;
 // Dict: {"plugin_id": module}
 static PyObject *g_loaded_modules = NULL;
 static BOOL g_initialized = NO;
+
+// ---------------------------------------------------------------------------
+// ObjC method-hook registry  (add_method_hook)
+// ---------------------------------------------------------------------------
+
+typedef struct {
+    IMP original_imp;
+    PyObject *before_list;
+    PyObject *after_list;
+} EGMethodHookEntry;
+
+// Key: "ClassName.methodName" → NSValue wrapping EGMethodHookEntry*
+static NSMutableDictionary<NSString *, NSValue *> *g_method_hooks = nil;
+
+static void eg_call_python_hooks(PyObject *list) {
+    if (!list) return;
+    Py_ssize_t n = PyList_Size(list);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *cb = PyList_GetItem(list, i); // borrowed
+        if (cb && PyCallable_Check(cb)) {
+            PyObject *r = PyObject_CallFunctionObjArgs(cb, NULL);
+            if (!r) PyErr_Clear(); else Py_DECREF(r);
+        }
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Python C extension: _ios_bridge
@@ -349,6 +375,197 @@ static PyObject *py_get_connection_state(PyObject *self, PyObject *args) {
     return result;
 }
 
+// ---------------------------------------------------------------------------
+// Bulletin / toast
+// ---------------------------------------------------------------------------
+
+// show_bulletin(title, text="", icon="")
+static PyObject *py_show_bulletin(PyObject *self, PyObject *args) {
+    const char *title = "", *text = "", *icon = "";
+    if (!PyArg_ParseTuple(args, "s|ss", &title, &text, &icon)) return NULL;
+    NSString *nsTitle = [NSString stringWithUTF8String:title];
+    NSString *nsText  = [NSString stringWithUTF8String:text];
+    NSString *nsIcon  = [NSString stringWithUTF8String:icon];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"EGPluginShowBulletinNotification"
+                          object:nil
+                        userInfo:@{@"title": nsTitle, @"text": nsText, @"icon": nsIcon}];
+    });
+    Py_RETURN_NONE;
+}
+
+// ---------------------------------------------------------------------------
+// ObjC method hooks
+// ---------------------------------------------------------------------------
+
+// add_method_hook(class_name, method_name, before=None, after=None)
+// Installs a Python before/after hook on the given ObjC instance method.
+// The callbacks receive no arguments (notification-style hooks).
+// Uses the ARM64 register-preservation trick so the original IMP sees all its args.
+static PyObject *py_add_method_hook(PyObject *self_py, PyObject *args) {
+    const char *class_name_c = "", *method_name_c = "";
+    PyObject *before = Py_None, *after = Py_None;
+    if (!PyArg_ParseTuple(args, "ss|OO", &class_name_c, &method_name_c, &before, &after))
+        return NULL;
+    if (before != Py_None && !PyCallable_Check(before)) {
+        PyErr_SetString(PyExc_TypeError, "before must be callable or None"); return NULL;
+    }
+    if (after != Py_None && !PyCallable_Check(after)) {
+        PyErr_SetString(PyExc_TypeError, "after must be callable or None"); return NULL;
+    }
+    if (!g_method_hooks) g_method_hooks = [NSMutableDictionary new];
+
+    NSString *className  = [NSString stringWithUTF8String:class_name_c];
+    NSString *methodName = [NSString stringWithUTF8String:method_name_c];
+    NSString *key = [NSString stringWithFormat:@"%@.%@", className, methodName];
+
+    Class cls = NSClassFromString(className);
+    if (!cls) {
+        PyErr_Format(PyExc_ValueError, "ObjC class not found: %s", class_name_c); return NULL;
+    }
+    SEL sel = NSSelectorFromString(methodName);
+    Method method = class_getInstanceMethod(cls, sel);
+    if (!method) method = class_getClassMethod(cls, sel);
+    if (!method) {
+        PyErr_Format(PyExc_ValueError, "Method not found: %s on %s", method_name_c, class_name_c);
+        return NULL;
+    }
+
+    NSValue *existing = g_method_hooks[key];
+    if (!existing) {
+        // First hook on this method — install replacement IMP
+        EGMethodHookEntry *entry = (EGMethodHookEntry *)calloc(1, sizeof(EGMethodHookEntry));
+        entry->original_imp = method_getImplementation(method);
+        entry->before_list  = PyList_New(0);
+        entry->after_list   = PyList_New(0);
+        g_method_hooks[key] = [NSValue valueWithPointer:entry];
+
+        const char *enc = method_getTypeEncoding(method) ?: "v@:";
+        char ret = enc[0];
+
+        // On ARM64 the calling convention puts self in x0, _cmd in x1, args in x2+.
+        // Our block only declares (id, SEL) but extra args remain untouched in x2+,
+        // so the original IMP receives them correctly when called via the cast.
+        if (ret == '@') {
+            id (^block)(id, SEL) = ^id(id target, SEL cmd) {
+                PyGILState_STATE gs = PyGILState_Ensure();
+                eg_call_python_hooks(entry->before_list);
+                PyGILState_Release(gs);
+                typedef id (*F)(id, SEL);
+                id res = ((F)entry->original_imp)(target, cmd);
+                gs = PyGILState_Ensure();
+                eg_call_python_hooks(entry->after_list);
+                PyGILState_Release(gs);
+                return res;
+            };
+            method_setImplementation(method, imp_implementationWithBlock(block));
+        } else if (ret == 'B' || ret == 'c') {
+            BOOL (^block)(id, SEL) = ^BOOL(id target, SEL cmd) {
+                PyGILState_STATE gs = PyGILState_Ensure();
+                eg_call_python_hooks(entry->before_list);
+                PyGILState_Release(gs);
+                typedef BOOL (*F)(id, SEL);
+                BOOL res = ((F)entry->original_imp)(target, cmd);
+                gs = PyGILState_Ensure();
+                eg_call_python_hooks(entry->after_list);
+                PyGILState_Release(gs);
+                return res;
+            };
+            method_setImplementation(method, imp_implementationWithBlock(block));
+        } else if (ret == 'i' || ret == 'l' || ret == 'q' || ret == 'I' || ret == 'L') {
+            long long (^block)(id, SEL) = ^long long(id target, SEL cmd) {
+                PyGILState_STATE gs = PyGILState_Ensure();
+                eg_call_python_hooks(entry->before_list);
+                PyGILState_Release(gs);
+                typedef long long (*F)(id, SEL);
+                long long res = ((F)entry->original_imp)(target, cmd);
+                gs = PyGILState_Ensure();
+                eg_call_python_hooks(entry->after_list);
+                PyGILState_Release(gs);
+                return res;
+            };
+            method_setImplementation(method, imp_implementationWithBlock(block));
+        } else {
+            // void or float/struct — treat as void
+            void (^block)(id, SEL) = ^void(id target, SEL cmd) {
+                PyGILState_STATE gs = PyGILState_Ensure();
+                eg_call_python_hooks(entry->before_list);
+                PyGILState_Release(gs);
+                typedef void (*F)(id, SEL);
+                ((F)entry->original_imp)(target, cmd);
+                gs = PyGILState_Ensure();
+                eg_call_python_hooks(entry->after_list);
+                PyGILState_Release(gs);
+            };
+            method_setImplementation(method, imp_implementationWithBlock(block));
+        }
+
+        EGPluginDebugLog_appendCStr("Swizzler",
+            [[NSString stringWithFormat:@"Hooked %@.%@", className, methodName] UTF8String]);
+    }
+
+    // Append callbacks (both first-time and subsequent hooks on the same method)
+    EGMethodHookEntry *entry = (EGMethodHookEntry *)[(existing ?: g_method_hooks[key]) pointerValue];
+    if (before != Py_None && PyCallable_Check(before)) {
+        Py_INCREF(before); PyList_Append(entry->before_list, before); Py_DECREF(before);
+    }
+    if (after != Py_None && PyCallable_Check(after)) {
+        Py_INCREF(after); PyList_Append(entry->after_list, after); Py_DECREF(after);
+    }
+    Py_RETURN_NONE;
+}
+
+// ---------------------------------------------------------------------------
+// Plugin settings introspection & UI
+// ---------------------------------------------------------------------------
+
+// plugin_has_settings(plugin_id) -> bool
+static PyObject *py_plugin_has_settings(PyObject *self, PyObject *args) {
+    const char *plugin_id = "";
+    if (!PyArg_ParseTuple(args, "s", &plugin_id)) return NULL;
+    if (!g_loaded_modules) Py_RETURN_FALSE;
+    PyObject *mod = PyDict_GetItemString(g_loaded_modules, plugin_id);
+    if (!mod) Py_RETURN_FALSE;
+    int has = PyObject_HasAttrString(mod, "__settings__");
+    return PyBool_FromLong(has);
+}
+
+// get_plugin_settings(plugin_id) -> dict | None
+// Returns the plugin's __settings__.to_dict() if present.
+static PyObject *py_get_plugin_settings(PyObject *self, PyObject *args) {
+    const char *plugin_id = "";
+    if (!PyArg_ParseTuple(args, "s", &plugin_id)) return NULL;
+    if (!g_loaded_modules) Py_RETURN_NONE;
+    PyObject *mod = PyDict_GetItemString(g_loaded_modules, plugin_id);
+    if (!mod) Py_RETURN_NONE;
+    PyObject *settings = PyObject_GetAttrString(mod, "__settings__");
+    if (!settings) { PyErr_Clear(); Py_RETURN_NONE; }
+    PyObject *to_dict = PyObject_GetAttrString(settings, "to_dict");
+    if (to_dict && PyCallable_Check(to_dict)) {
+        PyObject *result = PyObject_CallFunctionObjArgs(to_dict, NULL);
+        Py_DECREF(to_dict); Py_DECREF(settings);
+        if (!result) { PyErr_Clear(); Py_RETURN_NONE; }
+        return result;
+    }
+    Py_XDECREF(to_dict);
+    return settings; // return as-is if no to_dict
+}
+
+// show_plugin_settings(plugin_id)
+static PyObject *py_show_plugin_settings(PyObject *self, PyObject *args) {
+    const char *plugin_id = "";
+    if (!PyArg_ParseTuple(args, "s", &plugin_id)) return NULL;
+    NSString *nsId = [NSString stringWithUTF8String:plugin_id];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"EGPluginShowSettingsNotification"
+                          object:nil
+                        userInfo:@{@"pluginId": nsId}];
+    });
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef ios_bridge_methods[] = {
     {"log_text",           py_log_text,           METH_VARARGS, "log_text(msg, tag='Plugin')"},
     {"add_tl_hook",        py_add_tl_hook,        METH_VARARGS, "add_tl_hook(tl_type, callback)"},
@@ -364,9 +581,14 @@ static PyMethodDef ios_bridge_methods[] = {
     {"get_plugin_setting", py_get_plugin_setting, METH_VARARGS, "get_plugin_setting(plugin_id, key, default=None) -> Any"},
     {"set_plugin_setting", py_set_plugin_setting, METH_VARARGS, "set_plugin_setting(plugin_id, key, value)"},
     {"get_plugin_data_dir",py_get_plugin_data_dir,METH_VARARGS, "get_plugin_data_dir(plugin_id) -> str"},
-    {"get_account_id",     py_get_account_id,     METH_NOARGS,  "get_account_id() -> int"},
-    {"get_user_id",        py_get_user_id,        METH_NOARGS,  "get_user_id() -> int"},
-    {"get_connection_state",py_get_connection_state,METH_NOARGS,"get_connection_state() -> str"},
+    {"get_account_id",       py_get_account_id,       METH_NOARGS,  "get_account_id() -> int"},
+    {"get_user_id",          py_get_user_id,          METH_NOARGS,  "get_user_id() -> int"},
+    {"get_connection_state", py_get_connection_state, METH_NOARGS,  "get_connection_state() -> str"},
+    {"show_bulletin",        py_show_bulletin,        METH_VARARGS, "show_bulletin(title, text='', icon='')"},
+    {"add_method_hook",      py_add_method_hook,      METH_VARARGS, "add_method_hook(class_name, method_name, before=None, after=None)"},
+    {"plugin_has_settings",  py_plugin_has_settings,  METH_VARARGS, "plugin_has_settings(plugin_id) -> bool"},
+    {"get_plugin_settings",  py_get_plugin_settings,  METH_VARARGS, "get_plugin_settings(plugin_id) -> dict|None"},
+    {"show_plugin_settings", py_show_plugin_settings, METH_VARARGS, "show_plugin_settings(plugin_id)"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -797,6 +1019,49 @@ static id py_to_ns(PyObject *obj) {
     return result;
 #else
     return NO;
+#endif
+}
+
++ (BOOL)pluginHasSettings:(NSString *)pluginId {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized || !g_loaded_modules) return NO;
+    __block BOOL result = NO;
+    [self withPython:^{
+        PyObject *mod = PyDict_GetItemString(g_loaded_modules, pluginId.UTF8String);
+        if (mod) result = (BOOL)PyObject_HasAttrString(mod, "__settings__");
+    }];
+    return result;
+#else
+    return NO;
+#endif
+}
+
++ (nullable NSDictionary *)getPluginSettingsSchema:(NSString *)pluginId {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized || !g_loaded_modules) return nil;
+    __block NSDictionary *result = nil;
+    [self withPython:^{
+        PyObject *mod = PyDict_GetItemString(g_loaded_modules, pluginId.UTF8String);
+        if (!mod) return;
+        PyObject *settings = PyObject_GetAttrString(mod, "__settings__");
+        if (!settings) { PyErr_Clear(); return; }
+        PyObject *to_dict = PyObject_GetAttrString(settings, "to_dict");
+        PyObject *schema = NULL;
+        if (to_dict && PyCallable_Check(to_dict)) {
+            schema = PyObject_CallFunctionObjArgs(to_dict, NULL);
+            if (!schema) PyErr_Clear();
+        }
+        Py_XDECREF(to_dict);
+        Py_DECREF(settings);
+        if (schema) {
+            id ns = py_to_ns(schema);
+            if ([ns isKindOfClass:[NSDictionary class]]) result = ns;
+            Py_DECREF(schema);
+        }
+    }];
+    return result;
+#else
+    return nil;
 #endif
 }
 

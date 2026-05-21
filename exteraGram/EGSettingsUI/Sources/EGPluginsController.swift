@@ -1,6 +1,7 @@
 // MARK: exteraGram
 
 import Foundation
+import UIKit
 import SwiftUI
 import LegacyUI
 import EGSwiftUI
@@ -107,7 +108,9 @@ public struct EGPlugin: Identifiable, Codable {
 
 public final class PluginsController {
     public static let shared = PluginsController()
-    private init() {}
+    private init() {
+        observePluginUINotifications()
+    }
 
     private let engine = EGPluginsEngineImpl()
 
@@ -309,6 +312,120 @@ public final class PluginsController {
     }
     public func setSetting(_ pluginId: String, key: String, value: Any) {
         engine.setPluginSetting(pluginId, key: key, value: value)
+    }
+    public func getSettingsSchema(_ pluginId: String) -> [[String: Any]] {
+        engine.getPluginSettingsSchema(pluginId) ?? []
+    }
+
+    // MARK: - Plugin navigation callback (set by the settings VC hierarchy)
+
+    /// Called when a plugin posts show_plugin_settings. Set from the presenting VC.
+    public var onShowPluginSettings: ((String) -> Void)?
+
+    // MARK: - UI notification observers
+
+    private func observePluginUINotifications() {
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("EGPluginShowBulletinNotification"),
+            object: nil, queue: .main
+        ) { note in
+            let title = note.userInfo?["title"] as? String ?? ""
+            let text  = note.userInfo?["text"]  as? String ?? ""
+            let icon  = note.userInfo?["icon"]  as? String ?? ""
+            Self.showBulletin(title: title, text: text, icon: icon)
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("EGPluginShowToastNotification"),
+            object: nil, queue: .main
+        ) { note in
+            let message  = note.userInfo?["message"]  as? String ?? ""
+            let duration = note.userInfo?["duration"]  as? Double ?? 2.0
+            Self.showToast(message: message, duration: duration)
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("EGPluginShowSettingsNotification"),
+            object: nil, queue: .main
+        ) { [weak self] note in
+            guard let pluginId = note.userInfo?["pluginId"] as? String else { return }
+            self?.onShowPluginSettings?(pluginId)
+        }
+    }
+
+    // MARK: - Bulletin / toast presentation
+
+    private static func topViewController() -> UIViewController? {
+        var win: UIWindow?
+        for scene in UIApplication.shared.connectedScenes {
+            if let ws = scene as? UIWindowScene,
+               ws.activationState == .foregroundActive {
+                win = ws.windows.first(where: { $0.isKeyWindow })
+                if win != nil { break }
+            }
+        }
+        if win == nil {
+            win = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first(where: { $0.isKeyWindow })
+        }
+        var vc = win?.rootViewController
+        while let presented = vc?.presentedViewController,
+              !presented.isBeingDismissed {
+            vc = presented
+        }
+        while vc?.isBeingDismissed == true, let parent = vc?.presentingViewController {
+            vc = parent
+        }
+        return vc
+    }
+
+    private static func showBulletin(title: String, text: String, icon: String) {
+        guard let vc = topViewController() else { return }
+        let alert = UIAlertController(
+            title: title,
+            message: text.isEmpty ? nil : text,
+            preferredStyle: .alert
+        )
+        if !icon.isEmpty {
+            let config = UIImage.SymbolConfiguration(pointSize: 28, weight: .medium)
+            if let img = UIImage(systemName: icon, withConfiguration: config) {
+                alert.setValue(img, forKey: "image")
+            }
+        }
+        vc.present(alert, animated: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            alert.dismiss(animated: true)
+        }
+    }
+
+    private static func showToast(message: String, duration: Double) {
+        guard let vc = topViewController(), let view = vc.view else { return }
+        let label = UILabel()
+        label.text = message
+        label.textColor = .white
+        label.backgroundColor = UIColor.black.withAlphaComponent(0.75)
+        label.textAlignment = .center
+        label.font = .systemFont(ofSize: 14, weight: .medium)
+        label.layer.cornerRadius = 10
+        label.clipsToBounds = true
+        label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(label)
+        NSLayoutConstraint.activate([
+            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            label.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
+            label.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
+            label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -32),
+        ])
+        label.alpha = 0
+        UIView.animate(withDuration: 0.3) { label.alpha = 1 }
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+            UIView.animate(withDuration: 0.3, animations: { label.alpha = 0 }) { _ in
+                label.removeFromSuperview()
+            }
+        }
     }
 }
 
@@ -617,6 +734,7 @@ private struct PluginRowView: View {
     let onUpdate: (EGPlugin) -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
+    let onSettings: () -> Void
 
     private var subtitleString: String {
         "v\(plugin.version)" + (plugin.subtitle.isEmpty ? "" : " · \(plugin.subtitle)")
@@ -744,7 +862,7 @@ private struct PluginRowView: View {
                 onUpdate(updated)
             }
             if plugin.hasSettings && plugin.isEnabled && !plugin.isError && !plugin.isNotResponding {
-                cellButton(image: "msg_settings") {}
+                cellButton(image: "msg_settings") { onSettings() }
             }
             Spacer()
         }
@@ -845,6 +963,15 @@ private struct EGPluginsView: View {
                             onDelete: {
                                 PluginsController.shared.uninstall(plugin.id)
                                 plugins = PluginsController.shared.plugins
+                            },
+                            onSettings: {
+                                guard let nav = wrapperController?.navigationController as? NavigationController else { return }
+                                let settingsVC = makePluginSettingsController(
+                                    pluginId: plugin.id,
+                                    pluginName: plugin.name,
+                                    context: context
+                                )
+                                nav.pushViewController(settingsVC, animated: true)
                             }
                         )
                     }

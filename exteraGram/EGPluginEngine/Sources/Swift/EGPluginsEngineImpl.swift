@@ -98,6 +98,7 @@ public final class EGPluginsEngineImpl {
             EGPluginDebugLog.shared.append(tag: "Engine", "ERROR [\(id)]: \(errMsg)")
         } else {
             errorStates.removeValue(forKey: id)
+            hasSettingsMap[id] = EGPythonBridge.pluginHasSettings(id)
             EGPluginDebugLog.shared.append(tag: "Engine", "Loaded [\(id)] ✓")
         }
     }
@@ -127,8 +128,16 @@ public final class EGPluginsEngineImpl {
         }
     }
 
-    // MARK: - Settings (stub — expand when ui/settings.py lands)
+    // MARK: - Settings
 
     public func getPluginSetting(_ id: String, key: String, default def: Any?) -> Any? { def }
     public func setPluginSetting(_ id: String, key: String, value: Any) { }
+
+    /// Returns the plugin's `__settings__` items array, or nil if the plugin has no settings.
+    public func getPluginSettingsSchema(_ id: String) -> [[String: Any]]? {
+        guard EGPythonBridge.isInitialized else { return nil }
+        guard let schema = EGPythonBridge.getPluginSettingsSchema(id),
+              let items = schema["items"] as? [[String: Any]] else { return nil }
+        return items
+    }
 }

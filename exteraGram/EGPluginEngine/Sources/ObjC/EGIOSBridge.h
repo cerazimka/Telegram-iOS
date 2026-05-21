@@ -44,6 +44,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// Called by the Python _ios_bridge extension to log messages.
 + (void)logFromPlugin:(NSString *)tag message:(NSString *)message;
 
+/// Returns YES if the loaded plugin module exposes a `__settings__` attribute.
++ (BOOL)pluginHasSettings:(NSString *)pluginId;
+
+/// Returns the plugin's `__settings__.to_dict()` as an NSDictionary, or nil if none.
++ (nullable NSDictionary *)getPluginSettingsSchema:(NSString *)pluginId;
+
 /// Extract python3.14.zip (bundled as a data resource) to destDir, preserving paths.
 /// Returns YES on success. Idempotent — call before initializeWithHome:.
 + (BOOL)extractPythonStdlibZip:(NSString *)zipPath toDirectory:(NSString *)destDir;
