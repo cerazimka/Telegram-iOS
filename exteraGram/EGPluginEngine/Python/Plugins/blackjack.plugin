@@ -1,21 +1,12 @@
 __id__          = "blackjack"
 __name__        = "♠️ Blackjack ♥️"
-__description__ = """🇷🇺[RU]
-Игра BlackJack(21) для exteraGram iOS. Управление чат-командами: /bj start <сумма>, /bj hit, /bj stand, /bj double, /bj split, /bj insurance, /bj stats, /bj reset, /bj exit. Изначальный плагин: @SaturnFake (@DevPluginsEUG). iOS-порт.
-
-🇬🇧[EN]
-BlackJack(21) for exteraGram iOS. Driven by chat commands: /bj start <amount>, /bj hit, /bj stand, /bj double, /bj split, /bj insurance, /bj stats, /bj reset, /bj exit. Originally by @SaturnFake (@DevPluginsEUG). iOS port."""
+__description__ = "BlackJack(21) для exteraGram iOS. Управляется чат-командой /bj. Изначальный плагин: @SaturnFake (@DevPluginsEUG). iOS-порт."
 __author__      = "@SaturnFake (ported)"
 __version__     = "1.0.0-ios"
 __os__          = "ios"
 
 import random
 import _ios_bridge
-
-from android_utils import log, run_on_ui_thread, get_plugin_setting, set_plugin_setting
-from hook_utils import add_tl_hook
-from ios_utils import show_alert, show_toast, haptic_feedback
-from ui.bulletin import show_bulletin
 
 
 # ---------------------------------------------------------------------------
@@ -33,35 +24,55 @@ RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 CMD_PREFIX = "/bj"
 
 
-def t(key, **kwargs):
-    translations = {
-        "welcome_title":    "♠️ BlackJack ♥️",
-        "welcome_msg":      "Баланс: ${balance}\nW/L: {wins}/{losses}\n\nКоманды:\n{cmds}",
-        "cmds":             "/bj start <сумма> — начать раздачу\n/bj hit — взять карту\n/bj stand — стоп\n/bj double — удвоить\n/bj split — разделить\n/bj insurance — страховка\n/bj stats — статистика\n/bj reset — сбросить баланс\n/bj exit — выйти",
-        "round_title":      "♠️ Раздача",
-        "round_state":      "Дилер: {dealer} (счёт: {dealer_score})\nИгрок: {player} (счёт: {player_score})\nСтавка: ${bet}\n\n{status}",
-        "your_turn":        "Ваш ход: /bj hit, stand, double, split, insurance",
-        "no_game":          "Сначала сделайте ставку: /bj start <сумма>",
-        "game_in_progress": "Раздача уже идёт",
-        "bad_amount":       "Неверная сумма. Мин ${min}, макс ${max}",
-        "insufficient":     "Недостаточно средств",
-        "blackjack":        "БЛЭКДЖЕК! 🏆",
-        "win":              "ПОБЕДА! 🎉",
-        "lose":             "ПОРАЖЕНИЕ 💔",
-        "push":             "НИЧЬЯ 🤝",
-        "bust":             "ПЕРЕБОР! 💥",
-        "result_msg":       "{result}\nБаланс: ${balance} ({delta})",
-        "reset_done":       "Баланс сброшен: ${balance}",
-        "stats_title":      "📊 Статистика",
-        "stats_msg":        "Баланс: ${balance}\nПобеды: {wins}\nПоражения: {losses}\nТекущая ставка: ${bet}",
-        "exit_done":        "Выход — раздача завершена",
-        "loaded":           "BlackJack загружен. Отправьте /bj в любом чате чтобы начать.",
-    }
-    return translations.get(key, key).format(**kwargs)
+# ---------------------------------------------------------------------------
+# Tiny logging / UI shims — call _ios_bridge directly, swallow missing methods
+# ---------------------------------------------------------------------------
+
+def _log(msg):
+    try:
+        _ios_bridge.log_text(str(msg), "Blackjack")
+    except Exception:
+        pass
+
+
+def _alert(title, message, button="OK"):
+    try:
+        _ios_bridge.show_alert(title, message, button)
+    except Exception as e:
+        _log(f"show_alert failed: {e}")
+
+
+def _toast(message, duration=2.0):
+    try:
+        _ios_bridge.show_toast(message, duration)
+    except Exception:
+        pass
+
+
+def _haptic(style="medium"):
+    try:
+        _ios_bridge.haptic_feedback(style)
+    except Exception:
+        pass
+
+
+def _get(key, default):
+    try:
+        v = _ios_bridge.get_plugin_setting(__id__, key, default)
+        return v if v is not None else default
+    except Exception:
+        return default
+
+
+def _set(key, value):
+    try:
+        _ios_bridge.set_plugin_setting(__id__, key, value)
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------------------
-# Game engine — ported verbatim from the Android original, no Android deps.
+# Game engine
 # ---------------------------------------------------------------------------
 
 class Card:
@@ -71,7 +82,7 @@ class Card:
         self.hidden = False
         self.is_ace = rank == "A"
 
-    def get_value(self):
+    def value(self):
         if self.rank in ("J", "Q", "K"):
             return 10
         if self.rank == "A":
@@ -79,9 +90,7 @@ class Card:
         return int(self.rank)
 
     def render(self):
-        if self.hidden:
-            return "🂠"
-        return f"{self.rank}{SUIT_SYMBOLS[self.suit]}"
+        return "🂠" if self.hidden else f"{self.rank}{SUIT_SYMBOLS[self.suit]}"
 
 
 class BlackjackGame:
@@ -113,12 +122,12 @@ class BlackjackGame:
         hand.append(card)
         return card
 
-    def _score(self, hand):
+    def _score(self, hand, ignore_hidden=True):
         score, aces = 0, 0
         for c in hand:
-            if c.hidden:
+            if ignore_hidden and c.hidden:
                 continue
-            score += c.get_value()
+            score += c.value()
             if c.is_ace:
                 aces += 1
         while score > 21 and aces:
@@ -141,7 +150,8 @@ class BlackjackGame:
         self.dealer_score = self._score(self.dealer_hand)
         self.player_has_blackjack = self.player_score == 21 and len(self.player_hand) == 2
         self.dealer_has_blackjack = (
-            self._score_unhidden(self.dealer_hand) == 21 and len(self.dealer_hand) == 2
+            self._score(self.dealer_hand, ignore_hidden=False) == 21
+            and len(self.dealer_hand) == 2
         )
         self.can_split = (
             len(self.player_hand) == 2
@@ -153,17 +163,6 @@ class BlackjackGame:
         if self.player_has_blackjack or self.dealer_has_blackjack:
             return self._finish()
         return None
-
-    def _score_unhidden(self, hand):
-        score, aces = 0, 0
-        for c in hand:
-            score += c.get_value()
-            if c.is_ace:
-                aces += 1
-        while score > 21 and aces:
-            score -= 10
-            aces -= 1
-        return score
 
     def hit(self):
         if not self.player_turn or self.game_over:
@@ -200,7 +199,6 @@ class BlackjackGame:
     def split(self):
         if not self.player_turn or self.game_over or not self.can_split:
             return None
-        # Simplified split: deal an extra card to the existing hand, double the bet.
         self._deal(self.player_hand)
         self.player_score = self._score(self.player_hand)
         self.bet *= 2
@@ -223,57 +221,53 @@ class BlackjackGame:
             self.dealer_score = self._score(self.dealer_hand)
 
     def _finish(self):
-        # Reveal dealer hole card on game end.
         for c in self.dealer_hand:
             c.hidden = False
         self.dealer_score = self._score(self.dealer_hand)
         self.game_over = True
         self.player_turn = False
         if self.player_has_blackjack and not self.dealer_has_blackjack:
-            self.result = t("blackjack")
+            self.result = "БЛЭКДЖЕК! 🏆"
             return int(self.bet * 2.5)
         if self.dealer_has_blackjack and not self.player_has_blackjack:
-            self.result = t("lose")
+            self.result = "ПОРАЖЕНИЕ 💔"
             return 0
         if self.player_has_blackjack and self.dealer_has_blackjack:
-            self.result = t("push")
+            self.result = "НИЧЬЯ 🤝"
             return self.bet
         if self.player_score > 21:
-            self.result = t("bust")
+            self.result = "ПЕРЕБОР! 💥"
             return 0
         if self.dealer_score > 21:
-            self.result = t("win")
+            self.result = "ПОБЕДА! 🎉"
             return self.bet * 2
         if self.player_score > self.dealer_score:
-            self.result = t("win")
+            self.result = "ПОБЕДА! 🎉"
             return self.bet * 2
         if self.player_score < self.dealer_score:
-            self.result = t("lose")
+            self.result = "ПОРАЖЕНИЕ 💔"
             return 0
-        self.result = t("push")
+        self.result = "НИЧЬЯ 🤝"
         return self.bet
 
 
 # ---------------------------------------------------------------------------
-# Persistent state — balance/wins/losses survive across plugin loads
+# Persistent state
 # ---------------------------------------------------------------------------
 
 class State:
     def __init__(self):
-        self.balance = get_plugin_setting(__id__, "balance", START_BALANCE)
-        self.wins = get_plugin_setting(__id__, "wins", 0)
-        self.losses = get_plugin_setting(__id__, "losses", 0)
         try:
-            self.balance = int(self.balance)
-            self.wins = int(self.wins)
-            self.losses = int(self.losses)
+            self.balance = int(_get("balance", START_BALANCE))
+            self.wins = int(_get("wins", 0))
+            self.losses = int(_get("losses", 0))
         except (TypeError, ValueError):
             self.balance, self.wins, self.losses = START_BALANCE, 0, 0
 
     def save(self):
-        set_plugin_setting(__id__, "balance", self.balance)
-        set_plugin_setting(__id__, "wins", self.wins)
-        set_plugin_setting(__id__, "losses", self.losses)
+        _set("balance", self.balance)
+        _set("wins", self.wins)
+        _set("losses", self.losses)
 
 
 game = BlackjackGame()
@@ -281,7 +275,7 @@ state = State()
 
 
 # ---------------------------------------------------------------------------
-# UI helpers — single-button alerts + bulletin + haptic
+# UI rendering
 # ---------------------------------------------------------------------------
 
 def _render_hand(hand):
@@ -289,38 +283,54 @@ def _render_hand(hand):
 
 
 def _state_text(status=""):
-    return t(
-        "round_state",
-        dealer=_render_hand(game.dealer_hand),
-        dealer_score="?" if (game.player_turn and not game.game_over) else game.dealer_score,
-        player=_render_hand(game.player_hand),
-        player_score=game.player_score,
-        bet=game.bet,
-        status=status or (t("your_turn") if game.player_turn else ""),
+    dealer_score = "?" if (game.player_turn and not game.game_over) else game.dealer_score
+    status_line = status or ("Ваш ход: /bj hit, stand, double, split, insurance"
+                             if game.player_turn else "")
+    return (
+        f"Дилер: {_render_hand(game.dealer_hand)} (счёт: {dealer_score})\n"
+        f"Игрок: {_render_hand(game.player_hand)} (счёт: {game.player_score})\n"
+        f"Ставка: ${game.bet}\n\n{status_line}"
     )
 
 
-def _show_round(status="", title=None):
-    show_alert(title or t("round_title"), _state_text(status))
+def _show_round(status=""):
+    _alert("♠️ Раздача", _state_text(status))
 
 
-def _finish_round(payout, initial_bet):
-    delta = payout - initial_bet
+def _show_help():
+    msg = (
+        f"Баланс: ${state.balance}\n"
+        f"W/L: {state.wins}/{state.losses}\n\n"
+        "Команды:\n"
+        "/bj start <сумма> — начать\n"
+        "/bj hit — взять карту\n"
+        "/bj stand — стоп\n"
+        "/bj double — удвоить\n"
+        "/bj split — разделить\n"
+        "/bj insurance — страховка\n"
+        "/bj stats — статистика\n"
+        "/bj reset — сброс баланса\n"
+        "/bj exit — выйти"
+    )
+    _alert("♠️ BlackJack ♥️", msg)
+
+
+def _finish_round(payout, total_cost):
+    delta = payout - total_cost
     if payout == 0:
         state.losses += 1
-        haptic_feedback("error")
-    elif payout > initial_bet:
+        _haptic("error")
+    elif payout > total_cost:
         state.wins += 1
-        haptic_feedback("success")
+        _haptic("success")
     else:
-        haptic_feedback("warning")
+        _haptic("warning")
     state.balance += payout
     state.save()
     delta_str = f"+${delta}" if delta >= 0 else f"-${-delta}"
-    show_bulletin(game.result, f"Баланс: ${state.balance} ({delta_str})")
-    show_alert(
+    _alert(
         game.result,
-        t("result_msg", result=game.result, balance=state.balance, delta=delta_str),
+        f"{_state_text(status=game.result)}\n\nБаланс: ${state.balance} ({delta_str})",
     )
 
 
@@ -328,102 +338,82 @@ def _finish_round(payout, initial_bet):
 # Command handlers
 # ---------------------------------------------------------------------------
 
-def _parse_amount(parts):
+def _cmd_start(parts):
+    if not game.game_over:
+        _toast("Раздача уже идёт")
+        return
     if len(parts) < 3:
-        return None
+        _toast(f"Укажите сумму: /bj start <{MIN_BET}-{MAX_BET}>")
+        return
     try:
         amount = int(parts[2])
     except ValueError:
-        return None
-    if amount < MIN_BET or amount > MAX_BET:
-        return None
-    return amount
-
-
-def cmd_start(parts):
-    if not game.game_over:
-        show_toast(t("game_in_progress"))
+        _toast("Неверная сумма")
         return
-    amount = _parse_amount(parts)
-    if amount is None:
-        show_toast(t("bad_amount", min=MIN_BET, max=MAX_BET))
+    if amount < MIN_BET or amount > MAX_BET:
+        _toast(f"Мин ${MIN_BET}, макс ${MAX_BET}")
         return
     if state.balance < amount:
-        show_toast(t("insufficient"))
+        _toast("Недостаточно средств")
         return
     state.balance -= amount
     state.save()
     payout = game.start(amount)
-    haptic_feedback("light")
+    _haptic("light")
     if payout is not None:
         _finish_round(payout, amount)
     else:
         _show_round()
 
 
-def cmd_action(action_name):
+def _cmd_action(name):
     if game.game_over or not game.player_turn:
-        show_toast(t("no_game"))
+        _toast("Сначала: /bj start <сумма>")
         return
     initial_bet = game.bet
-    extra_cost = 0
-    if action_name == "double":
+    extra = 0
+    if name in ("double", "split"):
         if state.balance < game.bet:
-            show_toast(t("insufficient"))
+            _toast("Недостаточно средств")
             return
-        extra_cost = game.bet
-        state.balance -= extra_cost
-    elif action_name == "split":
-        if state.balance < game.bet:
-            show_toast(t("insufficient"))
-            return
-        extra_cost = game.bet
-        state.balance -= extra_cost
-    elif action_name == "insurance":
+        extra = game.bet
+        state.balance -= extra
+    elif name == "insurance":
         cost = game.bet // 2
         if state.balance < cost:
-            show_toast(t("insufficient"))
+            _toast("Недостаточно средств")
             return
-        extra_cost = cost
-        state.balance -= extra_cost
-
-    payout = getattr(game, action_name)()
+        extra = cost
+        state.balance -= extra
+    payout = getattr(game, name)()
     state.save()
-    haptic_feedback("light")
+    _haptic("light")
     if payout is not None:
-        _finish_round(payout, initial_bet + extra_cost)
+        _finish_round(payout, initial_bet + extra)
     else:
         _show_round()
 
 
-def cmd_stats():
-    show_alert(
-        t("stats_title"),
-        t("stats_msg",
-          balance=state.balance, wins=state.wins, losses=state.losses, bet=game.bet),
+def _cmd_stats():
+    _alert(
+        "📊 Статистика",
+        f"Баланс: ${state.balance}\nПобеды: {state.wins}\nПоражения: {state.losses}\n"
+        f"Текущая ставка: ${game.bet}",
     )
 
 
-def cmd_reset():
+def _cmd_reset():
     state.balance = START_BALANCE
     state.wins = 0
     state.losses = 0
     state.save()
     game.__init__()
-    show_alert(t("welcome_title"), t("reset_done", balance=state.balance))
+    _alert("♠️ BlackJack ♥️", f"Баланс сброшен: ${state.balance}")
 
 
-def cmd_exit():
+def _cmd_exit():
     game.__init__()
-    show_toast(t("exit_done"))
-
-
-def cmd_help():
-    show_alert(
-        t("welcome_title"),
-        t("welcome_msg", balance=state.balance, wins=state.wins, losses=state.losses,
-          cmds=t("cmds")),
-    )
+    _toast("Раздача завершена")
 
 
 def _dispatch(text):
@@ -432,39 +422,37 @@ def _dispatch(text):
         return False
     sub = parts[1].lower() if len(parts) > 1 else ""
     if sub == "" or sub == "help":
-        cmd_help()
+        _show_help()
     elif sub == "start":
-        cmd_start(parts)
+        _cmd_start(parts)
     elif sub in ("hit", "stand", "double", "split", "insurance"):
-        cmd_action(sub)
+        _cmd_action(sub)
     elif sub == "stats":
-        cmd_stats()
+        _cmd_stats()
     elif sub == "reset":
-        cmd_reset()
+        _cmd_reset()
     elif sub == "exit":
-        cmd_exit()
+        _cmd_exit()
     else:
-        show_toast(f"Неизвестная команда: {sub}")
+        _toast(f"Неизвестная команда: {sub}")
     return True
 
 
 # ---------------------------------------------------------------------------
-# TL hook — intercepts outgoing chat messages and rewrites /bj <cmd>
-# so the command does not actually post to the chat.
+# TL hook — intercept outgoing chat messages prefixed with /bj
 # ---------------------------------------------------------------------------
 
 def _on_send_message(tl_obj):
     try:
         message = tl_obj.get("message", "") if hasattr(tl_obj, "get") else ""
     except Exception:
-        message = ""
+        return
     if not isinstance(message, str) or not message.startswith(CMD_PREFIX):
         return
     try:
         _dispatch(message)
     except Exception as e:
-        log(f"blackjack dispatch error: {e}")
-    # Replace outgoing payload so the command itself isn't broadcast.
+        _log(f"dispatch error: {e}")
     try:
         tl_obj["message"] = "🎰"
         if "entities" in tl_obj:
@@ -478,16 +466,23 @@ def _on_send_message(tl_obj):
 # ---------------------------------------------------------------------------
 
 def on_load(plugin):
-    log(t("loaded"))
-    add_tl_hook("messages.sendMessage", _on_send_message)
-    run_on_ui_thread(lambda: show_alert(
-        t("welcome_title"),
-        t("welcome_msg",
-          balance=state.balance, wins=state.wins, losses=state.losses,
-          cmds=t("cmds")),
-    ))
+    _log("blackjack on_load called")
+    try:
+        _ios_bridge.add_tl_hook("messages.sendMessage", _on_send_message)
+    except Exception as e:
+        _log(f"add_tl_hook failed: {e}")
+    _alert(
+        "♠️ BlackJack ♥️ загружен",
+        f"Баланс: ${state.balance}  W/L: {state.wins}/{state.losses}\n\n"
+        "Отправьте /bj в любом чате для справки.\n"
+        "Начать игру: /bj start 50",
+        "OK",
+    )
 
 
-def on_unload():
-    log("blackjack unloaded")
-    state.save()
+def on_unload(plugin):
+    _log("blackjack on_unload called")
+    try:
+        state.save()
+    except Exception:
+        pass
