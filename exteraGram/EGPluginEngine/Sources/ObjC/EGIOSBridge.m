@@ -69,8 +69,9 @@ static PyObject *g_tl_hooks = NULL;
 static PyObject *g_loaded_modules = NULL;
 static BOOL g_initialized = NO;
 
-// Block set by EGPluginsEngineImpl to forward set_anti_spoiler() → EGPluginHooks.antiSpoilerEnabled
-static void (^g_antiSpoilerSetter)(BOOL) = nil;
+// Wired by EGPluginsEngineImpl to forward suppress_entity/attribute_type() → EGPluginHooks Sets
+static void (^g_suppressEntityTypeHandler)(NSString *, BOOL) = nil;
+static void (^g_suppressAttributeTypeHandler)(NSString *, BOOL) = nil;
 
 // ---------------------------------------------------------------------------
 // ObjC method-hook registry  (add_method_hook)
@@ -611,16 +612,32 @@ static PyObject *py_haptic_feedback(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
-// set_anti_spoiler(enabled: bool) — plugin calls this to toggle EGPluginHooks.antiSpoilerEnabled.
-// The actual flag lives in Swift (TelegramCore) and is set via g_antiSpoilerSetter, which
-// EGPluginsEngineImpl wires up at engine start.
-static PyObject *py_set_anti_spoiler(PyObject *self, PyObject *args) {
-    int enabled = 0;
-    if (!PyArg_ParseTuple(args, "p", &enabled)) return NULL;
-    void (^setter)(BOOL) = g_antiSpoilerSetter;
-    if (setter) {
-        BOOL b = (BOOL)enabled;
-        dispatch_async(dispatch_get_main_queue(), ^{ setter(b); });
+// suppress_entity_type(type_name, suppress=True)
+// Adds/removes a MessageTextEntity type name from EGPluginHooks.suppressedEntityTypes.
+static PyObject *py_suppress_entity_type(PyObject *self, PyObject *args) {
+    const char *typeName = "";
+    int suppress = 1;
+    if (!PyArg_ParseTuple(args, "s|p", &typeName, &suppress)) return NULL;
+    void (^h)(NSString *, BOOL) = g_suppressEntityTypeHandler;
+    if (h) {
+        NSString *t = [NSString stringWithUTF8String:typeName];
+        BOOL s = (BOOL)suppress;
+        dispatch_async(dispatch_get_main_queue(), ^{ h(t, s); });
+    }
+    Py_RETURN_NONE;
+}
+
+// suppress_attribute_type(type_name, suppress=True)
+// Adds/removes a MessageAttribute class name from EGPluginHooks.suppressedAttributeTypes.
+static PyObject *py_suppress_attribute_type(PyObject *self, PyObject *args) {
+    const char *typeName = "";
+    int suppress = 1;
+    if (!PyArg_ParseTuple(args, "s|p", &typeName, &suppress)) return NULL;
+    void (^h)(NSString *, BOOL) = g_suppressAttributeTypeHandler;
+    if (h) {
+        NSString *t = [NSString stringWithUTF8String:typeName];
+        BOOL s = (BOOL)suppress;
+        dispatch_async(dispatch_get_main_queue(), ^{ h(t, s); });
     }
     Py_RETURN_NONE;
 }
@@ -955,7 +972,8 @@ static PyMethodDef ios_bridge_methods[] = {
     {"plugin_has_settings",  py_plugin_has_settings,  METH_VARARGS, "plugin_has_settings(plugin_id) -> bool"},
     {"get_plugin_settings",  py_get_plugin_settings,  METH_VARARGS, "get_plugin_settings(plugin_id) -> dict|None"},
     {"show_plugin_settings", py_show_plugin_settings, METH_VARARGS, "show_plugin_settings(plugin_id)"},
-    {"set_anti_spoiler",     py_set_anti_spoiler,     METH_VARARGS, "set_anti_spoiler(enabled: bool)"},
+    {"suppress_entity_type",    py_suppress_entity_type,    METH_VARARGS, "suppress_entity_type(type_name, suppress=True)"},
+    {"suppress_attribute_type", py_suppress_attribute_type, METH_VARARGS, "suppress_attribute_type(type_name, suppress=True)"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -1064,8 +1082,11 @@ static id py_to_ns(PyObject *obj) {
 
 @implementation EGPythonBridge
 
-+ (void (^)(BOOL))antiSpoilerEnabledSetter { return g_antiSpoilerSetter; }
-+ (void)setAntiSpoilerEnabledSetter:(void (^)(BOOL))block { g_antiSpoilerSetter = [block copy]; }
++ (void (^)(NSString *, BOOL))suppressEntityTypeHandler { return g_suppressEntityTypeHandler; }
++ (void)setSuppressEntityTypeHandler:(void (^)(NSString *, BOOL))b { g_suppressEntityTypeHandler = [b copy]; }
+
++ (void (^)(NSString *, BOOL))suppressAttributeTypeHandler { return g_suppressAttributeTypeHandler; }
++ (void)setSuppressAttributeTypeHandler:(void (^)(NSString *, BOOL))b { g_suppressAttributeTypeHandler = [b copy]; }
 
 + (BOOL)initializeWithHome:(NSString *)pythonHome
                    sdkPath:(NSString *)sdkPath

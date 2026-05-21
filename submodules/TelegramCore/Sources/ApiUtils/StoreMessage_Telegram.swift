@@ -805,7 +805,7 @@ func messageTextEntitiesFromApiEntities(_ entities: [Api.MessageEntity]) -> [Mes
             let (offset, length) = (messageEntityBankCardData.offset, messageEntityBankCardData.length)
             result.append(MessageTextEntity(range: Int(offset) ..< Int(offset + length), type: .BankCard))
         case let .messageEntitySpoiler(messageEntitySpoilerData):
-            if !EGPluginHooks.antiSpoilerEnabled {
+            if !EGPluginHooks.suppressedEntityTypes.contains("Spoiler") {
                 let (offset, length) = (messageEntitySpoilerData.offset, messageEntitySpoilerData.length)
                 result.append(MessageTextEntity(range: Int(offset) ..< Int(offset + length), type: .Spoiler))
             }
@@ -1034,7 +1034,8 @@ extension StoreMessage {
                             attributes.append(NonPremiumMessageAttribute())
                         }
                         
-                        if let hasSpoiler = hasSpoiler, hasSpoiler, !EGPluginHooks.antiSpoilerEnabled {
+                        if let hasSpoiler = hasSpoiler, hasSpoiler,
+                           !EGPluginHooks.suppressedAttributeTypes.contains("MediaSpoilerMessageAttribute") {
                             attributes.append(MediaSpoilerMessageAttribute())
                         }
 

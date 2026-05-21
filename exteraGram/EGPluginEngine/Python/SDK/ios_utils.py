@@ -80,13 +80,25 @@ def haptic_feedback(style: str = "medium") -> None:
         pass
 
 
-def set_anti_spoiler_enabled(enabled: bool) -> None:
+def suppress_entity_type(type_name: str, suppress: bool = True) -> None:
     """
-    When True, incoming messages are stored without spoiler entities/attributes,
-    so text and media spoilers are always visible. Calls into TelegramCore via
-    EGPluginHooks.antiSpoilerEnabled (Swift-level flag, fast path, no overhead).
+    Add or remove a MessageTextEntity type name from TelegramCore's suppressed set.
+    When suppressed, entities of that type are dropped before messages are stored.
+    Example: suppress_entity_type("Spoiler") strips text-spoiler formatting.
     """
     try:
-        _ios_bridge.set_anti_spoiler(bool(enabled))
+        _ios_bridge.suppress_entity_type(type_name, suppress)
+    except AttributeError:
+        pass
+
+
+def suppress_attribute_type(type_name: str, suppress: bool = True) -> None:
+    """
+    Add or remove a MessageAttribute class name from TelegramCore's suppressed set.
+    When suppressed, attributes of that class are dropped before messages are stored.
+    Example: suppress_attribute_type("MediaSpoilerMessageAttribute") auto-reveals media.
+    """
+    try:
+        _ios_bridge.suppress_attribute_type(type_name, suppress)
     except AttributeError:
         pass

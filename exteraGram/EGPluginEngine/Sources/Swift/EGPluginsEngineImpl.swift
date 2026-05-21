@@ -50,9 +50,14 @@ public final class EGPluginsEngineImpl {
                 EGTLHookBridge.shared.dispatchTLHookAsync(
                     "messages.deleteMessages", snapshot: params)
             }
-            // Wire anti-spoiler setter: Python's set_anti_spoiler(bool) → EGPluginHooks.antiSpoilerEnabled
-            EGPythonBridge.antiSpoilerEnabledSetter = { enabled in
-                EGPluginHooks.antiSpoilerEnabled = enabled
+            // Wire generic message-filter hooks so plugins can suppress entity/attribute types.
+            EGPythonBridge.suppressEntityTypeHandler = { typeName, suppress in
+                if suppress { EGPluginHooks.suppressedEntityTypes.insert(typeName) }
+                else        { EGPluginHooks.suppressedEntityTypes.remove(typeName) }
+            }
+            EGPythonBridge.suppressAttributeTypeHandler = { typeName, suppress in
+                if suppress { EGPluginHooks.suppressedAttributeTypes.insert(typeName) }
+                else        { EGPluginHooks.suppressedAttributeTypes.remove(typeName) }
             }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {
@@ -70,8 +75,10 @@ public final class EGPluginsEngineImpl {
             EGPluginHooks.sendMessageHook = nil
             EGPluginHooks.editMessageHook = nil
             EGPluginHooks.deleteMessagesHook = nil
-            EGPluginHooks.antiSpoilerEnabled = false
-            EGPythonBridge.antiSpoilerEnabledSetter = nil
+            EGPluginHooks.suppressedEntityTypes.removeAll()
+            EGPluginHooks.suppressedAttributeTypes.removeAll()
+            EGPythonBridge.suppressEntityTypeHandler = nil
+            EGPythonBridge.suppressAttributeTypeHandler = nil
             for id in pluginIds {
                 if EGPythonBridge.isInitialized {
                     EGPythonBridge.unloadPlugin(id)
