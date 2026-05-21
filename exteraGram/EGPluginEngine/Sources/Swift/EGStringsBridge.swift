@@ -22,15 +22,15 @@ import EGStrings
 @_cdecl("EGStringsBridge_currentLanguageCStr")
 public func EGStringsBridge_currentLanguageCStr() -> UnsafePointer<CChar>? {
     let lang = Locale.current.languageCode ?? "en"
-    return strdup(lang)
+    return UnsafePointer(strdup(lang))
 }
 
 /// Returns a localized string for the given key, or the key itself if not found.
 /// Result is heap-allocated; caller must `free()` it.
 @_cdecl("EGStringsBridge_localizedStringCStr")
 public func EGStringsBridge_localizedStringCStr(_ key: UnsafePointer<CChar>?) -> UnsafePointer<CChar>? {
-    guard let key else { return strdup("") }
+    guard let key else { return UnsafePointer(strdup("")) }
     let keyStr = String(cString: key)
     let value = EGLocalizationManager.shared.localizedString(keyStr)
-    return strdup(value)
+    return UnsafePointer(strdup(value))
 }
