@@ -56,6 +56,10 @@ static void plugin_log(NSString *tag, NSString *fmt, ...) {
 
 #if EGPLUGIN_HAS_PYTHON
 
+// Forward declarations — implementations appear after the PyMethodDef table.
+static PyObject *ns_to_py(id obj);
+static id py_to_ns(PyObject *obj);
+
 // Dict: {"tl_type": [callback, ...]}
 static PyObject *g_tl_hooks = NULL;
 // Dict: {"plugin_id": module}
