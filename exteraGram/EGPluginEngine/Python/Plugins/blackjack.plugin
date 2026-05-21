@@ -1,17 +1,15 @@
 __id__          = "blackjack"
 __name__        = "♠️ Blackjack ♥️"
-__description__ = "BlackJack(21) для exteraGram iOS. Управляется чат-командой /bj. Изначальный плагин: @SaturnFake (@DevPluginsEUG). iOS-порт."
+__description__ = "BlackJack(21) для exteraGram iOS — авто-раунд на каждую загрузку плагина. Перезагрузи плагин (Settings → Plugins → toggle) чтобы сыграть снова. Статистика сохраняется. Изначально: @SaturnFake (@DevPluginsEUG). iOS-порт."
 __author__      = "@SaturnFake (ported)"
-__version__     = "1.0.0-ios"
+__version__     = "1.1.0-ios"
 __os__          = "ios"
 
 import _ios_bridge
 
 
 # ---------------------------------------------------------------------------
-# Tiny stdlib-free PRNG. The iOS CPython build does not ship `math`, and any
-# import of `random` or anything else that pulls `math` will fail plugin load.
-# Use a small-int xorshift32 to keep arithmetic out of bignum paths too.
+# Stdlib-free PRNG (iOS CPython build doesn't ship math; import random fails)
 # ---------------------------------------------------------------------------
 
 _rng = [0]
@@ -31,13 +29,10 @@ def _rand():
 
 
 def _shuffle(lst):
-    n = len(lst)
-    i = n - 1
+    i = len(lst) - 1
     while i > 0:
         j = _rand() % (i + 1)
-        tmp = lst[i]
-        lst[i] = lst[j]
-        lst[j] = tmp
+        tmp = lst[i]; lst[i] = lst[j]; lst[j] = tmp
         i -= 1
 
 
@@ -45,10 +40,8 @@ def _shuffle(lst):
 # Constants
 # ---------------------------------------------------------------------------
 
-MIN_BET = 5
-MAX_BET = 500
 START_BALANCE = 1000
-CMD_PREFIX = "/bj"
+BET_OPTIONS = [10, 25, 50, 100]   # random pick per round
 
 SUITS = ["H", "D", "C", "S"]
 SUIT_SYM = {"H": "♥", "D": "♦", "C": "♣", "S": "♠"}
@@ -56,7 +49,7 @@ RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"]
 
 
 # ---------------------------------------------------------------------------
-# Bridge wrappers — every call guarded
+# Bridge wrappers (each guarded — missing bridge method must not break load)
 # ---------------------------------------------------------------------------
 
 def _log(msg):
@@ -73,13 +66,6 @@ def _alert(title, message, button="OK"):
         _log("alert failed: " + str(e))
 
 
-def _toast(message):
-    try:
-        _ios_bridge.show_toast(message, 2.0)
-    except Exception:
-        pass
-
-
 def _haptic(style):
     try:
         _ios_bridge.haptic_feedback(style)
@@ -90,9 +76,7 @@ def _haptic(style):
 def _get(key, default):
     try:
         v = _ios_bridge.get_plugin_setting(__id__, key, default)
-        if v is None:
-            return default
-        return v
+        return default if v is None else v
     except Exception:
         return default
 
@@ -105,29 +89,11 @@ def _set(key, value):
 
 
 # ---------------------------------------------------------------------------
-# Game state — module-level dicts/lists, no classes
+# Game state — module-level dicts/lists, zero classes
 # ---------------------------------------------------------------------------
 
-# A card is a 3-tuple: (rank, suit, hidden)
 _deck = []
-_player = []
-_dealer = []
-
-# game dict keeps mutable counters/flags
-G = {
-    "bet": 0,
-    "player_score": 0,
-    "dealer_score": 0,
-    "game_over": True,
-    "player_turn": False,
-    "result": "",
-    "can_split": False,
-    "can_insure": False,
-    "player_bj": False,
-    "dealer_bj": False,
-}
-
-S = {"balance": START_BALANCE, "wins": 0, "losses": 0}
+S = {"balance": START_BALANCE, "wins": 0, "losses": 0, "pushes": 0}
 
 
 def _card_value(rank):
@@ -138,38 +104,30 @@ def _card_value(rank):
     return int(rank)
 
 
-def _card_render(card):
-    rank, suit, hidden = card
-    if hidden:
-        return "\U0001F0A0"
-    return rank + SUIT_SYM[suit]
+def _render(card):
+    return card[0] + SUIT_SYM[card[1]]
 
 
-def _reshuffle():
+def _build_deck():
     global _deck
     _deck = []
     for _ in range(6):
         for s in SUITS:
             for r in RANKS:
-                _deck.append((r, s, False))
+                _deck.append((r, s))
     _shuffle(_deck)
 
 
-def _deal(hand, hidden=False):
+def _deal(hand):
     if len(_deck) < 20:
-        _reshuffle()
-    card = _deck.pop()
-    if hidden:
-        card = (card[0], card[1], True)
-    hand.append(card)
+        _build_deck()
+    hand.append(_deck.pop())
 
 
-def _score(hand, ignore_hidden=True):
+def _score(hand):
     total = 0
     aces = 0
     for c in hand:
-        if ignore_hidden and c[2]:
-            continue
         total += _card_value(c[0])
         if c[0] == "A":
             aces += 1
@@ -179,342 +137,77 @@ def _score(hand, ignore_hidden=True):
     return total
 
 
-def _reveal_dealer():
-    for i in range(len(_dealer)):
-        c = _dealer[i]
-        if c[2]:
-            _dealer[i] = (c[0], c[1], False)
-
-
 def _render_hand(hand):
-    if not hand:
-        return "-"
     parts = []
     for c in hand:
-        parts.append(_card_render(c))
+        parts.append(_render(c))
     return " ".join(parts)
 
 
-def _state_text(status):
-    if G["player_turn"] and not G["game_over"]:
-        ds = "?"
-    else:
-        ds = str(G["dealer_score"])
-    line = status
-    if not line and G["player_turn"]:
-        line = "Ход: /bj hit, stand, double, split, insurance"
-    return ("Дилер: " + _render_hand(_dealer) + " (" + ds + ")\n"
-            + "Игрок: " + _render_hand(_player) + " (" + str(G["player_score"]) + ")\n"
-            + "Ставка: $" + str(G["bet"]) + "\n\n" + line)
-
-
-def _show_round(status=""):
-    _alert("♠ Раздача", _state_text(status))
-
-
-def _show_help():
-    msg = ("Баланс: $" + str(S["balance"]) + "\n"
-           "W/L: " + str(S["wins"]) + "/" + str(S["losses"]) + "\n\n"
-           "Команды:\n"
-           "/bj start <сумма>\n/bj hit\n/bj stand\n/bj double\n"
-           "/bj split\n/bj insurance\n/bj stats\n/bj reset\n/bj exit")
-    _alert("♠ BlackJack ♥", msg)
-
-
 # ---------------------------------------------------------------------------
-# Round resolution
+# Auto-play one round using basic "mirror dealer" strategy:
+#   player hits while score < 17 (same rule the dealer follows),
+#   then dealer plays, then payout.
 # ---------------------------------------------------------------------------
 
-def _finish():
-    _reveal_dealer()
-    G["dealer_score"] = _score(_dealer)
-    G["game_over"] = True
-    G["player_turn"] = False
-    bet = G["bet"]
-    if G["player_bj"] and not G["dealer_bj"]:
-        G["result"] = "БЛЭКДЖЕК! 🏆"
-        return (bet * 5) // 2
-    if G["dealer_bj"] and not G["player_bj"]:
-        G["result"] = "ПОРАЖЕНИЕ 💔"
-        return 0
-    if G["player_bj"] and G["dealer_bj"]:
-        G["result"] = "НИЧЬЯ 🤝"
-        return bet
-    if G["player_score"] > 21:
-        G["result"] = "ПЕРЕБОР! 💥"
-        return 0
-    if G["dealer_score"] > 21:
-        G["result"] = "ПОБЕДА! 🎉"
-        return bet * 2
-    if G["player_score"] > G["dealer_score"]:
-        G["result"] = "ПОБЕДА! 🎉"
-        return bet * 2
-    if G["player_score"] < G["dealer_score"]:
-        G["result"] = "ПОРАЖЕНИЕ 💔"
-        return 0
-    G["result"] = "НИЧЬЯ 🤝"
-    return bet
+def _play_round(bet):
+    _build_deck()
+    player = []
+    dealer = []
+    _deal(player); _deal(dealer); _deal(player); _deal(dealer)
 
+    player_score = _score(player)
+    dealer_score = _score(dealer)
+    player_bj = (player_score == 21)
+    dealer_bj = (dealer_score == 21)
 
-def _dealer_play():
-    _reveal_dealer()
-    G["dealer_score"] = _score(_dealer)
-    while G["dealer_score"] < 17:
-        _deal(_dealer)
-        G["dealer_score"] = _score(_dealer)
+    # Player auto-strategy: hit while under 17 (unless already a blackjack).
+    if not player_bj and not dealer_bj:
+        while _score(player) < 17:
+            _deal(player)
+        player_score = _score(player)
 
+    # Dealer plays only if player didn't bust.
+    if player_score <= 21 and not player_bj and not dealer_bj:
+        while _score(dealer) < 17:
+            _deal(dealer)
+        dealer_score = _score(dealer)
 
-def _start_round(bet):
-    global _player, _dealer
-    _player = []
-    _dealer = []
-    G["bet"] = bet
-    G["result"] = ""
-    G["game_over"] = False
-    G["player_turn"] = True
-    _deal(_player)
-    _deal(_dealer, hidden=True)
-    _deal(_player)
-    _deal(_dealer)
-    G["player_score"] = _score(_player)
-    G["dealer_score"] = _score(_dealer)
-    G["player_bj"] = G["player_score"] == 21 and len(_player) == 2
-    G["dealer_bj"] = _score(_dealer, ignore_hidden=False) == 21 and len(_dealer) == 2
-    G["can_split"] = len(_player) == 2 and _player[0][0] == _player[1][0]
-    G["can_insure"] = (not G["player_bj"]) and _dealer[1][0] == "A"
-    if G["player_bj"] or G["dealer_bj"]:
-        return _finish()
-    return None
-
-
-def _finish_and_show(payout, total_cost):
-    delta = payout - total_cost
-    if payout == 0:
-        S["losses"] = S["losses"] + 1
-        _haptic("error")
-    elif payout > total_cost:
-        S["wins"] = S["wins"] + 1
-        _haptic("success")
+    # Resolve outcome
+    if player_bj and not dealer_bj:
+        result = "♠ БЛЭКДЖЕК! \U0001F3C6"
+        payout = (bet * 5) // 2
+        kind = "win_bj"
+    elif dealer_bj and not player_bj:
+        result = "Дилер БЛЭКДЖЕК \U0001F494"
+        payout = 0
+        kind = "lose"
+    elif player_bj and dealer_bj:
+        result = "Двойной БЛЭКДЖЕК — ничья \U0001F91D"
+        payout = bet
+        kind = "push"
+    elif player_score > 21:
+        result = "ПЕРЕБОР! \U0001F4A5"
+        payout = 0
+        kind = "lose"
+    elif dealer_score > 21:
+        result = "ПОБЕДА — у дилера перебор \U0001F389"
+        payout = bet * 2
+        kind = "win"
+    elif player_score > dealer_score:
+        result = "ПОБЕДА! \U0001F389"
+        payout = bet * 2
+        kind = "win"
+    elif player_score < dealer_score:
+        result = "ПОРАЖЕНИЕ \U0001F494"
+        payout = 0
+        kind = "lose"
     else:
-        _haptic("warning")
-    S["balance"] = S["balance"] + payout
-    _set("balance", S["balance"])
-    _set("wins", S["wins"])
-    _set("losses", S["losses"])
-    if delta >= 0:
-        delta_str = "+$" + str(delta)
-    else:
-        delta_str = "-$" + str(-delta)
-    _alert(G["result"], _state_text(G["result"]) + "\n\nБаланс: $" + str(S["balance"]) + " (" + delta_str + ")")
+        result = "НИЧЬЯ \U0001F91D"
+        payout = bet
+        kind = "push"
 
-
-# ---------------------------------------------------------------------------
-# Commands
-# ---------------------------------------------------------------------------
-
-def _cmd_start(parts):
-    if not G["game_over"]:
-        _toast("Раздача уже идёт")
-        return
-    if len(parts) < 3:
-        _toast("Укажите сумму: /bj start <" + str(MIN_BET) + "-" + str(MAX_BET) + ">")
-        return
-    try:
-        amount = int(parts[2])
-    except Exception:
-        _toast("Неверная сумма")
-        return
-    if amount < MIN_BET or amount > MAX_BET:
-        _toast("Мин $" + str(MIN_BET) + ", макс $" + str(MAX_BET))
-        return
-    if S["balance"] < amount:
-        _toast("Недостаточно средств")
-        return
-    S["balance"] = S["balance"] - amount
-    _set("balance", S["balance"])
-    payout = _start_round(amount)
-    _haptic("light")
-    if payout is not None:
-        _finish_and_show(payout, amount)
-    else:
-        _show_round()
-
-
-def _do_hit():
-    _deal(_player)
-    G["player_score"] = _score(_player)
-    G["can_split"] = False
-    G["can_insure"] = False
-    if G["player_score"] > 21:
-        return _finish()
-    return None
-
-
-def _do_stand():
-    G["player_turn"] = False
-    _dealer_play()
-    return _finish()
-
-
-def _do_double():
-    if len(_player) != 2:
-        return None
-    _deal(_player)
-    G["player_score"] = _score(_player)
-    G["bet"] = G["bet"] * 2
-    G["can_split"] = False
-    G["can_insure"] = False
-    if G["player_score"] > 21:
-        return _finish()
-    G["player_turn"] = False
-    _dealer_play()
-    return _finish()
-
-
-def _do_split():
-    if not G["can_split"]:
-        return None
-    _deal(_player)
-    G["player_score"] = _score(_player)
-    G["bet"] = G["bet"] * 2
-    G["can_split"] = False
-    G["can_insure"] = False
-    return None
-
-
-def _do_insurance():
-    if not G["can_insure"]:
-        return None
-    G["can_insure"] = False
-    return None
-
-
-def _cmd_action(name):
-    if G["game_over"] or not G["player_turn"]:
-        _toast("Сначала: /bj start <сумма>")
-        return
-    initial_bet = G["bet"]
-    extra = 0
-    if name == "double" or name == "split":
-        if S["balance"] < G["bet"]:
-            _toast("Недостаточно средств")
-            return
-        extra = G["bet"]
-        S["balance"] = S["balance"] - extra
-    elif name == "insurance":
-        cost = G["bet"] // 2
-        if S["balance"] < cost:
-            _toast("Недостаточно средств")
-            return
-        extra = cost
-        S["balance"] = S["balance"] - extra
-    _set("balance", S["balance"])
-
-    if name == "hit":
-        payout = _do_hit()
-    elif name == "stand":
-        payout = _do_stand()
-    elif name == "double":
-        payout = _do_double()
-    elif name == "split":
-        payout = _do_split()
-    elif name == "insurance":
-        payout = _do_insurance()
-    else:
-        return
-
-    _haptic("light")
-    if payout is not None:
-        _finish_and_show(payout, initial_bet + extra)
-    else:
-        _show_round()
-
-
-def _cmd_stats():
-    _alert("\U0001F4CA Статистика",
-           "Баланс: $" + str(S["balance"]) + "\n"
-           "Победы: " + str(S["wins"]) + "\n"
-           "Поражения: " + str(S["losses"]) + "\n"
-           "Текущая ставка: $" + str(G["bet"]))
-
-
-def _cmd_reset():
-    global _player, _dealer
-    S["balance"] = START_BALANCE
-    S["wins"] = 0
-    S["losses"] = 0
-    _set("balance", S["balance"])
-    _set("wins", S["wins"])
-    _set("losses", S["losses"])
-    _player = []
-    _dealer = []
-    G["bet"] = 0
-    G["game_over"] = True
-    G["player_turn"] = False
-    G["result"] = ""
-    _alert("♠ BlackJack ♥", "Баланс сброшен: $" + str(S["balance"]))
-
-
-def _cmd_exit():
-    global _player, _dealer
-    _player = []
-    _dealer = []
-    G["bet"] = 0
-    G["game_over"] = True
-    G["player_turn"] = False
-    _toast("Раздача завершена")
-
-
-def _dispatch(text):
-    parts = text.strip().split()
-    if not parts:
-        return False
-    if parts[0] != CMD_PREFIX:
-        return False
-    if len(parts) < 2:
-        _show_help()
-        return True
-    sub = parts[1].lower()
-    if sub == "help":
-        _show_help()
-    elif sub == "start":
-        _cmd_start(parts)
-    elif sub == "hit" or sub == "stand" or sub == "double" or sub == "split" or sub == "insurance":
-        _cmd_action(sub)
-    elif sub == "stats":
-        _cmd_stats()
-    elif sub == "reset":
-        _cmd_reset()
-    elif sub == "exit":
-        _cmd_exit()
-    else:
-        _toast("Неизвестная команда: " + sub)
-    return True
-
-
-def _on_send_message(tl_obj):
-    try:
-        message = tl_obj.get("message", "")
-    except Exception:
-        return
-    if not message:
-        return
-    try:
-        starts = message.startswith(CMD_PREFIX)
-    except Exception:
-        return
-    if not starts:
-        return
-    try:
-        _dispatch(message)
-    except Exception as e:
-        _log("dispatch error: " + str(e))
-    try:
-        tl_obj["message"] = "\U0001F3B0"
-        if "entities" in tl_obj:
-            tl_obj["entities"] = []
-    except Exception:
-        pass
+    return player, dealer, player_score, dealer_score, result, payout, kind
 
 
 # ---------------------------------------------------------------------------
@@ -523,36 +216,83 @@ def _on_send_message(tl_obj):
 
 def _load_state():
     try:
-        b = _get("balance", START_BALANCE)
-        w = _get("wins", 0)
-        l = _get("losses", 0)
-        S["balance"] = int(b) if b is not None else START_BALANCE
-        S["wins"] = int(w) if w is not None else 0
-        S["losses"] = int(l) if l is not None else 0
+        S["balance"] = int(_get("balance", START_BALANCE))
+        S["wins"] = int(_get("wins", 0))
+        S["losses"] = int(_get("losses", 0))
+        S["pushes"] = int(_get("pushes", 0))
     except Exception:
         S["balance"] = START_BALANCE
         S["wins"] = 0
         S["losses"] = 0
+        S["pushes"] = 0
+
+
+def _save_state():
+    _set("balance", S["balance"])
+    _set("wins", S["wins"])
+    _set("losses", S["losses"])
+    _set("pushes", S["pushes"])
+
+
+def _pick_bet():
+    if S["balance"] <= 0:
+        return 0
+    # Pick the largest affordable bet from the option list.
+    options = []
+    for b in BET_OPTIONS:
+        if b <= S["balance"]:
+            options.append(b)
+    if not options:
+        return S["balance"]
+    return options[_rand() % len(options)]
 
 
 def on_load(plugin):
-    _log("blackjack on_load called")
+    _log("blackjack on_load")
     _load_state()
-    try:
-        _ios_bridge.add_tl_hook("messages.sendMessage", _on_send_message)
-    except Exception as e:
-        _log("add_tl_hook failed: " + str(e))
-    _alert("♠ BlackJack ♥ загружен",
-           "Баланс: $" + str(S["balance"]) + "  W/L: " + str(S["wins"]) + "/" + str(S["losses"]) + "\n\n"
-           "Отправьте /bj в чате — справка.\nНачать: /bj start 50",
-           "OK")
+
+    if S["balance"] <= 0:
+        _alert("♠ BlackJack ♥",
+               "Баланс: $0\n\nЧтобы сыграть заново, очисти статистику плагина в настройках iOS (UserDefaults).",
+               "OK")
+        return
+
+    bet = _pick_bet()
+    S["balance"] -= bet
+
+    player, dealer, ps, ds, result, payout, kind = _play_round(bet)
+
+    if kind == "win" or kind == "win_bj":
+        S["wins"] += 1
+        _haptic("success")
+    elif kind == "lose":
+        S["losses"] += 1
+        _haptic("error")
+    else:
+        S["pushes"] += 1
+        _haptic("warning")
+
+    S["balance"] += payout
+    _save_state()
+
+    delta = payout - bet
+    delta_str = ("+$" + str(delta)) if delta >= 0 else ("-$" + str(-delta))
+
+    body = (
+        "Ставка: $" + str(bet) + "\n"
+        "Дилер: " + _render_hand(dealer) + " (" + str(ds) + ")\n"
+        "Игрок: " + _render_hand(player) + " (" + str(ps) + ")\n\n"
+        + result + "\n\n"
+        "Баланс: $" + str(S["balance"]) + " (" + delta_str + ")\n"
+        "W/L/T: " + str(S["wins"]) + "/" + str(S["losses"]) + "/" + str(S["pushes"]) + "\n\n"
+        "Перезагрузи плагин чтобы сыграть ещё раз."
+    )
+    _alert("♠ BlackJack ♥", body, "OK")
 
 
 def on_unload(plugin):
-    _log("blackjack on_unload called")
+    _log("blackjack on_unload")
     try:
-        _set("balance", S["balance"])
-        _set("wins", S["wins"])
-        _set("losses", S["losses"])
+        _save_state()
     except Exception:
         pass
