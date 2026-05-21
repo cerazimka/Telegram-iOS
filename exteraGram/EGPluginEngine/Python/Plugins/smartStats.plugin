@@ -1,0 +1,188 @@
+"""
+SmartStats — demo plugin for exteraGram iOS Plugin Engine.
+
+Demonstrates:
+  • __settings__          — native settings screen with toggles + text
+  • add_tl_hook           — intercept outgoing TL messages
+  • add_method_hook       — ObjC runtime swizzling (UIViewController)
+  • show_bulletin         — auto-dismissing bulletin notifications
+  • show_toast            — bottom-of-screen toast
+  • haptic_feedback       — vibration on events
+  • get_account_id / get_connection_state — live client info
+  • file_utils            — persist stats across sessions
+  • get/set_plugin_setting — per-key UserDefaults storage
+"""
+
+__id__          = "smartStats"
+__name__        = "Smart Stats"
+__os__          = "ios"
+__version__     = "1.1"
+__author__      = "@exteraPlugins"
+__description__ = "Tracks sent messages, shows bulletins on milestones, hooks ObjC screen transitions."
+
+import _ios_bridge
+from ui.settings  import PluginSettings, SettingItem
+from ui.bulletin  import show_bulletin
+from android_utils import log
+from hook_utils   import add_tl_hook, add_method_hook
+from client_utils import get_account_id, get_user_id, get_connection_state
+from file_utils   import read_json, write_json
+
+# ---------------------------------------------------------------------------
+# Settings declaration  →  shown in Settings → Plugins → SmartStats → ⚙
+# ---------------------------------------------------------------------------
+
+__settings__ = PluginSettings([
+    SettingItem(
+        key="greet_on_load",
+        title="Welcome bulletin",
+        subtitle="Show a bulletin when the engine starts",
+        type="toggle",
+        default=True,
+    ),
+    SettingItem(
+        key="track_messages",
+        title="Track sent messages",
+        subtitle="Count every outgoing message",
+        type="toggle",
+        default=True,
+    ),
+    SettingItem(
+        key="milestone_bulletin",
+        title="Milestone bulletins",
+        subtitle="Notify at 10 / 50 / 100 / 500 messages",
+        type="toggle",
+        default=True,
+    ),
+    SettingItem(
+        key="haptic_on_send",
+        title="Haptic on send",
+        subtitle="Light vibration for each outgoing message",
+        type="toggle",
+        default=False,
+    ),
+    SettingItem(
+        key="hook_screens",
+        title="Log screen transitions",
+        subtitle="Hook UIViewController.viewDidAppear: via ObjC swizzler",
+        type="toggle",
+        default=True,
+    ),
+    SettingItem(
+        key="greeting_text",
+        title="Greeting text",
+        subtitle="Shown in the welcome bulletin",
+        type="text",
+        default="Smart Stats is running",
+    ),
+])
+
+_ID = __id__
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+_MILESTONES = {10, 50, 100, 500, 1000, 5000}
+_stats = {"sent": 0, "screens": 0}
+
+
+def _setting(key, default=None):
+    return _ios_bridge.get_plugin_setting(_ID, key, default)
+
+
+def _load():
+    global _stats
+    data = read_json(_ID, "stats.json")
+    if isinstance(data, dict):
+        _stats.update(data)
+    log(f"[SmartStats] loaded stats: sent={_stats['sent']}  screens={_stats['screens']}")
+
+
+def _save():
+    write_json(_ID, "stats.json", _stats)
+
+# ---------------------------------------------------------------------------
+# TL hook: messages.sendMessage
+# ---------------------------------------------------------------------------
+
+def _on_send_message(tl_obj):
+    if not _setting("track_messages", True):
+        return
+
+    _stats["sent"] += 1
+    _save()
+
+    if _setting("haptic_on_send", False):
+        _ios_bridge.haptic_feedback("light")
+
+    n = _stats["sent"]
+    if _setting("milestone_bulletin", True) and n in _MILESTONES:
+        show_bulletin(
+            f"{n} messages sent!",
+            "Tracked by Smart Stats",
+            "chart.bar.fill",
+        )
+
+# ---------------------------------------------------------------------------
+# TL hook: messages.sendReaction
+# ---------------------------------------------------------------------------
+
+def _on_send_reaction(tl_obj):
+    if _setting("haptic_on_send", False):
+        _ios_bridge.haptic_feedback("medium")
+
+# ---------------------------------------------------------------------------
+# ObjC hook: UIViewController.viewDidAppear:
+# ---------------------------------------------------------------------------
+
+_screen_count = 0
+
+def _before_view_appeared():
+    global _screen_count
+    _screen_count += 1
+    _stats["screens"] = _screen_count
+    if _screen_count % 20 == 0:
+        _save()
+        log(f"[SmartStats] {_screen_count} screen transitions logged")
+
+# ---------------------------------------------------------------------------
+# Lifecycle
+# ---------------------------------------------------------------------------
+
+def on_load(plugin):
+    _load()
+
+    # ── TL hooks ────────────────────────────────────────────────────────────
+    add_tl_hook("messages.sendMessage",  _on_send_message)
+    add_tl_hook("messages.sendReaction", _on_send_reaction)
+
+    # ── ObjC swizzler ───────────────────────────────────────────────────────
+    if _setting("hook_screens", True):
+        try:
+            add_method_hook(
+                "UIViewController",
+                "viewDidAppear:",
+                before=_before_view_appeared,
+            )
+            log("[SmartStats] ObjC hook installed: UIViewController.viewDidAppear:")
+        except Exception as exc:
+            log(f"[SmartStats] ObjC hook skipped: {exc}")
+
+    # ── Welcome bulletin ─────────────────────────────────────────────────────
+    if _setting("greet_on_load", True):
+        uid   = get_user_id()
+        state = get_connection_state()
+        text  = _setting("greeting_text", "Smart Stats is running")
+        show_bulletin(
+            text,
+            f"uid={uid}  ·  {state}  ·  {_stats['sent']} msgs tracked",
+            "puzzlepiece.extension.fill",
+        )
+
+    log(f"[SmartStats] on_load complete. account={get_account_id()}")
+
+
+def on_unload(plugin):
+    _save()
+    log("[SmartStats] on_unload — stats flushed to disk.")
