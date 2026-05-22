@@ -48,7 +48,9 @@ public func chatInputStateStringWithAppliedEntities(_ text: String, entities: [M
         case .Underline:
             string.addAttribute(ChatTextInputAttributes.underline, value: true as NSNumber, range: range)
         case .Spoiler:
-            string.addAttribute(ChatTextInputAttributes.spoiler, value: true as NSNumber, range: range)
+            if !EGPluginHooks.suppressedEntityTypes.contains("Spoiler") {
+                string.addAttribute(ChatTextInputAttributes.spoiler, value: true as NSNumber, range: range)
+            }
         case let .CustomEmoji(_, fileId):
             string.addAttribute(ChatTextInputAttributes.customEmoji, value: ChatTextInputTextCustomEmojiAttribute(interactivelySelectedFromPackId: nil, fileId: fileId, file: nil), range: range)
         case let .Pre(language):
@@ -317,6 +319,9 @@ public func stringWithAppliedEntities(_ text: String, entities: [MessageTextEnti
                 }
                 string.addAttribute(NSAttributedString.Key(rawValue: TelegramTextAttributes.BankCard), value: nsString!.substring(with: range), range: range)
             case .Spoiler:
+                if EGPluginHooks.suppressedEntityTypes.contains("Spoiler") {
+                    break
+                }
                 if external {
                     string.addAttribute(NSAttributedString.Key.backgroundColor, value: UIColor.gray, range: range)
                 } else {

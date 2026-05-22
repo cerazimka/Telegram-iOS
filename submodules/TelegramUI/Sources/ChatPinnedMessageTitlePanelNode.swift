@@ -720,8 +720,8 @@ final class ChatPinnedMessageTitlePanelNode: ChatTitleAccessoryPanelNode {
             mediaUpdated = true
         }
         
-        let hasSpoiler = message.attributes.contains(where: { $0 is MediaSpoilerMessageAttribute })
-        
+        let hasSpoiler = !EGPluginHooks.suppressedAttributeTypes.contains("MediaSpoilerMessageAttribute") && message.attributes.contains(where: { $0 is MediaSpoilerMessageAttribute })
+
         var updateImageSignal: Signal<(TransformImageArguments) -> DrawingContext?, NoError>?
         var updatedFetchMediaSignal: Signal<FetchResourceSourceType, FetchResourceError>?
         if mediaUpdated {
