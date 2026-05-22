@@ -766,6 +766,9 @@ static PyMethodDef ios_bridge_methods[] = {
     {"get_account_id",     py_get_account_id,     METH_NOARGS,  "get_account_id() -> int"},
     {"get_user_id",        py_get_user_id,        METH_NOARGS,  "get_user_id() -> int"},
     {"get_connection_state",py_get_connection_state,METH_NOARGS,"get_connection_state() -> str"},
+    {"kvc_get",            py_kvc_get,            METH_VARARGS, "kvc_get(obj_or_capsule, key) -> Any"},
+    {"kvc_set",            py_kvc_set,            METH_VARARGS, "kvc_set(obj_or_capsule, key, value)"},
+    {"objc_class_name",    py_objc_class_name,    METH_VARARGS, "objc_class_name(obj_or_capsule) -> str"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -779,6 +782,167 @@ PyMODINIT_FUNC PyInit__ios_bridge(void) {
     // Expose the global hook dict so Python code can inspect it if needed
     if (g_tl_hooks) PyModule_AddObject(m, "_hooks", g_tl_hooks);
     return m;
+}
+
+// ---------------------------------------------------------------------------
+// ObjC object wrapping (PyCapsule + hook_utils.ObjCObject)
+// ---------------------------------------------------------------------------
+//
+// Non-primitive ObjC values that flow into Python (hook args, return values,
+// KVC reads) are wrapped as hook_utils.ObjCObject. The wrapper holds a
+// PyCapsule that stores a +1-retained `id`; the capsule's destructor releases
+// the retain when the wrapper is garbage-collected.
+//
+// Forward declarations for ns_to_py / py_to_ns (defined further below).
+static PyObject *ns_to_py(id obj);
+static id py_to_ns(PyObject *obj);
+
+static PyObject *eg_objcobject_class_cached = NULL;
+
+static PyObject *eg_get_objcobject_class(void) {
+    if (eg_objcobject_class_cached) return eg_objcobject_class_cached;
+    PyObject *mod = PyImport_ImportModule("hook_utils");
+    if (!mod) { PyErr_Clear(); return NULL; }
+    PyObject *cls = PyObject_GetAttrString(mod, "ObjCObject");
+    Py_DECREF(mod);
+    if (!cls) { PyErr_Clear(); return NULL; }
+    eg_objcobject_class_cached = cls;  // keep strong ref
+    return cls;
+}
+
+// PyCapsule destructor: releases the +1 retain taken at creation time.
+static void eg_objcref_capsule_destructor(PyObject *capsule) {
+    void *p = PyCapsule_GetPointer(capsule, "egobjc");
+    if (p) CFRelease(p);
+}
+
+// Wrap an ObjC object as hook_utils.ObjCObject(PyCapsule, class_name).
+// Takes +1 retain so the wrapper owns a strong reference.
+static PyObject *eg_wrap_as_objcobject(id obj) {
+    if (!obj) Py_RETURN_NONE;
+    PyObject *cls = eg_get_objcobject_class();
+    if (!cls) {
+        // Bridge isn't fully wired yet — fall back to repr string.
+        return PyUnicode_FromString([[obj description] UTF8String]);
+    }
+    void *retained = (void *)CFBridgingRetain(obj);  // +1
+    PyObject *capsule = PyCapsule_New(retained, "egobjc", eg_objcref_capsule_destructor);
+    if (!capsule) {
+        CFRelease(retained);
+        PyErr_Clear();
+        return PyUnicode_FromString([[obj description] UTF8String]);
+    }
+    PyObject *className = PyUnicode_FromString(object_getClassName(obj));
+    PyObject *argTuple = PyTuple_Pack(2, capsule, className);
+    Py_DECREF(capsule); Py_DECREF(className);
+    PyObject *instance = PyObject_CallObject(cls, argTuple);
+    Py_DECREF(argTuple);
+    if (!instance) { PyErr_Clear(); Py_RETURN_NONE; }
+    return instance;
+}
+
+// Inverse of eg_wrap_as_objcobject. Returns nil if `obj` isn't an ObjCObject
+// (or if its capsule is gone). The returned id is autorelease-lifetime;
+// callers that need to retain it must do so explicitly.
+static id eg_unwrap_objcobject(PyObject *obj) {
+    if (!obj || obj == Py_None) return nil;
+    PyObject *cls = eg_get_objcobject_class();
+    if (!cls) return nil;
+    if (PyObject_IsInstance(obj, cls) != 1) { PyErr_Clear(); return nil; }
+    PyObject *capsule = PyObject_GetAttrString(obj, "_capsule");
+    if (!capsule) { PyErr_Clear(); return nil; }
+    id result = nil;
+    if (PyCapsule_CheckExact(capsule)) {
+        void *p = PyCapsule_GetPointer(capsule, "egobjc");
+        if (p) result = (__bridge id)p;
+    }
+    Py_DECREF(capsule);
+    return result;
+}
+
+// kvc_get(obj_or_capsule, key) -> Any
+//   obj_or_capsule: ObjCObject instance OR raw PyCapsule
+//   key: NSString-coercible
+// Performs [obj valueForKey:key] and wraps the result via ns_to_py.
+static PyObject *py_kvc_get(PyObject *self, PyObject *args) {
+    PyObject *first;
+    const char *key;
+    if (!PyArg_ParseTuple(args, "Os", &first, &key)) return NULL;
+
+    id obj = nil;
+    if (PyCapsule_CheckExact(first)) {
+        void *p = PyCapsule_GetPointer(first, "egobjc");
+        if (p) obj = (__bridge id)p;
+    } else {
+        obj = eg_unwrap_objcobject(first);
+    }
+    if (!obj) {
+        PyErr_SetString(PyExc_AttributeError, "kvc_get: receiver is not an ObjC object");
+        return NULL;
+    }
+
+    NSString *nsKey = [NSString stringWithUTF8String:key ?: ""];
+    __block id value = nil;
+    __block NSString *exReason = nil;
+    @try {
+        value = [obj valueForKey:nsKey];
+    } @catch (NSException *ex) {
+        exReason = ex.reason ?: @"unknown";
+    }
+    if (exReason) {
+        PyErr_Format(PyExc_AttributeError, "kvc_get(%s): %s", key, [exReason UTF8String]);
+        return NULL;
+    }
+    return ns_to_py(value);
+}
+
+// kvc_set(obj_or_capsule, key, value)
+static PyObject *py_kvc_set(PyObject *self, PyObject *args) {
+    PyObject *first, *value;
+    const char *key;
+    if (!PyArg_ParseTuple(args, "OsO", &first, &key, &value)) return NULL;
+
+    id obj = nil;
+    if (PyCapsule_CheckExact(first)) {
+        void *p = PyCapsule_GetPointer(first, "egobjc");
+        if (p) obj = (__bridge id)p;
+    } else {
+        obj = eg_unwrap_objcobject(first);
+    }
+    if (!obj) {
+        PyErr_SetString(PyExc_AttributeError, "kvc_set: receiver is not an ObjC object");
+        return NULL;
+    }
+
+    id ns_value = py_to_ns(value);
+    if (ns_value == [NSNull null]) ns_value = nil;
+
+    NSString *nsKey = [NSString stringWithUTF8String:key ?: ""];
+    __block NSString *exReason = nil;
+    @try {
+        [obj setValue:ns_value forKey:nsKey];
+    } @catch (NSException *ex) {
+        exReason = ex.reason ?: @"unknown";
+    }
+    if (exReason) {
+        PyErr_Format(PyExc_AttributeError, "kvc_set(%s): %s", key, [exReason UTF8String]);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+// objc_class_name(obj_or_capsule) -> str  (empty string on failure)
+static PyObject *py_objc_class_name(PyObject *self, PyObject *args) {
+    PyObject *first;
+    if (!PyArg_ParseTuple(args, "O", &first)) return NULL;
+    id obj = nil;
+    if (PyCapsule_CheckExact(first)) {
+        void *p = PyCapsule_GetPointer(first, "egobjc");
+        if (p) obj = (__bridge id)p;
+    } else {
+        obj = eg_unwrap_objcobject(first);
+    }
+    return PyUnicode_FromString(obj ? object_getClassName(obj) : "");
 }
 
 // ---------------------------------------------------------------------------
@@ -825,12 +989,15 @@ static PyObject *ns_to_py(id obj) {
         }
         return py_dict;
     }
-    // Fallback: repr string
-    return PyUnicode_FromString([[obj description] UTF8String]);
+    // Fallback: wrap as hook_utils.ObjCObject so plugins can KVC into it.
+    return eg_wrap_as_objcobject(obj);
 }
 
 static id py_to_ns(PyObject *obj) {
     if (!obj || obj == Py_None) return [NSNull null];
+    // ObjCObject → unwrap to the underlying id.
+    id unwrapped = eg_unwrap_objcobject(obj);
+    if (unwrapped) return unwrapped;
     if (PyBool_Check(obj)) return @((BOOL)(obj == Py_True));
     if (PyLong_Check(obj)) return @(PyLong_AsLongLong(obj));
     if (PyFloat_Check(obj)) return @(PyFloat_AsDouble(obj));
@@ -1169,14 +1336,74 @@ static id py_to_ns(PyObject *obj) {
         }
         Py_DECREF(exec_result);
 
-        // Call on_load(module) if it exists
-        PyObject *on_load = PyObject_GetAttrString(module, "on_load");
-        if (on_load && PyCallable_Check(on_load)) {
-            PyObject *r = PyObject_CallFunctionObjArgs(on_load, module, NULL);
-            if (!r) { PyErr_Clear(); } else { Py_DECREF(r); }
+        // ---------------------------------------------------------------------
+        // Lifecycle dispatch. Two supported forms:
+        //   (a) Android-style: a subclass of base_plugin.Plugin/BasePlugin is
+        //       defined at module level. The loader instantiates it and calls
+        //       on_plugin_load(); the instance is stashed at module.__eg_instance__
+        //       so unloadPlugin: can call on_plugin_unload().
+        //   (b) Legacy iOS-style: a module-level function `on_load(module)`.
+        // The class-based path wins when both are present.
+        // ---------------------------------------------------------------------
+
+        PyObject *plugin_instance = NULL;
+        {
+            PyObject *base_plugin_mod = PyImport_ImportModule("base_plugin");
+            PyObject *plugin_base = base_plugin_mod
+                ? PyObject_GetAttrString(base_plugin_mod, "Plugin") : NULL;
+            Py_XDECREF(base_plugin_mod);
+            if (plugin_base) {
+                PyObject *modDict = PyModule_GetDict(module);  // borrowed
+                PyObject *key, *value;
+                Py_ssize_t pos = 0;
+                while (PyDict_Next(modDict, &pos, &key, &value)) {
+                    if (!PyType_Check(value)) continue;
+                    if (value == plugin_base) continue;  // skip the base itself
+                    int isSub = PyObject_IsSubclass(value, plugin_base);
+                    if (isSub != 1) { if (isSub < 0) PyErr_Clear(); continue; }
+                    plugin_instance = PyObject_CallObject(value, NULL);
+                    if (plugin_instance) {
+                        PyObject_SetAttrString(module, "__eg_instance__", plugin_instance);
+                        break;
+                    }
+                    PyErr_Print(); PyErr_Clear();
+                }
+                Py_DECREF(plugin_base);
+            } else {
+                PyErr_Clear();
+            }
         }
-        PyErr_Clear();
-        Py_XDECREF(on_load);
+
+        if (plugin_instance) {
+            // Prefer on_plugin_load (Android), fall back to on_load (iOS-native).
+            PyObject *opl = PyObject_GetAttrString(plugin_instance, "on_plugin_load");
+            if (opl && PyCallable_Check(opl)) {
+                PyObject *r = PyObject_CallNoArgs(opl);
+                if (!r) { PyErr_Print(); PyErr_Clear(); }
+                else Py_DECREF(r);
+            } else {
+                PyErr_Clear();
+                PyObject *ol = PyObject_GetAttrString(plugin_instance, "on_load");
+                if (ol && PyCallable_Check(ol)) {
+                    PyObject *r = PyObject_CallNoArgs(ol);
+                    if (!r) { PyErr_Print(); PyErr_Clear(); }
+                    else Py_DECREF(r);
+                }
+                Py_XDECREF(ol);
+            }
+            Py_XDECREF(opl);
+            Py_DECREF(plugin_instance);
+        } else {
+            // Legacy form: module-level on_load(module).
+            PyObject *on_load = PyObject_GetAttrString(module, "on_load");
+            if (on_load && PyCallable_Check(on_load)) {
+                PyObject *r = PyObject_CallFunctionObjArgs(on_load, module, NULL);
+                if (!r) { PyErr_Print(); PyErr_Clear(); }
+                else Py_DECREF(r);
+            }
+            PyErr_Clear();
+            Py_XDECREF(on_load);
+        }
 
         // Store loaded module
         PyDict_SetItemString(g_loaded_modules, pluginId.UTF8String, module);
@@ -1199,13 +1426,41 @@ static id py_to_ns(PyObject *obj) {
     [self withPython:^{
         PyObject *module = PyDict_GetItemString(g_loaded_modules, pluginId.UTF8String);
         if (module) {
-            PyObject *on_unload = PyObject_GetAttrString(module, "on_unload");
-            if (on_unload && PyCallable_Check(on_unload)) {
-                PyObject *r = PyObject_CallFunctionObjArgs(on_unload, NULL);
-                if (!r) PyErr_Clear(); else Py_DECREF(r);
+            // Mirror loadPlugin lifecycle: prefer instance.on_plugin_unload,
+            // then instance.on_unload, then module-level on_unload().
+            PyObject *instance = PyObject_GetAttrString(module, "__eg_instance__");
+            if (instance && instance != Py_None) {
+                PyObject *opu = PyObject_GetAttrString(instance, "on_plugin_unload");
+                if (opu && PyCallable_Check(opu)) {
+                    PyObject *r = PyObject_CallNoArgs(opu);
+                    if (!r) { PyErr_Print(); PyErr_Clear(); }
+                    else Py_DECREF(r);
+                } else {
+                    PyErr_Clear();
+                    PyObject *ou = PyObject_GetAttrString(instance, "on_unload");
+                    if (ou && PyCallable_Check(ou)) {
+                        PyObject *r = PyObject_CallNoArgs(ou);
+                        if (!r) { PyErr_Print(); PyErr_Clear(); }
+                        else Py_DECREF(r);
+                    }
+                    Py_XDECREF(ou);
+                }
+                Py_XDECREF(opu);
+                Py_DECREF(instance);
+                PyObject_DelAttrString(module, "__eg_instance__");
+                PyErr_Clear();
+            } else {
+                Py_XDECREF(instance);
+                PyErr_Clear();
+                PyObject *on_unload = PyObject_GetAttrString(module, "on_unload");
+                if (on_unload && PyCallable_Check(on_unload)) {
+                    PyObject *r = PyObject_CallFunctionObjArgs(on_unload, NULL);
+                    if (!r) { PyErr_Print(); PyErr_Clear(); }
+                    else Py_DECREF(r);
+                }
+                PyErr_Clear();
+                Py_XDECREF(on_unload);
             }
-            PyErr_Clear();
-            Py_XDECREF(on_unload);
             PyDict_DelItemString(g_loaded_modules, pluginId.UTF8String);
             // Remove from sys.modules
             PyObject *sys_modules = PySys_GetObject("modules");
