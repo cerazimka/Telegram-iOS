@@ -68,6 +68,15 @@ static PyObject *g_menu_items = NULL;
 static long g_menu_next_handle = 1;
 static BOOL g_initialized = NO;
 
+// Forward declarations for symbols whose definitions come further down in
+// this file but which are referenced by earlier functions and by the C
+// extension methods table.
+static PyObject *ns_to_py(id obj);
+static id py_to_ns(PyObject *obj);
+static PyObject *py_kvc_get(PyObject *self, PyObject *args);
+static PyObject *py_kvc_set(PyObject *self, PyObject *args);
+static PyObject *py_objc_class_name(PyObject *self, PyObject *args);
+
 // ---------------------------------------------------------------------------
 // Python C extension: _ios_bridge
 // ---------------------------------------------------------------------------
@@ -874,10 +883,6 @@ PyMODINIT_FUNC PyInit__ios_bridge(void) {
 // KVC reads) are wrapped as hook_utils.ObjCObject. The wrapper holds a
 // PyCapsule that stores a +1-retained `id`; the capsule's destructor releases
 // the retain when the wrapper is garbage-collected.
-//
-// Forward declarations for ns_to_py / py_to_ns (defined further below).
-static PyObject *ns_to_py(id obj);
-static id py_to_ns(PyObject *obj);
 
 static PyObject *eg_objcobject_class_cached = NULL;
 
