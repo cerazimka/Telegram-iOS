@@ -72,6 +72,8 @@ static BOOL g_initialized = NO;
 // Wired by EGPluginsEngineImpl to forward suppress_entity/attribute_type() → EGPluginHooks Sets
 static void (^g_suppressEntityTypeHandler)(NSString *, BOOL) = nil;
 static void (^g_suppressAttributeTypeHandler)(NSString *, BOOL) = nil;
+// Wired by PluginsController.wireClientInfo: lets plugins send Telegram messages
+static void (^g_sendMessageHandler)(long long, NSString *) = nil;
 
 // ---------------------------------------------------------------------------
 // ObjC method-hook registry  (add_method_hook)
@@ -948,6 +950,52 @@ static PyObject *py_show_plugin_settings(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+// send_message(peer_id: int, text: str) — plugin-initiated Telegram message send.
+// Calls g_sendMessageHandler which is wired to real enqueueMessages by PluginsController.
+static PyObject *py_send_message(PyObject *self, PyObject *args) {
+    long long peerId = 0;
+    const char *text = "";
+    if (!PyArg_ParseTuple(args, "Ls", &peerId, &text)) return NULL;
+    void (^h)(long long, NSString *) = g_sendMessageHandler;
+    if (h) {
+        NSString *nsText = [NSString stringWithUTF8String:text];
+        h(peerId, nsText);
+        EGPluginDebugLog_appendCStr("Bridge", [[NSString stringWithFormat:@"send_message: peer=%lld len=%lu", peerId, (unsigned long)nsText.length] UTF8String]);
+    } else {
+        EGPluginDebugLog_appendCStr("Bridge", "send_message: handler NIL — wireClientInfo not called yet?");
+    }
+    Py_RETURN_NONE;
+}
+
+// get_device_info() -> dict
+// Returns: battery_level (float, -1 if unknown), battery_state (str), app_version (str).
+static PyObject *py_get_device_info(PyObject *self, PyObject *args) {
+    __block NSDictionary *result = nil;
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        UIDevice *device = [UIDevice currentDevice];
+        device.batteryMonitoringEnabled = YES;
+        float level = device.batteryLevel;
+        NSString *state;
+        switch (device.batteryState) {
+            case UIDeviceBatteryStateCharging:  state = @"charging";    break;
+            case UIDeviceBatteryStateFull:      state = @"full";        break;
+            case UIDeviceBatteryStateUnplugged: state = @"discharging"; break;
+            default:                            state = @"unknown";     break;
+        }
+        NSString *shortVer  = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleShortVersionString"] ?: @"";
+        NSString *buildNum  = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleVersion"] ?: @"";
+        NSString *appVer = buildNum.length
+            ? [NSString stringWithFormat:@"%@ (%@)", shortVer, buildNum]
+            : shortVer;
+        result = @{
+            @"battery_level": @(level),
+            @"battery_state": state,
+            @"app_version":   appVer,
+        };
+    });
+    return ns_to_py(result ?: @{});
+}
+
 static PyMethodDef ios_bridge_methods[] = {
     {"log_text",           py_log_text,           METH_VARARGS, "log_text(msg, tag='Plugin')"},
     {"add_tl_hook",        py_add_tl_hook,        METH_VARARGS, "add_tl_hook(tl_type, callback)"},
@@ -980,6 +1028,8 @@ static PyMethodDef ios_bridge_methods[] = {
     {"show_plugin_settings", py_show_plugin_settings, METH_VARARGS, "show_plugin_settings(plugin_id)"},
     {"suppress_entity_type",    py_suppress_entity_type,    METH_VARARGS, "suppress_entity_type(type_name, suppress=True)"},
     {"suppress_attribute_type", py_suppress_attribute_type, METH_VARARGS, "suppress_attribute_type(type_name, suppress=True)"},
+    {"send_message",            py_send_message,            METH_VARARGS, "send_message(peer_id, text) — send a Telegram message as the current user"},
+    {"get_device_info",         py_get_device_info,         METH_NOARGS,  "get_device_info() -> dict with battery_level, battery_state, app_version"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -1093,6 +1143,9 @@ static id py_to_ns(PyObject *obj) {
 
 + (void (^)(NSString *, BOOL))suppressAttributeTypeHandler { return g_suppressAttributeTypeHandler; }
 + (void)setSuppressAttributeTypeHandler:(void (^)(NSString *, BOOL))b { g_suppressAttributeTypeHandler = [b copy]; }
+
++ (void (^)(long long, NSString *))sendMessageHandler { return g_sendMessageHandler; }
++ (void)setSendMessageHandler:(void (^)(long long, NSString *))b { g_sendMessageHandler = [b copy]; }
 
 + (BOOL)initializeWithHome:(NSString *)pythonHome
                    sdkPath:(NSString *)sdkPath

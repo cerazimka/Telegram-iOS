@@ -64,6 +64,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// Wired by EGPluginsEngineImpl: (typeName, suppress) → EGPluginHooks.suppressedAttributeTypes insert/remove.
 @property (class, nonatomic, copy, nullable) void (^suppressAttributeTypeHandler)(NSString *, BOOL);
 
+/// Wired by PluginsController.wireClientInfo: (peerId, text) → real enqueueMessages call.
+/// Called from _ios_bridge.send_message(peer_id, text) to let plugins send messages.
+@property (class, nonatomic, copy, nullable) void (^sendMessageHandler)(long long peerId, NSString *text);
+
 @end
 
 NS_ASSUME_NONNULL_END

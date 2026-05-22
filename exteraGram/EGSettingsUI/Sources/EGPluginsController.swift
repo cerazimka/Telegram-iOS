@@ -216,6 +216,28 @@ public final class PluginsController {
             stateBox.value = Self.stateString(status)
         })
         EGPluginClientInfo.connectionStateProvider = { stateBox.value }
+
+        // Wire send_message() bridge so plugins can enqueue real Telegram messages.
+        EGPythonBridge.sendMessageHandler = { [weak context] peerId, text in
+            guard let ctx = context else { return }
+            let pid = PeerId(peerId)
+            let _ = enqueueMessages(
+                account: ctx.account,
+                peerId: pid,
+                messages: [.message(
+                    text: text,
+                    attributes: [],
+                    inlineStickers: [:],
+                    mediaReference: nil,
+                    threadId: nil,
+                    replyToMessageId: nil,
+                    replyToStoryId: nil,
+                    localGroupingKey: nil,
+                    correlationId: nil,
+                    bubbleUpEmojiOrStickersets: []
+                )]
+            ).startStandalone()
+        }
     }
 
     private static func stateString(_ status: ConnectionStatus) -> String {

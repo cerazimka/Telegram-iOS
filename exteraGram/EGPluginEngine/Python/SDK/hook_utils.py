@@ -19,6 +19,7 @@ Usage:
 Available events (all use add_event_hook / add_tl_hook interchangeably):
   Mutating (params written back, synchronous):
     messages.sendReaction      — params: peer_id, reaction; set big=True for large animation
+    messages.interceptMessage  — params: peer_id, text; set cancel=True to suppress the send
   Notification (async snapshots, params read-only):
     messages.sendMessage       — params: peer_id, count
     messages.editMessage       — params: peer_id, message_id, text

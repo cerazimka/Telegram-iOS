@@ -22,6 +22,15 @@ public enum EGPluginHooks {
     /// params["message_ids"]: [Int32], params["delete_for_everyone"]: Bool
     public static var deleteMessagesHook: ((inout [String: Any]) -> Void)?
 
+    /// Synchronous intercept hook for outgoing text messages.
+    /// params["peer_id"]: Int64, params["text"]: String
+    /// Handler sets params["cancel"] = true to cancel the send (enqueueMessages returns empty signal).
+    public static var messageInterceptHook: ((inout [String: Any]) -> Bool)?
+
+    /// Called from _ios_bridge.send_message(peer_id, text) — plugin-initiated sends.
+    /// Wired by PluginsController.wireClientInfo to a real enqueueMessages call.
+    public static var pluginSendMessageHandler: ((Int64, String) -> Void)?
+
     /// MessageTextEntity type names to suppress when storing incoming messages.
     /// Plugins insert/remove entries; TelegramCore checks the set at parse time.
     /// Example: "Spoiler" suppresses messageEntitySpoiler entities.

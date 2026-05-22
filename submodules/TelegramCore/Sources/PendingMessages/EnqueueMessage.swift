@@ -396,6 +396,19 @@ private func opportunisticallyTransformOutgoingMedia(network: Network, postbox: 
 public func enqueueMessages(account: Account, peerId: PeerId, messages: [EnqueueMessage]) -> Signal<[MessageId?], NoError> {
     var hookParams: [String: Any] = ["peer_id": peerId.id._internalGetInt64Value(), "count": messages.count]
     EGPluginHooks.sendMessageHook?(&hookParams)
+    // Synchronous intercept: a plugin may cancel the send (e.g. to replace message with computed content).
+    // Only fires for text messages and only when a hook is registered — zero overhead otherwise.
+    if let interceptHook = EGPluginHooks.messageInterceptHook {
+        for msg in messages {
+            if case .message(let text, _, _, _, _, _, _, _, _, _) = msg, !text.isEmpty {
+                var iParams: [String: Any] = ["peer_id": peerId.id._internalGetInt64Value(), "text": text]
+                if interceptHook(&iParams) {
+                    return .single([])
+                }
+                break
+            }
+        }
+    }
     let forwardCount = messages.filter { if case .forward = $0 { return true }; return false }.count
     if forwardCount > 0 {
         EGPluginHooks.fireAsync("messages.forwardMessages", params: ["peer_id": peerId.id._internalGetInt64Value(), "count": forwardCount])

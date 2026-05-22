@@ -67,6 +67,14 @@ public final class EGPluginsEngineImpl {
             EGPluginHooks.eventBusHookAsync = { event, params in
                 EGTLHookBridge.shared.dispatchTLHookAsync(event, snapshot: params)
             }
+            // Synchronous intercept: lets plugins cancel outgoing messages and send replacements.
+            // Zero overhead when no plugin registers "messages.interceptMessage".
+            EGPluginHooks.messageInterceptHook = { params in
+                guard EGPythonBridge.isInitialized,
+                      EGPythonBridge.hasHook("messages.interceptMessage") else { return false }
+                EGTLHookBridge.shared.dispatchTLHook("messages.interceptMessage", params: &params)
+                return params["cancel"] as? Bool ?? false
+            }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {
                 // loadPlugin also calls EGPluginRuntime.initialize() — dispatch_once makes it safe.
@@ -89,6 +97,7 @@ public final class EGPluginsEngineImpl {
             EGPythonBridge.suppressAttributeTypeHandler = nil
             EGPluginHooks.eventBusHook = nil
             EGPluginHooks.eventBusHookAsync = nil
+            EGPluginHooks.messageInterceptHook = nil
             for id in pluginIds {
                 if EGPythonBridge.isInitialized {
                     EGPythonBridge.unloadPlugin(id)
