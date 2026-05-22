@@ -75,6 +75,11 @@ public final class EGPluginsEngineImpl {
                 EGTLHookBridge.shared.dispatchTLHook("messages.interceptMessage", params: &params)
                 return params["cancel"] as? Bool ?? false
             }
+            // Forward _ios_bridge.send_message() to the real enqueueMessages wired by PluginsController.
+            // EGPythonBridge is ObjC — only visible inside EGPluginEngine, not in EGSettingsUI.
+            EGPythonBridge.sendMessageHandler = { peerId, text in
+                EGPluginHooks.pluginSendMessageHandler?(peerId, text)
+            }
             EGLogger.shared.log("PluginEngine", "Starting \(plugins.count) plugin(s)…")
             for plugin in plugins {
                 // loadPlugin also calls EGPluginRuntime.initialize() — dispatch_once makes it safe.
@@ -98,6 +103,7 @@ public final class EGPluginsEngineImpl {
             EGPluginHooks.eventBusHook = nil
             EGPluginHooks.eventBusHookAsync = nil
             EGPluginHooks.messageInterceptHook = nil
+            EGPythonBridge.sendMessageHandler = nil
             for id in pluginIds {
                 if EGPythonBridge.isInitialized {
                     EGPythonBridge.unloadPlugin(id)

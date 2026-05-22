@@ -217,8 +217,9 @@ public final class PluginsController {
         })
         EGPluginClientInfo.connectionStateProvider = { stateBox.value }
 
-        // Wire send_message() bridge so plugins can enqueue real Telegram messages.
-        EGPythonBridge.sendMessageHandler = { [weak context] peerId, text in
+        // Wire send_message() for plugins. EGPluginHooks.pluginSendMessageHandler is read
+        // by EGPluginsEngineImpl which forwards it to EGPythonBridge (visible there, not here).
+        EGPluginHooks.pluginSendMessageHandler = { [weak context] peerId, text in
             guard let ctx = context else { return }
             let pid = PeerId(peerId)
             let _ = enqueueMessages(
