@@ -620,9 +620,13 @@ static PyObject *py_suppress_entity_type(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "s|p", &typeName, &suppress)) return NULL;
     void (^h)(NSString *, BOOL) = g_suppressEntityTypeHandler;
     if (h) {
-        NSString *t = [NSString stringWithUTF8String:typeName];
-        BOOL s = (BOOL)suppress;
-        dispatch_async(dispatch_get_main_queue(), ^{ h(t, s); });
+        // Call synchronously — Set must be populated before asyncLayout reads it.
+        // No UI work here, no main-thread requirement.
+        h([NSString stringWithUTF8String:typeName], (BOOL)suppress);
+        EGPluginDebugLog_appendCStr("Bridge",
+            [[NSString stringWithFormat:@"suppress_entity_type: %s=%d", typeName, suppress] UTF8String]);
+    } else {
+        EGPluginDebugLog_appendCStr("Bridge", "suppress_entity_type: handler NIL — called before engine wired?");
     }
     Py_RETURN_NONE;
 }
@@ -635,9 +639,11 @@ static PyObject *py_suppress_attribute_type(PyObject *self, PyObject *args) {
     if (!PyArg_ParseTuple(args, "s|p", &typeName, &suppress)) return NULL;
     void (^h)(NSString *, BOOL) = g_suppressAttributeTypeHandler;
     if (h) {
-        NSString *t = [NSString stringWithUTF8String:typeName];
-        BOOL s = (BOOL)suppress;
-        dispatch_async(dispatch_get_main_queue(), ^{ h(t, s); });
+        h([NSString stringWithUTF8String:typeName], (BOOL)suppress);
+        EGPluginDebugLog_appendCStr("Bridge",
+            [[NSString stringWithFormat:@"suppress_attribute_type: %s=%d", typeName, suppress] UTF8String]);
+    } else {
+        EGPluginDebugLog_appendCStr("Bridge", "suppress_attribute_type: handler NIL — called before engine wired?");
     }
     Py_RETURN_NONE;
 }
