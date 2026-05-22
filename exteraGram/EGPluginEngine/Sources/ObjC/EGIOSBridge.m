@@ -1,9 +1,11 @@
 // MARK: exteraGram — EGPluginEngine ObjC/Python bridge implementation
 
 #import "EGIOSBridge.h"
+#import "EGObjCSwizzler.h"
 #import <UIKit/UIKit.h>
 #import <os/log.h>
 #import <ZipArchive/ZipArchive.h>
+#import <objc/runtime.h>
 
 // ---------------------------------------------------------------------------
 // CPython C API — only compiled when the framework is present.
@@ -59,6 +61,8 @@ static void plugin_log(NSString *tag, NSString *fmt, ...) {
 static PyObject *g_tl_hooks = NULL;
 // Dict: {"plugin_id": module}
 static PyObject *g_loaded_modules = NULL;
+// Dict: {"ClassName.selector:": [{"before": cb, "after": cb}, ...]} for ObjC method hooks
+static PyObject *g_method_hooks = NULL;
 static BOOL g_initialized = NO;
 
 // ---------------------------------------------------------------------------
@@ -349,9 +353,404 @@ static PyObject *py_get_connection_state(PyObject *self, PyObject *args) {
     return result;
 }
 
+// ---------------------------------------------------------------------------
+// Method hooks (ObjC method swizzling driven by Python callbacks)
+// ---------------------------------------------------------------------------
+//
+// add_method_hook(class_name, selector, before, after) registers per-(class, sel)
+// Python callbacks. The first call for a (cls, sel) installs a forwardInvocation:
+// trampoline via EGObjCSwizzler. The trampoline (eg_pythonMethodInvoker, defined
+// below) marshals NSInvocation args ↔ Python, fires before/after callbacks and
+// calls the original IMP through the alias selector.
+//
+// Supported types for marshaling: id, Class, SEL, BOOL/bool/char, short, int,
+// long, long long (signed/unsigned), float, double, C string. Structs (CGRect,
+// CGPoint, etc.) and arbitrary pointers are passed through opaquely: hooks see
+// them as None in `args` and cannot modify them, but the original IMP still
+// receives the correct values because NSInvocation's argument buffer is left
+// untouched in that case.
+
+// Skip type-encoding qualifier prefixes (r, n, N, o, O, R, V).
+static const char *eg_strip_qualifiers(const char *type) {
+    while (type && *type && strchr("rnNoORV", *type)) type++;
+    return type;
+}
+
+// Convert an NSInvocation argument (or return) buffer of the given ObjC type
+// encoding to a Python object. Returns Py_None for unsupported types.
+static PyObject *eg_value_to_py(const char *type, void *buf) {
+    type = eg_strip_qualifiers(type);
+    if (!type || !*type) Py_RETURN_NONE;
+    switch (*type) {
+        case '@': {
+            __unsafe_unretained id obj = *(__unsafe_unretained id *)buf;
+            return ns_to_py(obj);
+        }
+        case '#': {
+            Class c = *(Class *)buf;
+            return c ? PyUnicode_FromString(class_getName(c)) : (Py_INCREF(Py_None), Py_None);
+        }
+        case ':': {
+            SEL s = *(SEL *)buf;
+            return s ? PyUnicode_FromString(sel_getName(s)) : (Py_INCREF(Py_None), Py_None);
+        }
+        case 'B': return PyBool_FromLong(*(_Bool *)buf);
+        case 'c': return PyLong_FromLong(*(signed char *)buf);
+        case 'C': return PyLong_FromUnsignedLong(*(unsigned char *)buf);
+        case 's': return PyLong_FromLong(*(short *)buf);
+        case 'S': return PyLong_FromUnsignedLong(*(unsigned short *)buf);
+        case 'i': return PyLong_FromLong(*(int *)buf);
+        case 'I': return PyLong_FromUnsignedLong(*(unsigned int *)buf);
+        case 'l': return PyLong_FromLong(*(long *)buf);
+        case 'L': return PyLong_FromUnsignedLong(*(unsigned long *)buf);
+        case 'q': return PyLong_FromLongLong(*(long long *)buf);
+        case 'Q': return PyLong_FromUnsignedLongLong(*(unsigned long long *)buf);
+        case 'f': return PyFloat_FromDouble(*(float *)buf);
+        case 'd': return PyFloat_FromDouble(*(double *)buf);
+        case '*': {
+            const char *s = *(const char **)buf;
+            return s ? PyUnicode_FromString(s) : (Py_INCREF(Py_None), Py_None);
+        }
+        default: Py_RETURN_NONE;
+    }
+}
+
+// Read NSInvocation argument at `idx` into a Python object.
+static PyObject *eg_invocation_arg_to_py(NSInvocation *inv, NSUInteger idx) {
+    const char *type = [inv.methodSignature getArgumentTypeAtIndex:idx];
+    NSUInteger size = 0;
+    NSGetSizeAndAlignment(type, &size, NULL);
+    if (size == 0) Py_RETURN_NONE;
+    void *buf = alloca(size);
+    memset(buf, 0, size);
+    [inv getArgument:buf atIndex:idx];
+    return eg_value_to_py(type, buf);
+}
+
+// Read NSInvocation return value into a Python object.
+static PyObject *eg_invocation_return_to_py(NSInvocation *inv) {
+    const char *type = inv.methodSignature.methodReturnType;
+    NSUInteger size = inv.methodSignature.methodReturnLength;
+    if (size == 0) Py_RETURN_NONE;  // void
+    void *buf = alloca(size);
+    memset(buf, 0, size);
+    [inv getReturnValue:buf];
+    return eg_value_to_py(type, buf);
+}
+
+// Marshal a Python value back into an NSInvocation arg / return slot.
+// Returns YES if the value was applied, NO if the type is unsupported (caller
+// should leave the original buffer untouched).
+static BOOL eg_apply_py_arg_to_invocation(NSInvocation *inv, NSUInteger idx, PyObject *py, BOOL isReturn) {
+    const char *type = isReturn ? inv.methodSignature.methodReturnType
+                                : [inv.methodSignature getArgumentTypeAtIndex:idx];
+    type = eg_strip_qualifiers(type);
+    if (!type || !*type) return NO;
+
+    // Handle the object case separately so ARC manages retention correctly.
+    if (*type == '@') {
+        id obj = py_to_ns(py);
+        if (obj == [NSNull null]) obj = nil;
+        if (isReturn) [inv setReturnValue:&obj];
+        else          [inv setArgument:&obj atIndex:idx];
+        return YES;
+    }
+
+    #define EG_SET(c_type, py_extract) do { \
+        c_type v = (c_type)(py_extract); \
+        if (isReturn) [inv setReturnValue:&v]; else [inv setArgument:&v atIndex:idx]; \
+    } while (0)
+
+    switch (*type) {
+        case '#': {
+            // Class: accept str name or None.
+            Class c = Nil;
+            if (PyUnicode_Check(py)) {
+                const char *name = PyUnicode_AsUTF8(py);
+                if (name) c = objc_getClass(name);
+            }
+            if (isReturn) [inv setReturnValue:&c]; else [inv setArgument:&c atIndex:idx];
+            return YES;
+        }
+        case ':': {
+            SEL s = NULL;
+            if (PyUnicode_Check(py)) {
+                const char *name = PyUnicode_AsUTF8(py);
+                if (name) s = sel_registerName(name);
+            }
+            if (isReturn) [inv setReturnValue:&s]; else [inv setArgument:&s atIndex:idx];
+            return YES;
+        }
+        case 'B': EG_SET(_Bool,    PyObject_IsTrue(py)); return YES;
+        case 'c': {
+            // BOOL on iOS is encoded as 'c' historically. Accept bool or int.
+            signed char v;
+            if (PyBool_Check(py)) v = (py == Py_True) ? 1 : 0;
+            else v = (signed char)PyLong_AsLong(py);
+            if (isReturn) [inv setReturnValue:&v]; else [inv setArgument:&v atIndex:idx];
+            return YES;
+        }
+        case 'C': EG_SET(unsigned char,      PyLong_AsUnsignedLong(py)); return YES;
+        case 's': EG_SET(short,              PyLong_AsLong(py));         return YES;
+        case 'S': EG_SET(unsigned short,     PyLong_AsUnsignedLong(py)); return YES;
+        case 'i': EG_SET(int,                PyLong_AsLong(py));         return YES;
+        case 'I': EG_SET(unsigned int,       PyLong_AsUnsignedLong(py)); return YES;
+        case 'l': EG_SET(long,               PyLong_AsLong(py));         return YES;
+        case 'L': EG_SET(unsigned long,      PyLong_AsUnsignedLong(py)); return YES;
+        case 'q': EG_SET(long long,          PyLong_AsLongLong(py));     return YES;
+        case 'Q': EG_SET(unsigned long long, PyLong_AsUnsignedLongLong(py)); return YES;
+        case 'f': EG_SET(float,              PyFloat_AsDouble(py));      return YES;
+        case 'd': EG_SET(double,             PyFloat_AsDouble(py));      return YES;
+        default:
+            // Structs, pointers — unsupported. Caller leaves original buffer alone.
+            return NO;
+    }
+    #undef EG_SET
+}
+
+// Lazy-load hook_utils.MethodHookParam (cached).
+static PyObject *eg_method_hook_param_class(void) {
+    static PyObject *cached = NULL;
+    if (cached) return cached;
+    PyObject *mod = PyImport_ImportModule("hook_utils");
+    if (!mod) { PyErr_Clear(); return NULL; }
+    PyObject *cls = PyObject_GetAttrString(mod, "MethodHookParam");
+    Py_DECREF(mod);
+    if (!cls) { PyErr_Clear(); return NULL; }
+    cached = cls;  // keep strong ref
+    return cached;
+}
+
+// The invoker block registered with EGObjCSwizzler for every hooked (class, sel).
+// Runs on whatever thread the original call came in on. Acquires the GIL, fires
+// `before` callbacks, invokes the original (unless skipped), fires `after`
+// callbacks, and writes back any overridden return value.
+static void eg_dispatch_method_hooks(NSInvocation *inv, SEL aliasSel) {
+    if (!g_method_hooks) {
+        inv.selector = aliasSel;
+        [inv invoke];
+        return;
+    }
+
+    PyGILState_STATE state = PyGILState_Ensure();
+
+    id target = inv.target;
+    SEL sel = inv.selector;
+    Class cls = object_getClass(target);
+
+    // Find the Python hook list by walking the class hierarchy.
+    PyObject *hooks_list = NULL;
+    Class probe = cls;
+    while (probe && !hooks_list) {
+        NSString *key = [NSString stringWithFormat:@"%s.%s",
+                         class_getName(probe), sel_getName(sel)];
+        PyObject *lst = PyDict_GetItemString(g_method_hooks, [key UTF8String]);
+        if (lst && PyList_Check(lst) && PyList_Size(lst) > 0) hooks_list = lst;
+        probe = class_getSuperclass(probe);
+    }
+
+    if (!hooks_list) {
+        PyGILState_Release(state);
+        inv.selector = aliasSel;
+        [inv invoke];
+        return;
+    }
+
+    // Keep object args alive across the Python detour.
+    [inv retainArguments];
+
+    // Build the MethodHookParam Python object.
+    PyObject *param_cls = eg_method_hook_param_class();
+    PyObject *param = param_cls ? PyObject_CallObject(param_cls, NULL) : NULL;
+    if (!param) {
+        PyErr_Clear();
+        PyGILState_Release(state);
+        // Couldn't build param — fall through and just call the original.
+        inv.selector = aliasSel;
+        [inv invoke];
+        return;
+    }
+
+    // Marshal args[2:] into a Python list (idx 0/1 are self/_cmd).
+    NSMethodSignature *sig = inv.methodSignature;
+    NSUInteger argCount = sig.numberOfArguments;
+    PyObject *args_list = PyList_New(0);
+    for (NSUInteger i = 2; i < argCount; i++) {
+        PyObject *py_arg = eg_invocation_arg_to_py(inv, i);
+        PyList_Append(args_list, py_arg);
+        Py_DECREF(py_arg);
+    }
+
+    PyObject *py_target = ns_to_py(target);
+    PyObject_SetAttrString(param, "this_object", py_target);
+    Py_DECREF(py_target);
+
+    PyObject *py_method_name = PyUnicode_FromString(sel_getName(sel));
+    PyObject_SetAttrString(param, "method", py_method_name);
+    Py_DECREF(py_method_name);
+
+    PyObject_SetAttrString(param, "args", args_list);
+
+    // Fire `before` callbacks in registration order. Xposed/exteraGram semantics:
+    // if any before sets a result (or asks to skip), the original method AND all
+    // subsequent before/after callbacks are skipped.
+    Py_ssize_t n = PyList_Size(hooks_list);
+    BOOL skipOriginalAndAfter = NO;
+    Py_ssize_t lastBeforeIdx = -1;
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *hook = PyList_GetItem(hooks_list, i);  // borrowed
+        if (!hook || !PyDict_Check(hook)) continue;
+        PyObject *before = PyDict_GetItemString(hook, "before");
+        if (before && before != Py_None) {
+            PyObject *res = PyObject_CallOneArg(before, param);
+            if (!res) { PyErr_Print(); PyErr_Clear(); }
+            else Py_DECREF(res);
+        }
+        lastBeforeIdx = i;
+
+        // After each before, check whether it set a result or asked to skip.
+        PyObject *override = PyObject_GetAttrString(param, "_override_result");
+        PyObject *skip = PyObject_GetAttrString(param, "_skip_original");
+        BOOL hasOverride = (override && PyObject_IsTrue(override));
+        BOOL hasSkip = (skip && PyObject_IsTrue(skip));
+        Py_XDECREF(override);
+        Py_XDECREF(skip);
+        if (hasOverride || hasSkip) {
+            skipOriginalAndAfter = YES;
+            break;
+        }
+    }
+
+    BOOL doSkip = skipOriginalAndAfter;
+
+    // Write potentially-mutated args back into the invocation.
+    PyObject *cur_args = PyObject_GetAttrString(param, "args");
+    if (cur_args && PyList_Check(cur_args)) {
+        Py_ssize_t avail = PyList_Size(cur_args);
+        for (NSUInteger i = 2; i < argCount; i++) {
+            Py_ssize_t pyIdx = (Py_ssize_t)(i - 2);
+            if (pyIdx >= avail) break;
+            PyObject *val = PyList_GetItem(cur_args, pyIdx);  // borrowed
+            if (val) eg_apply_py_arg_to_invocation(inv, i, val, NO);
+        }
+    }
+    Py_XDECREF(cur_args);
+
+    // Invoke original.
+    if (!doSkip) {
+        inv.selector = aliasSel;
+        Py_BEGIN_ALLOW_THREADS
+        [inv invoke];
+        Py_END_ALLOW_THREADS
+
+        // Read return value into param.result.
+        PyObject *ret_py = eg_invocation_return_to_py(inv);
+        PyObject_SetAttrString(param, "result", ret_py);
+        Py_DECREF(ret_py);
+    }
+
+    // Fire `after` callbacks in reverse order (Xposed semantics).
+    // Skipped entirely if a before callback set the result / asked to skip.
+    if (!skipOriginalAndAfter) {
+        for (Py_ssize_t i = n - 1; i >= 0; i--) {
+            PyObject *hook = PyList_GetItem(hooks_list, i);
+            if (!hook || !PyDict_Check(hook)) continue;
+            PyObject *after = PyDict_GetItemString(hook, "after");
+            if (after && after != Py_None) {
+                PyObject *res = PyObject_CallOneArg(after, param);
+                if (!res) { PyErr_Print(); PyErr_Clear(); }
+                else Py_DECREF(res);
+            }
+        }
+    }
+    (void)lastBeforeIdx;
+
+    // Apply overridden return value, if any.
+    PyObject *override = PyObject_GetAttrString(param, "_override_result");
+    if (override && PyObject_IsTrue(override)) {
+        PyObject *final_result = PyObject_GetAttrString(param, "result");
+        if (final_result) {
+            eg_apply_py_arg_to_invocation(inv, 0, final_result, YES);
+            Py_DECREF(final_result);
+        }
+    }
+    Py_XDECREF(override);
+
+    Py_DECREF(args_list);
+    Py_DECREF(param);
+
+    PyGILState_Release(state);
+}
+
+// add_method_hook(class_name, selector, before, after) -> bool
+static PyObject *py_add_method_hook(PyObject *self, PyObject *args) {
+    const char *className = NULL;
+    const char *selName = NULL;
+    PyObject *before = Py_None;
+    PyObject *after  = Py_None;
+    if (!PyArg_ParseTuple(args, "ss|OO", &className, &selName, &before, &after)) return NULL;
+
+    if ((before == Py_None || !PyCallable_Check(before)) &&
+        (after  == Py_None || !PyCallable_Check(after))) {
+        PyErr_SetString(PyExc_ValueError, "at least one of `before` or `after` must be callable");
+        return NULL;
+    }
+    if (before != Py_None && !PyCallable_Check(before)) {
+        PyErr_SetString(PyExc_TypeError, "`before` must be callable or None");
+        return NULL;
+    }
+    if (after != Py_None && !PyCallable_Check(after)) {
+        PyErr_SetString(PyExc_TypeError, "`after` must be callable or None");
+        return NULL;
+    }
+
+    Class cls = objc_getClass(className);
+    if (!cls) {
+        plugin_log(@"PluginEngine", @"add_method_hook: class '%s' not found", className);
+        Py_RETURN_FALSE;
+    }
+    SEL sel = sel_registerName(selName);
+    if (!class_getInstanceMethod(cls, sel)) {
+        plugin_log(@"PluginEngine", @"add_method_hook: -[%s %s] not found", className, selName);
+        Py_RETURN_FALSE;
+    }
+
+    if (!g_method_hooks) g_method_hooks = PyDict_New();
+
+    // Append { "before": before, "after": after } to the per-(cls, sel) list.
+    NSString *key = [NSString stringWithFormat:@"%s.%s", className, selName];
+    PyObject *list = PyDict_GetItemString(g_method_hooks, [key UTF8String]);
+    BOOL firstTime = NO;
+    if (!list) {
+        list = PyList_New(0);
+        PyDict_SetItemString(g_method_hooks, [key UTF8String], list);
+        Py_DECREF(list);
+        list = PyDict_GetItemString(g_method_hooks, [key UTF8String]);
+        firstTime = YES;
+    }
+    PyObject *entry = PyDict_New();
+    PyDict_SetItemString(entry, "before", before);
+    PyDict_SetItemString(entry, "after",  after);
+    PyList_Append(list, entry);
+    Py_DECREF(entry);
+
+    // First hook for this (cls, sel): install the trampoline.
+    if (firstTime) {
+        Py_BEGIN_ALLOW_THREADS
+        [EGObjCSwizzler installForwardHookOnClass:cls selector:sel
+                                          invoker:^(NSInvocation *inv, SEL aliasSel) {
+            eg_dispatch_method_hooks(inv, aliasSel);
+        }];
+        Py_END_ALLOW_THREADS
+    }
+
+    Py_RETURN_TRUE;
+}
+
 static PyMethodDef ios_bridge_methods[] = {
     {"log_text",           py_log_text,           METH_VARARGS, "log_text(msg, tag='Plugin')"},
     {"add_tl_hook",        py_add_tl_hook,        METH_VARARGS, "add_tl_hook(tl_type, callback)"},
+    {"add_method_hook",    py_add_method_hook,    METH_VARARGS, "add_method_hook(class_name, selector, before=None, after=None) -> bool"},
     {"has_hook",           py_has_hook,           METH_VARARGS, "has_hook(tl_type) -> bool"},
     {"run_on_main_thread", py_run_on_main_thread, METH_VARARGS, "run_on_main_thread(fn)"},
     {"show_alert",         py_show_alert,         METH_VARARGS, "show_alert(title, message, button='OK')"},
@@ -495,6 +894,7 @@ static id py_to_ns(PyObject *obj) {
             PyGILState_STATE s = PyGILState_Ensure();
             if (!g_tl_hooks)       g_tl_hooks       = PyDict_New();
             if (!g_loaded_modules) g_loaded_modules  = PyDict_New();
+            if (!g_method_hooks)   g_method_hooks   = PyDict_New();
             PyGILState_Release(s);
             g_initialized = YES;
             return;
@@ -577,6 +977,7 @@ static id py_to_ns(PyObject *obj) {
         PyGILState_STATE state = PyGILState_Ensure();
         g_tl_hooks = PyDict_New();
         g_loaded_modules = PyDict_New();
+        g_method_hooks = PyDict_New();
 
         // Append SDK, plugins, and site-packages to sys.path now that Python is alive.
         PyObject *sysPath = PySys_GetObject("path"); // borrowed ref — never NULL post-init
@@ -681,6 +1082,69 @@ static id py_to_ns(PyObject *obj) {
         // Register in sys.modules so imports within the plugin work
         PyObject *sys_modules = PySys_GetObject("modules"); // borrowed
         PyDict_SetItemString(sys_modules, pluginId.UTF8String, module);
+
+        // --- Metadata validation (AST, pre-exec) ---
+        // `__os__` must be a bare lowercase identifier `ios` — NOT a quoted string.
+        // This is a metadata directive, parsed syntactically like Android exteraGram
+        // does, not a Python value. Anything else → refuse to load.
+        {
+            static const char *validatorSrc =
+                "import ast\n"
+                "def _eg_validate(_path):\n"
+                "    try:\n"
+                "        with open(_path, 'r') as _f:\n"
+                "            _tree = ast.parse(_f.read())\n"
+                "    except Exception as _e:\n"
+                "        return 'failed to parse plugin source: ' + str(_e)\n"
+                "    for _node in _tree.body:\n"
+                "        if not isinstance(_node, ast.Assign):\n"
+                "            continue\n"
+                "        for _t in _node.targets:\n"
+                "            if isinstance(_t, ast.Name) and _t.id == '__os__':\n"
+                "                _v = _node.value\n"
+                "                if isinstance(_v, ast.Name) and _v.id == 'ios':\n"
+                "                    return 'ok'\n"
+                "                if isinstance(_v, ast.Constant):\n"
+                "                    return 'plugin __os__ must be a bare identifier (ios), not a string literal'\n"
+                "                return 'plugin __os__ has unsupported form (must be: __os__ = ios)'\n"
+                "    return 'plugin metadata is missing __os__ = ios'\n";
+
+            PyObject *vGlobals = PyDict_New();
+            PyDict_SetItemString(vGlobals, "__builtins__", PyEval_GetBuiltins());
+            PyObject *vCompiled = PyRun_String(validatorSrc, Py_file_input, vGlobals, vGlobals);
+            NSString *validation = nil;
+            if (vCompiled) {
+                Py_DECREF(vCompiled);
+                PyObject *vFn = PyDict_GetItemString(vGlobals, "_eg_validate");
+                PyObject *vResult = vFn ? PyObject_CallFunction(vFn, "s", path.UTF8String) : NULL;
+                if (vResult && PyUnicode_Check(vResult)) {
+                    const char *s = PyUnicode_AsUTF8(vResult);
+                    if (s) validation = [NSString stringWithUTF8String:s];
+                }
+                Py_XDECREF(vResult);
+            }
+            Py_DECREF(vGlobals);
+            if (!validation) {
+                PyErr_Clear();
+                validation = @"metadata validator failed";
+            }
+            if (![validation isEqualToString:@"ok"]) {
+                errorMsg = validation;
+                PyDict_DelItemString(sys_modules, pluginId.UTF8String);
+                Py_DECREF(module); Py_DECREF(spec); Py_DECREF(importlib_util);
+                plugin_log(@"PluginEngine", @"Refused to load plugin %@: %@", pluginId, validation);
+                return;
+            }
+
+            // Inject `ios` as a sentinel string in the module's globals so that the
+            // bare-identifier assignment `__os__ = ios` doesn't NameError at exec.
+            PyObject *modDict = PyModule_GetDict(module);  // borrowed
+            if (modDict) {
+                PyObject *iosStr = PyUnicode_FromString("ios");
+                PyDict_SetItemString(modDict, "ios", iosStr);
+                Py_DECREF(iosStr);
+            }
+        }
 
         // Execute the module body
         PyObject *specLoader = PyObject_GetAttrString(spec, "loader");

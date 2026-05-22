@@ -3,7 +3,7 @@ __name__        = "Big Reactions"
 __description__ = "Forces the full-screen animation for every reaction you send."
 __author__      = "@exteraPlugins"
 __version__     = "1.0"
-__os__          = "ios"
+__os__          = ios
 
 from hook_utils import add_tl_hook
 from android_utils import log

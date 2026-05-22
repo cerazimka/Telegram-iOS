@@ -3,7 +3,7 @@ __name__        = "Hello Plugin"
 __description__ = "Shows an alert on load. Use to verify the plugin engine is working."
 __author__      = "@exteraPlugins"
 __version__     = "1.1"
-__os__          = "ios"
+__os__          = ios
 
 import _ios_bridge
 
