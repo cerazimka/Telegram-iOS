@@ -35,6 +35,10 @@ public final class EGPluginRuntime {
         // Locate the Python SDK .py files (base_plugin, hook_utils, etc.)
         let sdkPath = findSDKPath()
 
+        // Locate the bundled third-party site-packages (requests, cachetools, ...).
+        // Optional — engine still starts without it; plugins just won't see those imports.
+        let bundledSitePackages = findBundledSitePackages()
+
         // Log stdlib directory contents to help diagnose extraction issues.
         let stdlibContents = (try? FileManager.default.contentsOfDirectory(atPath: pythonHome))?
             .sorted().joined(separator: ", ") ?? "(empty)"
@@ -57,6 +61,13 @@ public final class EGPluginRuntime {
                 EGLogger.shared.log("PluginRuntime",
                     "Engine ready. home=\(pythonHome) sdk=\(sdkPath ?? "not found")")
                 EGPluginDebugLog.shared.append(tag: "Runtime", "CPython ready ✓")
+                // Add the bundled third-party site-packages (requests, cachetools…)
+                // to sys.path *after* init so the writable user dir keeps priority.
+                if let bundled = bundledSitePackages {
+                    EGPythonBridge.append(toSysPath: bundled)
+                    EGPluginDebugLog.shared.append(tag: "Runtime",
+                        "Bundled site-packages on sys.path: \(bundled)")
+                }
             } else {
                 EGPluginDebugLog.shared.append(tag: "Runtime", "CPython init FAILED ✗")
                 EGLogger.shared.log("PluginRuntime", "CPython init failed")
@@ -119,6 +130,32 @@ public final class EGPluginRuntime {
         try? currentVersion.write(toFile: markerPath, atomically: true, encoding: .utf8)
         EGLogger.shared.log("PluginRuntime", "Python stdlib extracted to \(stdlibHome.path)")
         return stdlibHome.path
+    }
+
+    /// Locate the bundled third-party site-packages directory. The BUILD file
+    /// ships `Python/site-packages/**/*.py` as data; we probe a couple of
+    /// stable package files to find the root, then return that root.
+    private func findBundledSitePackages() -> String? {
+        // Probe for requests/__init__.py which always exists if the bundle
+        // was assembled with the BundledSitePackages filegroup.
+        for subdir in ["Python/site-packages/requests", "Python/site-packages"] {
+            if let url = Bundle.main.url(forResource: "__init__", withExtension: "py",
+                                         subdirectory: subdir) {
+                // <bundle>/Python/site-packages/requests/__init__.py
+                //   → site-packages root is its grandparent (for the deeper subdir)
+                //   or its parent (for the shallow subdir).
+                if subdir.hasSuffix("/requests") {
+                    return url.deletingLastPathComponent().deletingLastPathComponent().path
+                }
+                return url.deletingLastPathComponent().path
+            }
+        }
+        // Fallback: search by a known unique file.
+        if let url = Bundle.main.url(forResource: "cachetools",
+                                     withExtension: nil) {
+            return url.deletingLastPathComponent().path
+        }
+        return nil
     }
 
     /// Find the Python SDK directory (contains base_plugin.py, hook_utils.py, etc.)

@@ -50,6 +50,20 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# Pure-Python third-party packages vendored under Python/site-packages.
+# Currently: requests + cachetools (+ their transitive deps urllib3, certifi,
+# idna, charset_normalizer). Native binaries (.so/.pyd/.dylib) and bin/ have
+# been stripped — what remains is the .py source tree.
+filegroup(
+    name = "BundledSitePackages",
+    srcs = glob([
+        "Python/site-packages/**/*.py",
+        "Python/site-packages/**/*.pem",       # certifi cacert bundle
+        "Python/site-packages/**/py.typed",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
 # ---------------------------------------------------------------------------
 # Main Swift module
 # ---------------------------------------------------------------------------
@@ -68,6 +82,9 @@ swift_library(
         "//submodules/TelegramCore:TelegramCore",
         "//submodules/MtProtoKit:MtProtoKit",
     ],
-    data = [":PythonSDK"],
+    data = [
+        ":PythonSDK",
+        ":BundledSitePackages",
+    ],
     visibility = ["//visibility:public"],
 )

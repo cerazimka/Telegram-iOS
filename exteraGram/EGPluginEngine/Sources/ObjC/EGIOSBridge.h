@@ -48,6 +48,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// Returns YES on success. Idempotent — call before initializeWithHome:.
 + (BOOL)extractPythonStdlibZip:(NSString *)zipPath toDirectory:(NSString *)destDir;
 
+/// Append `path` to `sys.path` (acquires the GIL). No-op if Python isn't
+/// initialised or if the path is already present.
++ (void)appendToSysPath:(NSString *)path;
+
 /// Whether the plugin declares any settings (create_settings or __settings__).
 + (BOOL)pluginHasSettings:(NSString *)pluginId;
 

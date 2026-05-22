@@ -1783,6 +1783,31 @@ static PyObject *eg_internal_callable(const char *name) {
     });
 }
 
++ (void)appendToSysPath:(NSString *)path {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized || path.length == 0) return;
+    [self withPython:^{
+        PyObject *sysPath = PySys_GetObject("path");  // borrowed
+        if (!sysPath || !PyList_Check(sysPath)) return;
+        // Skip if already present
+        PyObject *candidate = PyUnicode_FromString([path UTF8String]);
+        if (!candidate) { PyErr_Clear(); return; }
+        Py_ssize_t n = PyList_Size(sysPath);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *existing = PyList_GetItem(sysPath, i);
+            if (PyUnicode_Check(existing) && PyUnicode_Compare(existing, candidate) == 0) {
+                Py_DECREF(candidate);
+                return;
+            }
+        }
+        PyList_Append(sysPath, candidate);
+        Py_DECREF(candidate);
+    }];
+#else
+    (void)path;
+#endif
+}
+
 + (BOOL)extractPythonStdlibZip:(NSString *)zipPath toDirectory:(NSString *)destDir {
     NSFileManager *fm = [NSFileManager defaultManager];
     NSError *err = nil;
