@@ -310,6 +310,21 @@ public final class PluginsController {
     public func setSetting(_ pluginId: String, key: String, value: Any) {
         engine.setPluginSetting(pluginId, key: key, value: value)
     }
+
+    /// Fetch the plugin's declared settings rows (snapshot for rendering).
+    public func getPluginSettingsItems(_ pluginId: String) -> [[String: Any]] {
+        engine.getPluginSettingsItems(pluginId)
+    }
+
+    /// Notify the plugin that the value at `index` changed.
+    public func notifyPluginSettingChange(_ pluginId: String, index: Int, value: Any?) {
+        engine.notifyPluginSettingChange(pluginId, index: index, value: value)
+    }
+
+    /// Notify the plugin that the row at `index` was tapped.
+    public func notifyPluginSettingClick(_ pluginId: String, index: Int) {
+        engine.notifyPluginSettingClick(pluginId, index: index)
+    }
 }
 
 // MARK: - Notification names
@@ -617,6 +632,7 @@ private struct PluginRowView: View {
     let onUpdate: (EGPlugin) -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
+    let onOpenSettings: () -> Void
 
     private var subtitleString: String {
         "v\(plugin.version)" + (plugin.subtitle.isEmpty ? "" : " · \(plugin.subtitle)")
@@ -744,7 +760,7 @@ private struct PluginRowView: View {
                 onUpdate(updated)
             }
             if plugin.hasSettings && plugin.isEnabled && !plugin.isError && !plugin.isNotResponding {
-                cellButton(image: "msg_settings") {}
+                cellButton(image: "msg_settings") { onOpenSettings() }
             }
             Spacer()
         }
@@ -845,6 +861,13 @@ private struct EGPluginsView: View {
                             onDelete: {
                                 PluginsController.shared.uninstall(plugin.id)
                                 plugins = PluginsController.shared.plugins
+                            },
+                            onOpenSettings: { [weak wrapperController] in
+                                guard #available(iOS 14.0, *),
+                                      let nav = wrapperController?.navigationController as? NavigationController
+                                else { return }
+                                let controller = egPluginSettingsController(context: context, plugin: plugin)
+                                nav.pushViewController(controller)
                             }
                         )
                     }

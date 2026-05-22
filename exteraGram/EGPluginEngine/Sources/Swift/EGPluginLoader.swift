@@ -173,6 +173,12 @@ public final class EGPluginLoader {
         if valuePart.hasPrefix("[") {
             return (rawKey, valuePart)
         }
+        // Bare identifier (e.g. __os__ = ios — required form for the OS field).
+        if let firstChar = valuePart.first,
+           firstChar.isLetter || firstChar == "_",
+           valuePart.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" }) {
+            return (rawKey, valuePart)
+        }
         return nil
     }
 }

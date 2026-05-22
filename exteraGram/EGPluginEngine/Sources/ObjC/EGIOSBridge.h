@@ -48,6 +48,23 @@ NS_ASSUME_NONNULL_BEGIN
 /// Returns YES on success. Idempotent — call before initializeWithHome:.
 + (BOOL)extractPythonStdlibZip:(NSString *)zipPath toDirectory:(NSString *)destDir;
 
+/// Whether the plugin declares any settings (create_settings or __settings__).
++ (BOOL)pluginHasSettings:(NSString *)pluginId;
+
+/// Snapshot of the plugin's settings items as dicts (one per row).
+/// Each dict has at least: index, type, key, title, subtitle, icon, accent,
+/// red, link_alias, default, options, has_on_change, has_on_click.
++ (nullable NSArray<NSDictionary<NSString *, id> *> *)getPluginSettings:(NSString *)pluginId;
+
+/// Notify the plugin that the value of the setting at `index` changed.
+/// The renderer should call this immediately after writing the value to UserDefaults.
++ (void)invokePluginSettingChange:(NSString *)pluginId
+                            index:(NSInteger)index
+                            value:(nullable id)value;
+
+/// Notify the plugin that the row at `index` was tapped (Text-style rows).
++ (void)invokePluginSettingClick:(NSString *)pluginId index:(NSInteger)index;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -114,7 +114,20 @@ public final class EGPluginsEngineImpl {
     public func isPluginError(_ id: String) -> Bool { errorStates[id] != nil }
     public func pluginErrorMessage(_ id: String) -> String? { errorStates[id] }
     public func isPluginNotResponding(_ id: String) -> Bool { notResponding[id] == true }
-    public func pluginHasSettings(_ id: String) -> Bool { hasSettingsMap[id] == true }
+
+    /// Cheap cached check used during list rendering. Refreshed lazily —
+    /// callers that need the up-to-date value should call refreshHasSettings.
+    public func pluginHasSettings(_ id: String) -> Bool {
+        if let cached = hasSettingsMap[id] { return cached }
+        let value = EGPythonBridge.pluginHasSettings(id)
+        hasSettingsMap[id] = value
+        return value
+    }
+
+    /// Force a refresh of the pluginHasSettings cache for one plugin.
+    public func refreshHasSettings(_ id: String) {
+        hasSettingsMap[id] = EGPythonBridge.pluginHasSettings(id)
+    }
 
     // MARK: - Enable / Disable
 
@@ -127,8 +140,37 @@ public final class EGPluginsEngineImpl {
         }
     }
 
-    // MARK: - Settings (stub — expand when ui/settings.py lands)
+    // MARK: - Settings
 
-    public func getPluginSetting(_ id: String, key: String, default def: Any?) -> Any? { def }
-    public func setPluginSetting(_ id: String, key: String, value: Any) { }
+    /// Fetch the plugin's declared SettingItem list (already serialised to dicts
+    /// by the Python `_eg_internal.get_settings_items`). The Swift renderer
+    /// consumes these to build its UI.
+    public func getPluginSettingsItems(_ id: String) -> [[String: Any]] {
+        guard let raw = EGPythonBridge.getPluginSettings(id) else { return [] }
+        return raw as? [[String: Any]] ?? []
+    }
+
+    /// Read a single namespaced UserDefaults value (mirrors the Python
+    /// `_ios_bridge.get_plugin_setting` storage layout).
+    public func getPluginSetting(_ id: String, key: String, default def: Any?) -> Any? {
+        let defaultsKey = "eg.plugin.\(id).\(key)"
+        return UserDefaults.standard.object(forKey: defaultsKey) ?? def
+    }
+
+    /// Write a value to the namespaced UserDefaults bucket. Notifies the Python
+    /// plugin via invokePluginSettingChange so on_change fires synchronously.
+    public func setPluginSetting(_ id: String, key: String, value: Any) {
+        let defaultsKey = "eg.plugin.\(id).\(key)"
+        UserDefaults.standard.set(value, forKey: defaultsKey)
+    }
+
+    /// Invoke the on_change callback (and persist) for the setting at `index`.
+    public func notifyPluginSettingChange(_ id: String, index: Int, value: Any?) {
+        EGPythonBridge.invokePluginSettingChange(id, index: index, value: value)
+    }
+
+    /// Invoke the on_click callback for the row at `index`.
+    public func notifyPluginSettingClick(_ id: String, index: Int) {
+        EGPythonBridge.invokePluginSettingClick(id, index: index)
+    }
 }

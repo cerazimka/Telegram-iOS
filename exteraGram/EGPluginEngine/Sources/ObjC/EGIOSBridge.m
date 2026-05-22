@@ -1491,6 +1491,107 @@ static id py_to_ns(PyObject *obj) {
 #endif
 }
 
+// ---------------------------------------------------------------------------
+// Plugin settings discovery / dispatch (Swift-side renderer entry points)
+// ---------------------------------------------------------------------------
+//
+// Implementation lives in Python (_eg_internal). The ObjC wrappers below
+// acquire the GIL, call the helper, marshal the result and release the GIL.
+
+#if EGPLUGIN_HAS_PYTHON
+// Look up a callable in _eg_internal. Returns a NEW reference (caller must Py_DECREF).
+static PyObject *eg_internal_callable(const char *name) {
+    PyObject *mod = PyImport_ImportModule("_eg_internal");
+    if (!mod) { PyErr_Clear(); return NULL; }
+    PyObject *fn = PyObject_GetAttrString(mod, name);
+    Py_DECREF(mod);
+    if (!fn) { PyErr_Clear(); return NULL; }
+    return fn;
+}
+#endif
+
++ (BOOL)pluginHasSettings:(NSString *)pluginId {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized) return NO;
+    __block BOOL result = NO;
+    [self withPython:^{
+        PyObject *fn = eg_internal_callable("has_settings");
+        if (!fn) return;
+        PyObject *res = PyObject_CallFunction(fn, "s", pluginId.UTF8String);
+        Py_DECREF(fn);
+        if (!res) { PyErr_Clear(); return; }
+        result = (PyObject_IsTrue(res) == 1);
+        Py_DECREF(res);
+    }];
+    return result;
+#else
+    (void)pluginId; return NO;
+#endif
+}
+
++ (nullable NSArray<NSDictionary<NSString *, id> *> *)getPluginSettings:(NSString *)pluginId {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized) return nil;
+    __block NSArray<NSDictionary<NSString *, id> *> *result = nil;
+    [self withPython:^{
+        PyObject *fn = eg_internal_callable("get_settings_items");
+        if (!fn) return;
+        PyObject *res = PyObject_CallFunction(fn, "s", pluginId.UTF8String);
+        Py_DECREF(fn);
+        if (!res) { PyErr_Clear(); return; }
+        id ns = py_to_ns(res);
+        Py_DECREF(res);
+        if ([ns isKindOfClass:[NSArray class]]) {
+            // Filter to dict elements only — defensive.
+            NSMutableArray *items = [NSMutableArray array];
+            for (id item in (NSArray *)ns) {
+                if ([item isKindOfClass:[NSDictionary class]]) [items addObject:item];
+            }
+            result = [items copy];
+        }
+    }];
+    return result;
+#else
+    (void)pluginId; return nil;
+#endif
+}
+
++ (void)invokePluginSettingChange:(NSString *)pluginId
+                            index:(NSInteger)index
+                            value:(nullable id)value {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized) return;
+    [self withPython:^{
+        PyObject *fn = eg_internal_callable("invoke_change");
+        if (!fn) return;
+        PyObject *pyValue = value ? ns_to_py(value) : (Py_INCREF(Py_None), Py_None);
+        PyObject *res = PyObject_CallFunction(fn, "snO", pluginId.UTF8String, (Py_ssize_t)index, pyValue);
+        Py_DECREF(pyValue);
+        Py_DECREF(fn);
+        if (!res) { PyErr_Print(); PyErr_Clear(); }
+        else Py_DECREF(res);
+    }];
+#else
+    (void)pluginId; (void)index; (void)value;
+#endif
+}
+
++ (void)invokePluginSettingClick:(NSString *)pluginId index:(NSInteger)index {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized) return;
+    [self withPython:^{
+        PyObject *fn = eg_internal_callable("invoke_click");
+        if (!fn) return;
+        PyObject *res = PyObject_CallFunction(fn, "sn", pluginId.UTF8String, (Py_ssize_t)index);
+        Py_DECREF(fn);
+        if (!res) { PyErr_Print(); PyErr_Clear(); }
+        else Py_DECREF(res);
+    }];
+#else
+    (void)pluginId; (void)index;
+#endif
+}
+
 + (void)dispatchTLHook:(NSString *)tlType params:(NSMutableDictionary<NSString *, id> *)params {
 #if EGPLUGIN_HAS_PYTHON
     if (!g_initialized || !g_tl_hooks) return;
