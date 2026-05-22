@@ -197,6 +197,26 @@ static PyObject *py_show_toast(PyObject *self, PyObject *args) {
     Py_RETURN_NONE;
 }
 
+// show_bulletin(title, text="", icon="")
+// Posts EGPluginShowBulletinNotification on the main queue. The Swift side
+// presents a Telegram-style bulletin with optional SF Symbol icon.
+static PyObject *py_show_bulletin(PyObject *self, PyObject *args) {
+    const char *title = "";
+    const char *text  = "";
+    const char *icon  = "";
+    if (!PyArg_ParseTuple(args, "s|ss", &title, &text, &icon)) return NULL;
+    NSString *nsTitle = [NSString stringWithUTF8String:title];
+    NSString *nsText  = [NSString stringWithUTF8String:text];
+    NSString *nsIcon  = [NSString stringWithUTF8String:icon];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"EGPluginShowBulletinNotification"
+                          object:nil
+                        userInfo:@{@"title": nsTitle, @"text": nsText, @"icon": nsIcon}];
+    });
+    Py_RETURN_NONE;
+}
+
 // copy_to_clipboard(text)
 static PyObject *py_copy_to_clipboard(PyObject *self, PyObject *args) {
     const char *text = "";
@@ -755,6 +775,7 @@ static PyMethodDef ios_bridge_methods[] = {
     {"run_on_main_thread", py_run_on_main_thread, METH_VARARGS, "run_on_main_thread(fn)"},
     {"show_alert",         py_show_alert,         METH_VARARGS, "show_alert(title, message, button='OK')"},
     {"show_toast",         py_show_toast,         METH_VARARGS, "show_toast(message, duration=2.0)"},
+    {"show_bulletin",      py_show_bulletin,      METH_VARARGS, "show_bulletin(title, text='', icon='')"},
     {"copy_to_clipboard",  py_copy_to_clipboard,  METH_VARARGS, "copy_to_clipboard(text)"},
     {"open_url",           py_open_url,           METH_VARARGS, "open_url(url)"},
     {"haptic_feedback",    py_haptic_feedback,    METH_VARARGS, "haptic_feedback(style='medium')"},
