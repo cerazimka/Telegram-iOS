@@ -12,6 +12,7 @@ import Display
 import TelegramPresentationData
 import SwiftSignalKit
 import TelegramCore
+import Postbox
 import AnimatedStickerNode
 import TelegramAnimatedStickerNode
 
