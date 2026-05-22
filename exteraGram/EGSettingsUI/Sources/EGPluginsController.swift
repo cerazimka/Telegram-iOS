@@ -105,9 +105,16 @@ public struct EGPlugin: Identifiable, Codable {
 
 // MARK: - Engine Controller
 
-public final class PluginsController {
-    public static let shared = PluginsController()
-    private init() {}
+/// Singleton controller exposed to ObjC as `EGPluginsController` so that
+/// plugins can hook its public surface via `add_method_hook("EGPluginsController", ...)`.
+///
+/// Hookable methods are marked `@objc dynamic` — that combo makes the
+/// Swift compiler route even in-Swift call sites through `objc_msgSend`,
+/// which is what the forwardInvocation: trampoline needs to fire.
+@objc(EGPluginsController)
+public final class PluginsController: NSObject {
+    @objc public static let shared = PluginsController()
+    private override init() { super.init() }
 
     private let engine = EGPluginsEngineImpl()
 
@@ -127,29 +134,29 @@ public final class PluginsController {
 
     // MARK: Persisted flags
 
-    public var isEngineEnabled: Bool {
+    @objc public var isEngineEnabled: Bool {
         get { UserDefaults.standard.bool(forKey: "eg_engine_enabled") }
         set { UserDefaults.standard.set(newValue, forKey: "eg_engine_enabled") }
     }
 
-    public var isDevMode: Bool {
+    @objc public var isDevMode: Bool {
         get { UserDefaults.standard.bool(forKey: "eg_plugins_dev_mode") }
         set { UserDefaults.standard.set(newValue, forKey: "eg_plugins_dev_mode") }
     }
 
-    public var isCompactView: Bool {
+    @objc public var isCompactView: Bool {
         get { UserDefaults.standard.bool(forKey: "eg_plugins_compact") }
         set { UserDefaults.standard.set(newValue, forKey: "eg_plugins_compact") }
     }
 
-    public var isSafeModeEnabled: Bool {
+    @objc public var isSafeModeEnabled: Bool {
         get { UserDefaults.standard.bool(forKey: "eg_plugins_safe_mode") }
         set { UserDefaults.standard.set(newValue, forKey: "eg_plugins_safe_mode") }
     }
 
     // MARK: - Lifecycle
 
-    public func startEngine(completion: (() -> Void)? = nil) {
+    @objc dynamic public func startEngine(completion: (() -> Void)? = nil) {
         guard isEngineEnabled, !isSafeModeEnabled else {
             completion?(); return
         }
@@ -184,7 +191,7 @@ public final class PluginsController {
         if updated { plugins = list }
     }
 
-    public func stopEngine(completion: (() -> Void)? = nil) {
+    @objc dynamic public func stopEngine(completion: (() -> Void)? = nil) {
         let ids = plugins.map { $0.id }
         engine.stop(pluginIds: ids) {
             DispatchQueue.main.async { completion?() }
@@ -245,7 +252,7 @@ public final class PluginsController {
 
     // MARK: - Uninstall
 
-    public func uninstall(_ pluginId: String) {
+    @objc dynamic public func uninstall(_ pluginId: String) {
         engine.unloadPlugin(pluginId)
         var all = plugins
         all.removeAll { $0.id == pluginId }
@@ -257,7 +264,7 @@ public final class PluginsController {
 
     // MARK: - Enable / Disable
 
-    public func setEnabled(_ pluginId: String, enabled: Bool) {
+    @objc dynamic public func setEnabled(_ pluginId: String, enabled: Bool) {
         if let plugin = plugins.first(where: { $0.id == pluginId }) {
             if enabled {
                 engine.loadPlugin(id: pluginId, filePath: plugin.filePath)
@@ -276,7 +283,7 @@ public final class PluginsController {
     // MARK: - Live state (from engine)
 
     /// Sync engine error/not-responding states into the in-memory plugin structs so the UI reflects them.
-    public func refreshPluginStates() {
+    @objc dynamic public func refreshPluginStates() {
         var all = plugins
         var changed = false
         for i in all.indices {
@@ -297,32 +304,32 @@ public final class PluginsController {
         }
     }
 
-    public func isPluginError(_ id: String) -> Bool { engine.isPluginError(id) }
-    public func isPluginNotResponding(_ id: String) -> Bool { engine.isPluginNotResponding(id) }
-    public func pluginHasSettings(_ id: String) -> Bool { engine.pluginHasSettings(id) }
-    public func pluginErrorMessage(_ id: String) -> String? { engine.pluginErrorMessage(id) }
+    @objc dynamic public func isPluginError(_ id: String) -> Bool { engine.isPluginError(id) }
+    @objc dynamic public func isPluginNotResponding(_ id: String) -> Bool { engine.isPluginNotResponding(id) }
+    @objc dynamic public func pluginHasSettings(_ id: String) -> Bool { engine.pluginHasSettings(id) }
+    @objc dynamic public func pluginErrorMessage(_ id: String) -> String? { engine.pluginErrorMessage(id) }
 
     // MARK: - Settings
 
-    public func getSetting(_ pluginId: String, key: String, default def: Any?) -> Any? {
+    @objc dynamic public func getSetting(_ pluginId: String, key: String, default def: Any?) -> Any? {
         engine.getPluginSetting(pluginId, key: key, default: def)
     }
-    public func setSetting(_ pluginId: String, key: String, value: Any) {
+    @objc dynamic public func setSetting(_ pluginId: String, key: String, value: Any) {
         engine.setPluginSetting(pluginId, key: key, value: value)
     }
 
     /// Fetch the plugin's declared settings rows (snapshot for rendering).
-    public func getPluginSettingsItems(_ pluginId: String) -> [[String: Any]] {
+    @objc dynamic public func getPluginSettingsItems(_ pluginId: String) -> [[String: Any]] {
         engine.getPluginSettingsItems(pluginId)
     }
 
     /// Notify the plugin that the value at `index` changed.
-    public func notifyPluginSettingChange(_ pluginId: String, index: Int, value: Any?) {
+    @objc dynamic public func notifyPluginSettingChange(_ pluginId: String, index: Int, value: Any?) {
         engine.notifyPluginSettingChange(pluginId, index: index, value: value)
     }
 
     /// Notify the plugin that the row at `index` was tapped.
-    public func notifyPluginSettingClick(_ pluginId: String, index: Int) {
+    @objc dynamic public func notifyPluginSettingClick(_ pluginId: String, index: Int) {
         engine.notifyPluginSettingClick(pluginId, index: index)
     }
 
@@ -332,12 +339,32 @@ public final class PluginsController {
     /// priority (highest first). Each dict carries:
     ///   handle: Int, plugin_id: String, text: String, icon: String,
     ///   priority: Int, accent: Bool, red: Bool, link_alias: String
-    public func menuItems(of type: String) -> [[String: Any]] {
+    @objc dynamic public func menuItems(of type: String) -> [[String: Any]] {
         engine.menuItems(of: type)
     }
 
-    public func invokeMenuItemClick(_ handle: Int) {
+    @objc dynamic public func invokeMenuItemClick(_ handle: Int) {
         engine.invokeMenuItemClick(handle)
+    }
+
+    // MARK: - ObjC-friendly helpers exposed for plugin hooking
+    //
+    // EGPlugin is a Swift struct, so the strongly-typed `plugins` property and
+    // `install(filePath:isEnabled:)` aren't bridgeable. The helpers below give
+    // ObjC / Python callers a way to enumerate and install plugins through
+    // hookable, primitive-typed methods.
+
+    @objc dynamic public func allPluginIds() -> [String] {
+        plugins.map { $0.id }
+    }
+
+    @objc dynamic public func enabledPluginIds() -> [String] {
+        plugins.filter { $0.isEnabled }.map { $0.id }
+    }
+
+    @objc dynamic public func installPluginFromPath(_ path: String, enabled: Bool) -> Bool {
+        do { _ = try install(filePath: path, isEnabled: enabled); return true }
+        catch { return false }
     }
 }
 

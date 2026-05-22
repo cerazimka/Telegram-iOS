@@ -7,7 +7,12 @@ import TelegramCore
 
 /// Core engine. Owned by EGSettingsUI's PluginsController.
 /// Does NOT import EGSettingsUI — dependency flows: EGSettingsUI → EGPluginEngine.
-public final class EGPluginsEngineImpl {
+///
+/// Exposed to ObjC as `EGPluginsEngineImpl` so plugins can hook its public
+/// methods via `add_method_hook("EGPluginsEngineImpl", ...)`. Hookable methods
+/// are marked `@objc dynamic`.
+@objc(EGPluginsEngineImpl)
+public final class EGPluginsEngineImpl: NSObject {
     private var errorStates: [String: String] = [:]
     private var notResponding: [String: Bool] = [:]
     private var hasSettingsMap: [String: Bool] = [:]
@@ -16,7 +21,7 @@ public final class EGPluginsEngineImpl {
         qos: .userInitiated
     )
 
-    public init() {}
+    public override init() { super.init() }
 
     // MARK: - Lifecycle
 
@@ -79,7 +84,7 @@ public final class EGPluginsEngineImpl {
 
     // MARK: - Load / Unload
 
-    public func loadPlugin(id: String, filePath: String) {
+    @objc dynamic public func loadPlugin(id: String, filePath: String) {
         guard !filePath.isEmpty else { errorStates[id] = "No file path"; return }
         // Ensure Python is initialized. dispatch_once in EGPythonBridge makes this safe to call
         // from any thread, even concurrently — the second caller waits for the first to finish.
@@ -105,7 +110,7 @@ public final class EGPluginsEngineImpl {
         }
     }
 
-    public func unloadPlugin(_ id: String) {
+    @objc dynamic public func unloadPlugin(_ id: String) {
         EGPythonBridge.unloadPlugin(id)
         errorStates.removeValue(forKey: id)
         notResponding.removeValue(forKey: id)
