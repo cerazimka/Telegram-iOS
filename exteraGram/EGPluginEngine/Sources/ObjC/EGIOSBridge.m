@@ -3,6 +3,7 @@
 #import "EGIOSBridge.h"
 #import "EGViewRenderer.h"
 #import <UIKit/UIKit.h>
+#import <netinet/in.h>
 #import <os/log.h>
 #import <objc/runtime.h>
 #import <ZipArchive/ZipArchive.h>
