@@ -4,6 +4,8 @@
 #import "EGViewRenderer.h"
 #import <UIKit/UIKit.h>
 #import <netinet/in.h>
+#import <arpa/inet.h>
+#import <ifaddrs.h>
 #import <os/log.h>
 #import <objc/runtime.h>
 #import <ZipArchive/ZipArchive.h>
@@ -998,6 +1000,38 @@ static PyObject *py_get_device_info(PyObject *self, PyObject *args) {
     return ns_to_py(result ?: @{});
 }
 
+// get_network_info() -> dict: {"ip": str, "type": "wifi"|"cellular"|"none"}
+// Uses getifaddrs — works entirely in ObjC, no Python socket module needed.
+// en0 = Wi-Fi, pdp_ip* = cellular. Wi-Fi takes priority.
+static PyObject *py_get_network_info(PyObject *self, PyObject *args) {
+    struct ifaddrs *ifalist = NULL;
+    NSString *ip   = @"Unknown";
+    NSString *type = @"none";
+
+    if (getifaddrs(&ifalist) == 0) {
+        // Two-pass: collect cellular first, then override with WiFi if found.
+        for (struct ifaddrs *ifa = ifalist; ifa; ifa = ifa->ifa_next) {
+            if (!ifa->ifa_addr || ifa->ifa_addr->sa_family != AF_INET) continue;
+            struct sockaddr_in *sa = (struct sockaddr_in *)ifa->ifa_addr;
+            char buf[INET_ADDRSTRLEN] = {0};
+            inet_ntop(AF_INET, &sa->sin_addr, buf, sizeof(buf));
+            NSString *ifIP   = [NSString stringWithUTF8String:buf];
+            NSString *ifName = ifa->ifa_name ? [NSString stringWithUTF8String:ifa->ifa_name] : @"";
+            if ([ifIP isEqualToString:@"127.0.0.1"]) continue;
+            if ([ifName isEqualToString:@"en0"]) {
+                ip = ifIP; type = @"wifi"; break;          // WiFi found — stop
+            }
+            if ([ifName hasPrefix:@"pdp_ip"] && [type isEqualToString:@"none"]) {
+                ip = ifIP; type = @"cellular";             // remember cellular, keep scanning
+            }
+        }
+        freeifaddrs(ifalist);
+    }
+
+    NSDictionary *result = @{@"ip": ip, @"type": type};
+    return ns_to_py(result);
+}
+
 // get_network_type() -> str: "wifi" | "cellular" | "none"
 // Uses SCNetworkReachability + kSCNetworkReachabilityFlagsIsWWAN to distinguish WiFi vs Cellular.
 static PyObject *py_get_network_type(PyObject *self, PyObject *args) {
@@ -1058,6 +1092,7 @@ static PyMethodDef ios_bridge_methods[] = {
     {"send_message",            py_send_message,            METH_VARARGS, "send_message(peer_id, text) — send a Telegram message as the current user"},
     {"get_device_info",         py_get_device_info,         METH_NOARGS,  "get_device_info() -> dict with battery_level, battery_state, app_version"},
     {"get_network_type",        py_get_network_type,        METH_NOARGS,  "get_network_type() -> 'wifi' | 'cellular' | 'none'"},
+    {"get_network_info",        py_get_network_info,        METH_NOARGS,  "get_network_info() -> {'ip': str, 'type': str}"},
     {NULL, NULL, 0, NULL}
 };
 

@@ -37,7 +37,6 @@ __settings__ = {
 import _ios_bridge
 import platform
 import os
-import socket
 import threading
 import ctypes
 import time
@@ -128,17 +127,12 @@ def _get_uptime() -> str:
         return "Unknown"
 
 
-def _get_local_ip() -> str:
-    """Get local IP by connecting a UDP socket (no data sent)."""
+def _get_network_info() -> dict:
+    """Get local IP + connection type via getifaddrs (bridge, no socket module)."""
     try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0)
-        s.connect(("10.254.254.254", 1))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
+        return _ios_bridge.get_network_info()
     except Exception:
-        return "Unknown"
+        return {"ip": "Unknown", "type": "none"}
 
 
 def _collect() -> dict:
@@ -221,16 +215,17 @@ def _collect() -> dict:
         except Exception:
             info["Screen"] = "Unknown"
 
-    # --- Network ---
+    # --- Network (single getifaddrs call for both IP and type) ---
+    _net = None
+    if _s("show_ip") or _s("show_nettype"):
+        _net = _get_network_info()
+
     if _s("show_ip"):
-        info["IP"] = _get_local_ip()
+        info["IP"] = _net.get("ip", "Unknown") if _net else "Unknown"
 
     if _s("show_nettype"):
-        try:
-            nt = _ios_bridge.get_network_type()
-            info["Connection"] = {"wifi": "Wi-Fi", "cellular": "Cellular", "none": "None"}.get(nt, nt.title())
-        except Exception:
-            info["Connection"] = "Unknown"
+        nt = (_net.get("type", "none") if _net else "none")
+        info["Connection"] = {"wifi": "Wi-Fi", "cellular": "Cellular", "none": "None"}.get(nt, nt.title())
 
     if _s("show_network"):
         state = _ios_bridge.get_connection_state()
