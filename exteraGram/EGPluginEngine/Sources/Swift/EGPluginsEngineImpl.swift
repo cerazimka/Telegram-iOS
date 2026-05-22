@@ -23,6 +23,9 @@ public final class EGPluginsEngineImpl {
     /// Start engine and load the given plugins.
     /// `plugins` is a list of (id, filePath) pairs from PluginsController.
     public func start(plugins: [(id: String, filePath: String)], completion: @escaping () -> Void) {
+        // Spin up the bulletin/toast presenter on the main thread before any
+        // plugins try to call into _ios_bridge.show_bulletin / show_toast.
+        DispatchQueue.main.async { EGPluginBulletinHost.shared.start() }
         engineQueue.async {
             EGPluginRuntime.shared.initialize()
             guard EGPythonBridge.isInitialized else {
