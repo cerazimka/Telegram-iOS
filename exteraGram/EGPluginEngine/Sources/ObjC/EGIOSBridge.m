@@ -6,6 +6,7 @@
 #import <os/log.h>
 #import <objc/runtime.h>
 #import <ZipArchive/ZipArchive.h>
+#import <SystemConfiguration/SystemConfiguration.h>
 
 extern NSString *const EGPluginViewCallbackNotification;
 
@@ -996,6 +997,31 @@ static PyObject *py_get_device_info(PyObject *self, PyObject *args) {
     return ns_to_py(result ?: @{});
 }
 
+// get_network_type() -> str: "wifi" | "cellular" | "none"
+// Uses SCNetworkReachability + kSCNetworkReachabilityFlagsIsWWAN to distinguish WiFi vs Cellular.
+static PyObject *py_get_network_type(PyObject *self, PyObject *args) {
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_len    = sizeof(addr);
+    addr.sin_family = AF_INET;
+
+    SCNetworkReachabilityRef reach = SCNetworkReachabilityCreateWithAddress(NULL, (struct sockaddr *)&addr);
+    if (!reach) Py_RETURN_NONE;
+
+    SCNetworkReachabilityFlags flags = 0;
+    Boolean ok = SCNetworkReachabilityGetFlags(reach, &flags);
+    CFRelease(reach);
+
+    if (!ok) return PyUnicode_FromString("none");
+
+    BOOL reachable   = (flags & kSCNetworkReachabilityFlagsReachable) != 0;
+    BOOL needsConn   = (flags & kSCNetworkReachabilityFlagsConnectionRequired) != 0;
+    BOOL isWWAN      = (flags & kSCNetworkReachabilityFlagsIsWWAN) != 0;
+
+    if (!reachable || needsConn) return PyUnicode_FromString("none");
+    return PyUnicode_FromString(isWWAN ? "cellular" : "wifi");
+}
+
 static PyMethodDef ios_bridge_methods[] = {
     {"log_text",           py_log_text,           METH_VARARGS, "log_text(msg, tag='Plugin')"},
     {"add_tl_hook",        py_add_tl_hook,        METH_VARARGS, "add_tl_hook(tl_type, callback)"},
@@ -1030,6 +1056,7 @@ static PyMethodDef ios_bridge_methods[] = {
     {"suppress_attribute_type", py_suppress_attribute_type, METH_VARARGS, "suppress_attribute_type(type_name, suppress=True)"},
     {"send_message",            py_send_message,            METH_VARARGS, "send_message(peer_id, text) — send a Telegram message as the current user"},
     {"get_device_info",         py_get_device_info,         METH_NOARGS,  "get_device_info() -> dict with battery_level, battery_state, app_version"},
+    {"get_network_type",        py_get_network_type,        METH_NOARGS,  "get_network_type() -> 'wifi' | 'cellular' | 'none'"},
     {NULL, NULL, 0, NULL}
 };
 

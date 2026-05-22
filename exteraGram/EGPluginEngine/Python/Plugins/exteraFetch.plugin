@@ -1,7 +1,7 @@
 __id__          = "exteraFetch"
 __name__        = "exteraFetch"
 __description__ = "Type .efch in any chat to send your system information"
-__version__     = "1.0"
+__version__     = "1.1"
 __author__      = "@exteraiPlugins"
 __os__          = "ios"
 __icon__        = "miyabiZZZ/1"
@@ -9,30 +9,38 @@ __icon__        = "miyabiZZZ/1"
 __settings__ = {
     "items": [
         {"type": "header",  "title": "General"},
-        {"type": "input",   "key": "efch_prefix",    "title": "Command prefix",     "default": ".efch"},
+        {"type": "input",   "key": "efch_prefix",    "title": "Command prefix",       "default": ".efch"},
         {"type": "header",  "title": "Device"},
-        {"type": "switch",  "key": "show_device",    "title": "Device model",       "default": True},
-        {"type": "switch",  "key": "show_ios",       "title": "iOS version",        "default": True},
-        {"type": "switch",  "key": "show_battery",   "title": "Battery level",      "default": True},
-        {"type": "switch",  "key": "show_jailbreak", "title": "Jailbreak status",   "default": True},
+        {"type": "switch",  "key": "show_device",    "title": "Device model",         "default": True},
+        {"type": "switch",  "key": "show_arch",      "title": "Architecture",         "default": True},
+        {"type": "switch",  "key": "show_ios",       "title": "iOS version",          "default": True},
+        {"type": "switch",  "key": "show_kernel",    "title": "Kernel version",       "default": True},
+        {"type": "switch",  "key": "show_uptime",    "title": "Uptime",               "default": True},
+        {"type": "switch",  "key": "show_battery",   "title": "Battery level",        "default": True},
+        {"type": "switch",  "key": "show_jailbreak", "title": "Jailbreak status",     "default": True},
         {"type": "header",  "title": "Hardware"},
-        {"type": "switch",  "key": "show_cpu",       "title": "CPU info",           "default": True},
-        {"type": "switch",  "key": "show_ram",       "title": "RAM total",          "default": True},
-        {"type": "switch",  "key": "show_storage",   "title": "Storage usage",      "default": True},
+        {"type": "switch",  "key": "show_cpu",       "title": "CPU info",             "default": True},
+        {"type": "switch",  "key": "show_ram",       "title": "RAM total",            "default": True},
+        {"type": "switch",  "key": "show_storage",   "title": "Storage usage",        "default": True},
         {"type": "header",  "title": "Display"},
-        {"type": "switch",  "key": "show_screen",    "title": "Screen resolution",  "default": True},
+        {"type": "switch",  "key": "show_screen",    "title": "Screen resolution",    "default": True},
+        {"type": "header",  "title": "Network"},
+        {"type": "switch",  "key": "show_ip",        "title": "Local IP address",     "default": True},
+        {"type": "switch",  "key": "show_nettype",   "title": "Connection type",      "default": True},
+        {"type": "switch",  "key": "show_network",   "title": "Connection state",     "default": True},
         {"type": "header",  "title": "Telegram"},
-        {"type": "switch",  "key": "show_user_id",   "title": "User ID",            "default": True},
-        {"type": "switch",  "key": "show_app",       "title": "App version",        "default": True},
-        {"type": "switch",  "key": "show_network",   "title": "Network state",      "default": True},
+        {"type": "switch",  "key": "show_user_id",   "title": "User ID",              "default": True},
+        {"type": "switch",  "key": "show_app",       "title": "App version",          "default": True},
     ]
 }
 
 import _ios_bridge
 import platform
 import os
+import socket
 import threading
 import ctypes
+import time
 
 PLUGIN_ID = "exteraFetch"
 
@@ -41,7 +49,6 @@ PLUGIN_ID = "exteraFetch"
 # ---------------------------------------------------------------------------
 
 def _s(key):
-    """Read plugin setting, falling back to __settings__ default."""
     val = _ios_bridge.get_plugin_setting(PLUGIN_ID, key, None)
     if val is None:
         for item in __settings__["items"]:
@@ -51,40 +58,87 @@ def _s(key):
 
 
 # ---------------------------------------------------------------------------
-# System info collectors
+# sysctl helpers
 # ---------------------------------------------------------------------------
 
-def _sysctl_string(name: bytes) -> str:
+def _libc():
+    return ctypes.cdll.LoadLibrary("libSystem.dylib")
+
+
+def _sysctl_str(name: bytes) -> str:
     try:
-        libc = ctypes.cdll.LoadLibrary("libSystem.dylib")
-        buf = ctypes.create_string_buffer(256)
+        lib = _libc()
+        buf  = ctypes.create_string_buffer(256)
         size = ctypes.c_size_t(256)
-        libc.sysctlbyname(name, buf, ctypes.byref(size), None, 0)
+        lib.sysctlbyname(name, buf, ctypes.byref(size), None, 0)
         return buf.value.decode("utf-8", errors="replace").strip("\x00")
     except Exception:
         return ""
 
 
-def _sysctl_int64(name: bytes) -> int:
+def _sysctl_i64(name: bytes) -> int:
     try:
-        libc = ctypes.cdll.LoadLibrary("libSystem.dylib")
-        val = ctypes.c_int64(0)
+        lib = _libc()
+        val  = ctypes.c_int64(0)
         size = ctypes.c_size_t(ctypes.sizeof(val))
-        libc.sysctlbyname(name, ctypes.byref(val), ctypes.byref(size), None, 0)
+        lib.sysctlbyname(name, ctypes.byref(val), ctypes.byref(size), None, 0)
         return val.value
     except Exception:
         return 0
 
 
-def _sysctl_int32(name: bytes) -> int:
+def _sysctl_i32(name: bytes) -> int:
     try:
-        libc = ctypes.cdll.LoadLibrary("libSystem.dylib")
-        val = ctypes.c_int32(0)
+        lib = _libc()
+        val  = ctypes.c_int32(0)
         size = ctypes.c_size_t(ctypes.sizeof(val))
-        libc.sysctlbyname(name, ctypes.byref(val), ctypes.byref(size), None, 0)
+        lib.sysctlbyname(name, ctypes.byref(val), ctypes.byref(size), None, 0)
         return val.value
     except Exception:
         return 0
+
+
+# ---------------------------------------------------------------------------
+# Individual collectors
+# ---------------------------------------------------------------------------
+
+def _get_uptime() -> str:
+    """Read kern.boottime (struct timeval) and compute elapsed time."""
+    try:
+        lib = _libc()
+        # struct timeval: tv_sec (c_long 8 bytes arm64), tv_usec (c_long 8 bytes)
+        class timeval(ctypes.Structure):
+            _fields_ = [("tv_sec", ctypes.c_long), ("tv_usec", ctypes.c_long)]
+        tv   = timeval()
+        size = ctypes.c_size_t(ctypes.sizeof(tv))
+        lib.sysctlbyname(b"kern.boottime", ctypes.byref(tv), ctypes.byref(size), None, 0)
+        elapsed = int(time.time()) - tv.tv_sec
+        if elapsed <= 0:
+            return "Unknown"
+        d, rem  = divmod(elapsed, 86400)
+        h, rem  = divmod(rem, 3600)
+        m, s    = divmod(rem, 60)
+        if d:
+            return f"{d}d {h}h {m}m"
+        elif h:
+            return f"{h}h {m}m"
+        else:
+            return f"{m}m {s}s"
+    except Exception:
+        return "Unknown"
+
+
+def _get_local_ip() -> str:
+    """Get local IP by connecting a UDP socket (no data sent)."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        s.connect(("10.254.254.254", 1))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "Unknown"
 
 
 def _collect() -> dict:
@@ -92,45 +146,55 @@ def _collect() -> dict:
 
     # --- Device ---
     if _s("show_device"):
-        model = _sysctl_string(b"hw.machine") or platform.machine() or "Unknown"
-        info["Device"] = model
+        info["Device"] = _sysctl_str(b"hw.machine") or platform.machine() or "Unknown"
+
+    if _s("show_arch"):
+        uname = platform.uname()
+        arch  = uname.machine or uname.processor or "Unknown"
+        info["Architecture"] = arch
 
     if _s("show_ios"):
         ver = platform.mac_ver()[0] or platform.release() or "Unknown"
         info["iOS"] = ver
 
+    if _s("show_kernel"):
+        uname = platform.uname()
+        info["Kernel"] = uname.release or "Unknown"
+
+    if _s("show_uptime"):
+        info["Uptime"] = _get_uptime()
+
     if _s("show_battery"):
         try:
-            di = _ios_bridge.get_device_info()
+            di    = _ios_bridge.get_device_info()
             level = di.get("battery_level", -1.0)
             state = di.get("battery_state", "unknown")
             if isinstance(level, (int, float)) and level >= 0:
                 info["Battery"] = f"{int(level * 100)}% ({state})"
             else:
-                info["Battery"] = "N/A"
+                info["Battery"] = "N/A (simulator or restricted)"
         except Exception:
             info["Battery"] = "N/A"
 
     if _s("show_jailbreak"):
-        jb_paths = [
+        jb_markers = [
             "/bin/bash", "/etc/apt", "/var/lib/cydia",
-            "/Applications/Cydia.app", "/private/var/stash",
-            "/usr/lib/libhooker.dylib", "/usr/bin/ssh", "/usr/sbin/sshd",
-            "/var/checkra1n.dmg",
+            "/Applications/Cydia.app", "/Applications/Sileo.app",
+            "/private/var/stash", "/usr/lib/libhooker.dylib",
+            "/usr/bin/ssh", "/usr/sbin/sshd", "/var/checkra1n.dmg",
         ]
-        jailbroken = any(os.path.exists(p) for p in jb_paths)
-        info["Jailbreak"] = "Yes" if jailbroken else "No"
+        info["Jailbreak"] = "Yes" if any(os.path.exists(p) for p in jb_markers) else "No"
 
     # --- Hardware ---
     if _s("show_cpu"):
-        cores = _sysctl_int32(b"hw.ncpu") or os.cpu_count() or 1
-        brand = _sysctl_string(b"machdep.cpu.brand_string")
+        cores = _sysctl_i32(b"hw.ncpu") or os.cpu_count() or 1
+        brand = _sysctl_str(b"machdep.cpu.brand_string")
         if not brand:
             brand = platform.processor() or "Apple Silicon"
         info["CPU"] = f"{brand} ({cores} cores)"
 
     if _s("show_ram"):
-        mem = _sysctl_int64(b"hw.memsize")
+        mem = _sysctl_i64(b"hw.memsize")
         if mem > 0:
             info["RAM"] = f"{mem / (1024 ** 3):.1f} GB"
         else:
@@ -138,9 +202,9 @@ def _collect() -> dict:
 
     if _s("show_storage"):
         try:
-            stat = os.statvfs("/")
-            total = stat.f_blocks * stat.f_frsize
-            free  = stat.f_bavail * stat.f_frsize
+            st    = os.statvfs("/")
+            total = st.f_blocks * st.f_frsize
+            free  = st.f_bavail * st.f_frsize
             used  = total - free
             info["Storage"] = f"{used // (1024**3)} / {total // (1024**3)} GB"
         except Exception:
@@ -149,13 +213,28 @@ def _collect() -> dict:
     # --- Display ---
     if _s("show_screen"):
         try:
-            sc = _ios_bridge.get_screen_info()
-            w   = int(sc.get("width", 0))
-            h   = int(sc.get("height", 0))
+            sc    = _ios_bridge.get_screen_info()
+            w     = int(sc.get("width",  0))
+            h     = int(sc.get("height", 0))
             scale = sc.get("nativeScale") or sc.get("scale") or 1.0
             info["Screen"] = f"{w}×{h} @{scale:.1f}×"
         except Exception:
             info["Screen"] = "Unknown"
+
+    # --- Network ---
+    if _s("show_ip"):
+        info["IP"] = _get_local_ip()
+
+    if _s("show_nettype"):
+        try:
+            nt = _ios_bridge.get_network_type()
+            info["Connection"] = {"wifi": "Wi-Fi", "cellular": "Cellular", "none": "None"}.get(nt, nt.title())
+        except Exception:
+            info["Connection"] = "Unknown"
+
+    if _s("show_network"):
+        state = _ios_bridge.get_connection_state()
+        info["Network state"] = state.replace("_", " ").title()
 
     # --- Telegram ---
     if _s("show_user_id"):
@@ -169,10 +248,6 @@ def _collect() -> dict:
         except Exception:
             info["App"] = "Unknown"
 
-    if _s("show_network"):
-        state = _ios_bridge.get_connection_state()
-        info["Network"] = state.replace("_", " ").title()
-
     return info
 
 
@@ -184,18 +259,18 @@ def _format(info: dict, header: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Background processor — collects info and sends replacement message
+# Background processor
 # ---------------------------------------------------------------------------
 
 def _process(peer_id: int, extra_text: str) -> None:
     try:
-        info = _collect()
+        info   = _collect()
         header = extra_text.strip() if extra_text.strip() else "System Information"
-        msg = _format(info, header)
+        msg    = _format(info, header)
         _ios_bridge.send_message(peer_id, msg)
-        _ios_bridge.log_text(f"Sent fetch to peer {peer_id}", PLUGIN_ID)
+        _ios_bridge.log_text(f"Sent to peer {peer_id} ({len(info)} fields)", PLUGIN_ID)
     except Exception as e:
-        _ios_bridge.log_text(f"Error in _process: {e}", PLUGIN_ID)
+        _ios_bridge.log_text(f"Error: {e}", PLUGIN_ID)
 
 
 # ---------------------------------------------------------------------------
@@ -213,7 +288,6 @@ def on_intercept_message(params: dict) -> None:
     if not text.strip().startswith(prefix):
         return
 
-    # Cancel the original send and process in background
     params["cancel"] = True
     after = text.strip()[len(prefix):]
     threading.Thread(

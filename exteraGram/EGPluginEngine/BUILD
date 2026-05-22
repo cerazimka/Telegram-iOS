@@ -26,6 +26,7 @@ objc_library(
     ],
     sdk_frameworks = [
         "Foundation",
+        "SystemConfiguration",
         "UIKit",
     ],
     deps = [
