@@ -325,6 +325,27 @@ public final class PluginsController {
     public func notifyPluginSettingClick(_ pluginId: String, index: Int) {
         engine.notifyPluginSettingClick(pluginId, index: index)
     }
+
+    // MARK: - Menu items
+
+    /// Plugin-registered menu items for the requested surface. Sorted by
+    /// priority (highest first). Each dict carries:
+    ///   handle: Int, plugin_id: String, text: String, icon: String,
+    ///   priority: Int, accent: Bool, red: Bool, link_alias: String
+    public func menuItems(of type: String) -> [[String: Any]] {
+        engine.menuItems(of: type)
+    }
+
+    public func invokeMenuItemClick(_ handle: Int) {
+        engine.invokeMenuItemClick(handle)
+    }
+}
+
+extension Notification.Name {
+    /// Posted on the main queue whenever the menu-items collection changes.
+    /// Renderers listening to this should re-query `menuItems(of:)`.
+    public static let egPluginMenuItemsChanged =
+        Notification.Name("EGPluginMenuItemsChangedNotification")
 }
 
 // MARK: - Notification names

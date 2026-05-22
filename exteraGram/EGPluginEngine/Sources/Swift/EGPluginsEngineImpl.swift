@@ -176,4 +176,17 @@ public final class EGPluginsEngineImpl {
     public func notifyPluginSettingClick(_ id: String, index: Int) {
         EGPythonBridge.invokePluginSettingClick(id, index: index)
     }
+
+    // MARK: - Menu items
+
+    /// Snapshot of menu items registered for the given surface
+    /// ("drawer" / "context" / "settings" / "profile" / "chat").
+    public func menuItems(of type: String) -> [[String: Any]] {
+        EGPythonBridge.menuItems(ofType: type) as? [[String: Any]] ?? []
+    }
+
+    /// Invoke the on_click callback for the menu item with `handle`.
+    public func invokeMenuItemClick(_ handle: Int) {
+        EGPythonBridge.invokeMenuItemClick(handle)
+    }
 }

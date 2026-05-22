@@ -140,19 +140,43 @@ class Plugin:
             pass
 
     # ------------------------------------------------------------------
-    # Menu items — stubs for Android source compatibility.
-    # Real menu integration requires Swift-side work; these accept the call
-    # and remember the handle so plugins don't crash.
+    # Menu items
     # ------------------------------------------------------------------
+    #
+    # Plugins register MenuItemData instances; the iOS host UI picks them
+    # up by surface (drawer / context / settings) and renders them. Taps
+    # are dispatched back to the supplied on_click callable through the
+    # bridge using the returned integer handle.
 
-    def add_menu_item(self, item) -> object:
-        self._menu_items.append(item)
-        return item
+    def add_menu_item(self, item) -> int:
+        """
+        Register a menu item. Returns a numeric handle (>0) suitable for
+        passing to remove_menu_item(). Returns -1 on failure.
+        """
+        try:
+            import _ios_bridge
+            data = item.to_dict() if hasattr(item, "to_dict") else dict(item)
+            on_click = getattr(item, "on_click", None)
+            handle = _ios_bridge.register_menu_item(
+                self.__settings_prefix__, data, on_click
+            )
+            if handle and handle > 0:
+                self._menu_items.append(handle)
+                return handle
+        except Exception as exc:
+            self.log(f"add_menu_item failed: {exc}")
+        return -1
 
     def remove_menu_item(self, ref) -> None:
         try:
-            self._menu_items.remove(ref)
-        except ValueError:
+            import _ios_bridge
+            if isinstance(ref, int) and ref > 0:
+                _ios_bridge.unregister_menu_item(ref)
+            try:
+                self._menu_items.remove(ref)
+            except ValueError:
+                pass
+        except Exception:
             pass
 
 

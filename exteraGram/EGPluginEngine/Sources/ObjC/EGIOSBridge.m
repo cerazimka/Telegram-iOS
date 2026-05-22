@@ -63,6 +63,9 @@ static PyObject *g_tl_hooks = NULL;
 static PyObject *g_loaded_modules = NULL;
 // Dict: {"ClassName.selector:": [{"before": cb, "after": cb}, ...]} for ObjC method hooks
 static PyObject *g_method_hooks = NULL;
+// Dict: {handle_int: {"plugin_id": str, "data": dict, "on_click": callable}}
+static PyObject *g_menu_items = NULL;
+static long g_menu_next_handle = 1;
 static BOOL g_initialized = NO;
 
 // ---------------------------------------------------------------------------
@@ -767,6 +770,62 @@ static PyObject *py_add_method_hook(PyObject *self, PyObject *args) {
     Py_RETURN_TRUE;
 }
 
+// ---------------------------------------------------------------------------
+// Menu items
+// ---------------------------------------------------------------------------
+//
+// Plugins call _ios_bridge.register_menu_item(plugin_id, data_dict, on_click)
+// to add a row to the host UI's drawer / context / settings menu. The host UI
+// (Swift) reads the current list via EGPythonBridge.menuItemsOfType: and
+// invokes click callbacks via invokeMenuItemClick:.
+
+static PyObject *py_register_menu_item(PyObject *self, PyObject *args) {
+    const char *plugin_id = "";
+    PyObject *data_dict = NULL;
+    PyObject *callback = Py_None;
+    if (!PyArg_ParseTuple(args, "sO|O", &plugin_id, &data_dict, &callback)) return NULL;
+    if (!data_dict || !PyDict_Check(data_dict)) {
+        PyErr_SetString(PyExc_TypeError, "data_dict must be a dict");
+        return NULL;
+    }
+    if (!g_menu_items) g_menu_items = PyDict_New();
+
+    long handle = g_menu_next_handle++;
+    PyObject *entry = PyDict_New();
+    PyObject *pid    = PyUnicode_FromString(plugin_id);
+    PyDict_SetItemString(entry, "plugin_id", pid);
+    Py_DECREF(pid);
+    PyDict_SetItemString(entry, "data", data_dict);
+    PyDict_SetItemString(entry, "on_click", callback);
+
+    PyObject *handleObj = PyLong_FromLong(handle);
+    PyDict_SetItem(g_menu_items, handleObj, entry);
+    Py_DECREF(entry);
+
+    // Notify Swift that the menu collection changed (debounced on main queue).
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"EGPluginMenuItemsChangedNotification" object:nil];
+    });
+
+    return handleObj;  // returns the new reference to caller
+}
+
+static PyObject *py_unregister_menu_item(PyObject *self, PyObject *args) {
+    long handle;
+    if (!PyArg_ParseTuple(args, "l", &handle)) return NULL;
+    if (!g_menu_items) Py_RETURN_FALSE;
+    PyObject *handleObj = PyLong_FromLong(handle);
+    int rc = PyDict_DelItem(g_menu_items, handleObj);
+    Py_DECREF(handleObj);
+    if (rc != 0) { PyErr_Clear(); Py_RETURN_FALSE; }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[NSNotificationCenter defaultCenter]
+            postNotificationName:@"EGPluginMenuItemsChangedNotification" object:nil];
+    });
+    Py_RETURN_TRUE;
+}
+
 static PyMethodDef ios_bridge_methods[] = {
     {"log_text",           py_log_text,           METH_VARARGS, "log_text(msg, tag='Plugin')"},
     {"add_tl_hook",        py_add_tl_hook,        METH_VARARGS, "add_tl_hook(tl_type, callback)"},
@@ -790,6 +849,8 @@ static PyMethodDef ios_bridge_methods[] = {
     {"kvc_get",            py_kvc_get,            METH_VARARGS, "kvc_get(obj_or_capsule, key) -> Any"},
     {"kvc_set",            py_kvc_set,            METH_VARARGS, "kvc_set(obj_or_capsule, key, value)"},
     {"objc_class_name",    py_objc_class_name,    METH_VARARGS, "objc_class_name(obj_or_capsule) -> str"},
+    {"register_menu_item", py_register_menu_item, METH_VARARGS, "register_menu_item(plugin_id, data, on_click=None) -> handle"},
+    {"unregister_menu_item",py_unregister_menu_item,METH_VARARGS,"unregister_menu_item(handle) -> bool"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -1083,6 +1144,7 @@ static id py_to_ns(PyObject *obj) {
             if (!g_tl_hooks)       g_tl_hooks       = PyDict_New();
             if (!g_loaded_modules) g_loaded_modules  = PyDict_New();
             if (!g_method_hooks)   g_method_hooks   = PyDict_New();
+            if (!g_menu_items)     g_menu_items     = PyDict_New();
             PyGILState_Release(s);
             g_initialized = YES;
             return;
@@ -1166,6 +1228,7 @@ static id py_to_ns(PyObject *obj) {
         g_tl_hooks = PyDict_New();
         g_loaded_modules = PyDict_New();
         g_method_hooks = PyDict_New();
+        g_menu_items = PyDict_New();
 
         // Append SDK, plugins, and site-packages to sys.path now that Python is alive.
         PyObject *sysPath = PySys_GetObject("path"); // borrowed ref — never NULL post-init
@@ -1573,6 +1636,74 @@ static PyObject *eg_internal_callable(const char *name) {
     }];
 #else
     (void)pluginId; (void)index; (void)value;
+#endif
+}
+
++ (NSArray<NSDictionary<NSString *, id> *> *)menuItemsOfType:(NSString *)type {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized || !g_menu_items) return @[];
+    __block NSMutableArray<NSDictionary<NSString *, id> *> *result =
+        [NSMutableArray array];
+    [self withPython:^{
+        PyObject *keys = PyDict_Keys(g_menu_items);
+        if (!keys) return;
+        Py_ssize_t n = PyList_Size(keys);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            PyObject *key = PyList_GetItem(keys, i);
+            PyObject *entry = PyDict_GetItem(g_menu_items, key);
+            if (!entry || !PyDict_Check(entry)) continue;
+            PyObject *data = PyDict_GetItemString(entry, "data");
+            if (!data || !PyDict_Check(data)) continue;
+            PyObject *mtObj = PyDict_GetItemString(data, "menu_type");
+            if (mtObj && PyUnicode_Check(mtObj)) {
+                const char *mt = PyUnicode_AsUTF8(mtObj);
+                if (!mt || strcmp(mt, type.UTF8String) != 0) continue;
+            } else if (type.length > 0) {
+                continue;
+            }
+            // Merge handle + plugin_id + data into a single dict for Swift.
+            id nsData = py_to_ns(data);
+            NSMutableDictionary *merged = [NSMutableDictionary dictionary];
+            if ([nsData isKindOfClass:[NSDictionary class]]) [merged addEntriesFromDictionary:nsData];
+            merged[@"handle"] = @(PyLong_AsLong(key));
+            PyObject *pid = PyDict_GetItemString(entry, "plugin_id");
+            if (pid && PyUnicode_Check(pid)) {
+                const char *s = PyUnicode_AsUTF8(pid);
+                if (s) merged[@"plugin_id"] = [NSString stringWithUTF8String:s];
+            }
+            [result addObject:merged];
+        }
+        Py_DECREF(keys);
+    }];
+    // Sort by priority descending (Android convention).
+    [result sortUsingComparator:^NSComparisonResult(NSDictionary *a, NSDictionary *b) {
+        NSInteger pa = [a[@"priority"] integerValue];
+        NSInteger pb = [b[@"priority"] integerValue];
+        if (pa == pb) return NSOrderedSame;
+        return pa > pb ? NSOrderedAscending : NSOrderedDescending;
+    }];
+    return [result copy];
+#else
+    (void)type; return @[];
+#endif
+}
+
++ (void)invokeMenuItemClick:(NSInteger)handle {
+#if EGPLUGIN_HAS_PYTHON
+    if (!g_initialized || !g_menu_items) return;
+    [self withPython:^{
+        PyObject *handleObj = PyLong_FromLong((long)handle);
+        PyObject *entry = PyDict_GetItem(g_menu_items, handleObj);
+        Py_DECREF(handleObj);
+        if (!entry) return;
+        PyObject *cb = PyDict_GetItemString(entry, "on_click");
+        if (!cb || cb == Py_None || !PyCallable_Check(cb)) return;
+        PyObject *r = PyObject_CallFunctionObjArgs(cb, Py_None, NULL);
+        if (!r) { PyErr_Print(); PyErr_Clear(); }
+        else Py_DECREF(r);
+    }];
+#else
+    (void)handle;
 #endif
 }
 

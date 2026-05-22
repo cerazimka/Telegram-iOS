@@ -65,6 +65,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// Notify the plugin that the row at `index` was tapped (Text-style rows).
 + (void)invokePluginSettingClick:(NSString *)pluginId index:(NSInteger)index;
 
+/// Snapshot of registered menu items for the given surface (drawer / context /
+/// settings / profile / chat). Each dict carries: handle, plugin_id, menu_type,
+/// text, icon, priority, accent, red, link_alias.
++ (NSArray<NSDictionary<NSString *, id> *> *)menuItemsOfType:(NSString *)type;
+
+/// Fire the on_click callback registered for `handle`. No-op if the handle
+/// is unknown or the entry has no callback.
++ (void)invokeMenuItemClick:(NSInteger)handle;
+
 @end
 
 NS_ASSUME_NONNULL_END
