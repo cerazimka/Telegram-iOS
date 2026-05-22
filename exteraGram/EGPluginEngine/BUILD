@@ -50,17 +50,13 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-# Pure-Python third-party packages vendored under Python/site-packages.
-# Currently: requests + cachetools (+ their transitive deps urllib3, certifi,
-# idna, charset_normalizer). Native binaries (.so/.pyd/.dylib) and bin/ have
-# been stripped — what remains is the .py source tree.
+# Pure-Python third-party packages, shipped as a single zip so the bundler
+# doesn't try to flatten multiple package __init__.py files into the
+# framework root (which would collide). EGPluginRuntime extracts it to a
+# cache directory on first launch and appends that directory to sys.path.
 filegroup(
     name = "BundledSitePackages",
-    srcs = glob([
-        "Python/site-packages/**/*.py",
-        "Python/site-packages/**/*.pem",       # certifi cacert bundle
-        "Python/site-packages/**/py.typed",
-    ]),
+    srcs = ["Python/site-packages/bundled-site-packages.zip"],
     visibility = ["//visibility:public"],
 )
 

@@ -132,30 +132,44 @@ public final class EGPluginRuntime {
         return stdlibHome.path
     }
 
-    /// Locate the bundled third-party site-packages directory. The BUILD file
-    /// ships `Python/site-packages/**/*.py` as data; we probe a couple of
-    /// stable package files to find the root, then return that root.
+    /// Extract `bundled-site-packages.zip` from the app bundle into
+    /// `Library/Caches/EGPythonBundledSitePackages/` on first launch (or after
+    /// app updates) and return that directory's path. The zip is shipped as
+    /// a single file rather than a directory tree because ios_framework
+    /// flattens data dependencies into the framework root — and multiple
+    /// package `__init__.py` files would then collide.
     private func findBundledSitePackages() -> String? {
-        // Probe for requests/__init__.py which always exists if the bundle
-        // was assembled with the BundledSitePackages filegroup.
-        for subdir in ["Python/site-packages/requests", "Python/site-packages"] {
-            if let url = Bundle.main.url(forResource: "__init__", withExtension: "py",
-                                         subdirectory: subdir) {
-                // <bundle>/Python/site-packages/requests/__init__.py
-                //   → site-packages root is its grandparent (for the deeper subdir)
-                //   or its parent (for the shallow subdir).
-                if subdir.hasSuffix("/requests") {
-                    return url.deletingLastPathComponent().deletingLastPathComponent().path
-                }
-                return url.deletingLastPathComponent().path
-            }
+        guard let zipURL = Bundle.main.url(forResource: "bundled-site-packages",
+                                           withExtension: "zip") else {
+            EGLogger.shared.log("PluginRuntime",
+                "bundled-site-packages.zip not found in bundle — third-party imports unavailable")
+            return nil
         }
-        // Fallback: search by a known unique file.
-        if let url = Bundle.main.url(forResource: "cachetools",
-                                     withExtension: nil) {
-            return url.deletingLastPathComponent().path
+
+        let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        let extractDir = caches.appendingPathComponent("EGPythonBundledSitePackages")
+        let markerPath = extractDir.appendingPathComponent(".extracted_version").path
+
+        let currentVersion = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String) ?? "1"
+        let extractedVersion = try? String(contentsOfFile: markerPath, encoding: .utf8)
+
+        if extractedVersion == currentVersion,
+           FileManager.default.fileExists(atPath: extractDir.path) {
+            return extractDir.path
         }
-        return nil
+
+        // Re-extract on first launch or after an app update.
+        try? FileManager.default.removeItem(at: extractDir)
+        guard EGPythonBridge.extractPythonStdlibZip(zipURL.path, toDirectory: extractDir.path)
+        else {
+            EGLogger.shared.log("PluginRuntime",
+                "Failed to extract bundled-site-packages.zip")
+            return nil
+        }
+        try? currentVersion.write(toFile: markerPath, atomically: true, encoding: .utf8)
+        EGLogger.shared.log("PluginRuntime",
+            "Bundled site-packages extracted to \(extractDir.path)")
+        return extractDir.path
     }
 
     /// Find the Python SDK directory (contains base_plugin.py, hook_utils.py, etc.)
